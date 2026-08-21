@@ -48,7 +48,11 @@ id_ed25519.*
 credentials.json
 credentials.*
 .git-credentials
-secrets.*
+# `secrets.*` would also match data/catalog/icons/secrets.png
+/secrets.env
+/secrets.json
+**/secrets.env
+**/secrets.json
 *.secret
 auth.json
 token
