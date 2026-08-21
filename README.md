@@ -9,6 +9,7 @@
 </p>
 
 <p align="center">
+  <a href="#why-urstack">Why</a> ·
   <a href="#features">Features</a> ·
   <a href="#requirements">Requirements</a> ·
   <a href="#quick-start">Quick Start</a> ·
@@ -31,6 +32,36 @@
 **UrStack** is a native GTK4 / libadwaita companion for daily-driver Fedora machines. It checks and applies updates across package managers and developer toolchains, installs popular software from a curated catalog, tunes workstation health, and backs up a machine so you can rebuild it later — from one dashboard, with PolicyKit for privileged steps instead of pasted `sudo` commands.
 
 Launch it as `urstack` or `stackup` (the `fedora-updates` command is kept as a compatibility alias).
+
+---
+
+## Why UrStack
+
+I built this because a fresh Fedora install is a blank machine, and I did not want to clone my disk to get my life back.
+
+I wanted to **take programs, settings, and the shape of the workstation onto a new OS** — reinstall, new SSD, or a different PC — without a full-disk image. A clone copies junk, is slow to move, and is a poor fit when the next box has different storage or a different GPU. A **blueprint** (what is installed, plus the settings that matter) is something you can keep and re-apply.
+
+I also wanted a **unified updater**. Fedora does not have one: DNF, Flatpak, Snap, firmware, and developer tools (npm, pip, rustup, and friends) each have their own command and UI. I wanted one place that checks them together and applies what I choose.
+
+### Problems it solves
+
+| If you are tired of… | UrStack |
+| --- | --- |
+| Running `dnf`, GNOME Software, Snap, `fwupdmgr`, and toolchain CLIs separately | One Updates page (and CLI) for the whole stack |
+| Spending a day reinstalling apps after a clean Fedora | Catalog + backup manifests so you can batch-install what you actually use |
+| Disk clones for “move me to a fresh OS” | Backup / restore as a blueprint, not an image |
+| Blind system tweaks with no undo | Health actions with restore points |
+| Pasting `sudo` into a terminal for every privileged step | PolicyKit prompts for DNF, firmware, and similar jobs |
+
+### What it offers
+
+- **Unified updates** — DNF, Flatpak, Snap, firmware, plus optional developer sources, checked in parallel and applied from one dashboard.
+- **Rebuild without cloning** — export package lists, projects, AppImages, and desktop settings; restore them on a clean Fedora.
+- **Curated apps** — category catalog (Flatpak / DNF / Snap / vendor) instead of hunting each store yourself.
+- **Workstation health** — cleanup, codecs, zram, power profiles, with a restore point before aggressive changes.
+- **Native desktop app** — GTK4 / libadwaita, plus a CLI for scripts and a daily check timer.
+
+The sections below are the detail. If you only need a reinstall kit and one updater, start at [Quick Start](#quick-start), then enable Backup in Settings.
 
 ---
 
