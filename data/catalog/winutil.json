@@ -2,7 +2,7 @@
   "version": 1,
   "source": "https://github.com/ChrisTitusTech/winutil",
   "source_file": "config/applications.json",
-  "note": "Imported from Chris Titus Tech winutil; Linux install methods mapped where possible.",
+  "note": "Imported from Chris Titus Tech winutil; only Linux install methods (Flatpak, DNF, or a Linux vendor URL) are kept.",
   "categories": [
     {
       "id": "browsers",
@@ -40,7 +40,7 @@
           "store": "flathub",
           "source": "winutil",
           "winutil_id": "chromium",
-          "url": "https://github.com/Hibbiki/chromium-win64"
+          "url": "https://www.chromium.org/"
         },
         {
           "id": "winutil-edge",
@@ -368,18 +368,6 @@
           "detect": "viber"
         },
         {
-          "id": "winutil-whatsapp",
-          "name": "WhatsApp Desktop",
-          "summary": "WhatsApp Desktop is the official Windows desktop messaging app from Meta, distributed through the Microsoft Store.",
-          "method": "browser",
-          "package": "whatsapp",
-          "store": "vendor",
-          "source": "winutil",
-          "winutil_id": "whatsapp",
-          "url": "https://www.whatsapp.com/download",
-          "detect": "whatsapp"
-        },
-        {
           "id": "winutil-zoom",
           "name": "Zoom",
           "summary": "Zoom is a popular video conferencing and web conferencing service for online meetings, webinars, and collaborative projects.",
@@ -406,30 +394,6 @@
           "source": "winutil",
           "winutil_id": "bruno",
           "url": "https://www.usebruno.com/"
-        },
-        {
-          "id": "winutil-chatgpt",
-          "name": "ChatGPT Desktop",
-          "summary": "The official ChatGPT desktop app for Windows, distributed through the Microsoft Store.",
-          "method": "browser",
-          "package": "chatgpt",
-          "store": "vendor",
-          "source": "winutil",
-          "winutil_id": "chatgpt",
-          "url": "https://chatgpt.com/",
-          "detect": "chatgpt"
-        },
-        {
-          "id": "winutil-claude",
-          "name": "Claude Desktop",
-          "summary": "Anthropic's Claude desktop application for focused AI-assisted work and chat.",
-          "method": "browser",
-          "package": "claude-desktop",
-          "store": "vendor",
-          "source": "winutil",
-          "winutil_id": "claude",
-          "url": "https://claude.ai/download",
-          "detect": "claude-desktop"
         },
         {
           "id": "winutil-claude-code",
@@ -482,7 +446,7 @@
         {
           "id": "winutil-dockerdesktop",
           "name": "Docker Desktop",
-          "summary": "Docker Desktop provides a local environment for building, running, and testing containerized applications on Windows.",
+          "summary": "Local environment for building, running, and testing containerized applications on Linux.",
           "method": "browser",
           "package": "docker-desktop",
           "store": "vendor",
@@ -819,19 +783,19 @@
           "store": "fedora",
           "source": "winutil",
           "winutil_id": "Ruby",
-          "url": "https://rubyinstaller.org/",
+          "url": "https://www.ruby-lang.org/",
           "detect": "ruby"
         },
         {
           "id": "winutil-Lua",
           "name": "Lua",
-          "summary": "A 'batteries included environment' for the Lua scripting language on Windows.",
+          "summary": "The Lua scripting language — Fedora's lua package.",
           "method": "dnf",
           "package": "lua",
           "store": "fedora",
           "source": "winutil",
           "winutil_id": "Lua",
-          "url": "https://github.com/rjpcomputing/luaforwindows",
+          "url": "https://www.lua.org/",
           "detect": "lua"
         }
       ]
@@ -866,13 +830,12 @@
           "id": "winutil-naps2",
           "name": "NAPS2 (Scanner)",
           "summary": "NAPS2 is a document scanning application that simplifies the process of creating electronic documents.",
-          "method": "browser",
-          "package": "naps2",
-          "store": "vendor",
+          "method": "flatpak",
+          "package": "com.naps2.Naps2",
+          "store": "flathub",
           "source": "winutil",
           "winutil_id": "naps2",
-          "url": "https://www.naps2.com/download",
-          "detect": "naps2"
+          "url": "https://www.naps2.com/"
         },
         {
           "id": "winutil-obsidian",
@@ -911,13 +874,12 @@
           "id": "winutil-pdfsam",
           "name": "PDFsam Basic",
           "summary": "PDFsam Basic is a free and open-source tool for splitting, merging, and rotating PDF files.",
-          "method": "browser",
-          "package": "pdfsam",
-          "store": "vendor",
+          "method": "flatpak",
+          "package": "org.pdfsam.PDFSam",
+          "store": "flathub",
           "source": "winutil",
           "winutil_id": "pdfsam",
-          "url": "https://pdfsam.org/download-pdfsam-basic/",
-          "detect": "pdfsam"
+          "url": "https://pdfsam.org/"
         },
         {
           "id": "winutil-simplenote",
@@ -1056,30 +1018,6 @@
       "name": "Microsoft tools",
       "apps": [
         {
-          "id": "winutil-nuget",
-          "name": "NuGet",
-          "summary": "NuGet is a package manager for the .NET framework, enabling developers to manage and share libraries in their .NET applications.",
-          "method": "browser",
-          "package": "nuget",
-          "store": "vendor",
-          "source": "winutil",
-          "winutil_id": "nuget",
-          "url": "https://www.nuget.org/downloads",
-          "detect": "nuget"
-        },
-        {
-          "id": "winutil-onedrive",
-          "name": "OneDrive",
-          "summary": "OneDrive is a cloud storage service provided by Microsoft, allowing users to store and share files securely across devices.",
-          "method": "browser",
-          "package": "onedrive",
-          "store": "vendor",
-          "source": "winutil",
-          "winutil_id": "onedrive",
-          "url": "https://www.microsoft.com/microsoft-365/onedrive/download",
-          "detect": "onedrive"
-        },
-        {
           "id": "winutil-powershell",
           "name": "PowerShell",
           "summary": "PowerShell is a task automation framework and scripting language designed for system administrators, offering powerful command-line capabilities.",
@@ -1151,18 +1089,6 @@
           "source": "winutil",
           "winutil_id": "handbrake",
           "url": "https://handbrake.fr/"
-        },
-        {
-          "id": "winutil-itunes",
-          "name": "iTunes",
-          "summary": "iTunes is a media player, media library, and online radio broadcaster application developed by Apple Inc.",
-          "method": "browser",
-          "package": "itunes",
-          "store": "vendor",
-          "source": "winutil",
-          "winutil_id": "itunes",
-          "url": "https://www.apple.com/itunes/",
-          "detect": "itunes"
         },
         {
           "id": "winutil-mpc-qt",
@@ -1454,7 +1380,7 @@
         {
           "id": "winutil-plexdesktop",
           "name": "Plex Desktop",
-          "summary": "Plex Desktop for Windows is the front end for Plex Media Server.",
+          "summary": "Desktop client for Plex Media Server.",
           "method": "browser",
           "package": "plex-desktop",
           "store": "vendor",
@@ -1549,18 +1475,6 @@
           "source": "winutil",
           "winutil_id": "enteauth",
           "url": "https://ente.io/auth/"
-        },
-        {
-          "id": "winutil-googledrive",
-          "name": "Google Drive",
-          "summary": "File syncing across devices all tied to your Google account.",
-          "method": "browser",
-          "package": "google-drive",
-          "store": "vendor",
-          "source": "winutil",
-          "winutil_id": "googledrive",
-          "url": "https://www.google.com/drive/download/",
-          "detect": "google-drive"
         },
         {
           "id": "winutil-hugo",
@@ -1690,28 +1604,15 @@
           "detect": "teamviewer"
         },
         {
-          "id": "winutil-wingetui",
-          "name": "UniGetUI",
-          "summary": "UniGetUI is a GUI for WinGet, Chocolatey, and other Windows CLI package managers.",
-          "method": "browser",
-          "package": "unigetui",
-          "store": "vendor",
-          "source": "winutil",
-          "winutil_id": "wingetui",
-          "url": "https://www.marticliment.com/unigetui/",
-          "detect": "unigetui"
-        },
-        {
           "id": "winutil-tightvnc",
-          "name": "TightVNC",
-          "summary": "TightVNC is a free and open-source remote desktop software that lets you access and control a computer over the network. With its intuitive interface, you can interact with the rem",
+          "name": "TigerVNC",
+          "summary": "Remote desktop (VNC) server and viewer for Linux.",
           "method": "dnf",
           "package": "tigervnc",
           "store": "fedora",
           "source": "winutil",
           "winutil_id": "tightvnc",
-          "url": "https://www.tightvnc.com/",
-          "detect": "tigervnc"
+          "url": "https://tigervnc.org/"
         },
         {
           "id": "winutil-deskflow",

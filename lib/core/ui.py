@@ -2763,8 +2763,14 @@ SETTING_KEYS: list[tuple[str, str, str, str]] = [
     (
         "enable_fw",
         "Core updates",
-        "Firmware",
-        "Check device firmware with fwupd (UEFI, docks, peripherals). Apply may need a reboot.",
+        "Check firmware",
+        "Look for device firmware with fwupd (UEFI, docks, peripherals). Showing updates does not install them.",
+    ),
+    (
+        "apply_fw",
+        "Core updates",
+        "Apply firmware updates",
+        "Install fwupd payloads when you Apply (and in stackup --yes). Off by default because a flash may need a reboot. You can still tick Firmware on the Apply screen for a one-off.",
     ),
     (
         "enable_kernel_prune",
@@ -2864,6 +2870,22 @@ SETTING_KEYS: list[tuple[str, str, str, str]] = [
     ),
 ]
 
+# Match lib/core/common.sh cfg_get defaults so Settings doesn't show (and save) the wrong state.
+SETTING_DEFAULTS: dict[str, str] = {
+    "enable_dnf": "1",
+    "enable_flatpak": "1",
+    "enable_snap": "1",
+    "enable_fw": "1",
+    "apply_fw": "0",
+    "enable_kernel_prune": "1",
+    "exclude_discover": "1",
+    "quiet_gnome_software": "1",
+}
+
+
+def setting_default(key: str) -> str:
+    return SETTING_DEFAULTS.get(key, "0")
+
 
 def read_config_map(path: Path) -> dict[str, str]:
     values: dict[str, str] = {}
@@ -2903,7 +2925,7 @@ def write_config_map(path: Path, values: dict[str, str]) -> None:
         "# ── Core / plugins ──────────────────────────────────────────────────────────",
     ]
     for key, _group, _title, _sub in SETTING_KEYS:
-        lines.append(f"{key}={merged.get(key, '0')}")
+        lines.append(f"{key}={merged.get(key, setting_default(key))}")
     lines.append("")
     lines.append("# ── Behaviour ────────────────────────────────────────────────────────────────")
     lines.append(f"keep_kernels={merged.get('keep_kernels', '3')}")
@@ -6211,7 +6233,7 @@ def build_settings_content(
     cfg_path = Path(config_file).expanduser()
     values = read_config_map(cfg_path)
     for key, _group, _t, _s in SETTING_KEYS:
-        values.setdefault(key, "0")
+        values.setdefault(key, setting_default(key))
     values.setdefault("keep_kernels", "3")
     values["appearance"] = normalize_appearance(values.get("appearance"))
 
@@ -6368,7 +6390,7 @@ def build_settings_content(
 
     def apply_values_to_ui(new_vals: dict[str, str]) -> None:
         for key, sw in switches.items():
-            sw.set_active(new_vals.get(key, "0") == "1")
+            sw.set_active(new_vals.get(key, setting_default(key)) == "1")
         kentry.set_text(str(new_vals.get("keep_kernels", "3")))
         scheme = normalize_appearance(new_vals.get("appearance"))
         appearance_state["v"] = scheme
@@ -7369,6 +7391,11 @@ def mode_shell(args: argparse.Namespace) -> int:
             sections_file = (getattr(args, "sections_file", "") or "").strip()
             check_dir = (getattr(args, "check_dir", "") or "").strip()
             items = parse_items_file(sections_file) if sections_file and Path(sections_file).is_file() else []
+            cfg_now = read_config_map(Path(args.config_file)) if getattr(args, "config_file", "") else {}
+            apply_fw_on = cfg_now.get("apply_fw", setting_default("apply_fw")) == "1"
+            for it in items:
+                if it.item_id == "fw":
+                    it.checked = apply_fw_on
             if not items:
                 if check_dir and Path(check_dir).is_dir():
                     run_embedded_job(
@@ -7390,10 +7417,16 @@ def mode_shell(args: argparse.Namespace) -> int:
                 except Exception:  # noqa: BLE001
                     pass
 
+            apply_sub = "Selected sections will run in order. Progress stays in this window."
+            if any(it.item_id == "fw" for it in items):
+                apply_sub = (
+                    "Firmware is unchecked unless you enable Apply firmware in Settings. "
+                    "Tick it here for a one-off; a flash may need a reboot."
+                )
             content = build_checklist_content(
                 items,
                 heading="Select which updates to apply",
-                subheading="Selected sections will run in order. Progress stays in this window.",
+                subheading=apply_sub,
                 ok_label="Apply",
                 on_confirm=start_apply_sections,
                 on_cancel=on_cancel,

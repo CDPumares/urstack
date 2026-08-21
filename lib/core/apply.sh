@@ -6,9 +6,32 @@ emit_progress() {
   echo "# $1"
 }
 
-# True when --yes should skip firmware (unless --include-firmware)
+# True when firmware apply should be skipped for this selection.
+# Opt-in: Settings apply_fw=1, or --include-firmware.
+# Explicit Apply-checklist picks (selected != "all") still install firmware
+# even when apply_fw is off — that is the one-off tick.
 skip_firmware() {
-  [[ "${AUTO_YES:-0}" -eq 1 && "${INCLUDE_FIRMWARE:-0}" -eq 0 ]]
+  local selected="${1:-all}"
+  [[ "${INCLUDE_FIRMWARE:-0}" == "1" ]] && return 1
+  [[ "$(cfg_get apply_fw 0)" == "1" ]] && return 1
+  [[ "$selected" != "all" ]] && return 1
+  return 0
+}
+
+# Write TRUE/FALSE|id|label lines for the Apply checklist.
+write_apply_sections_file() {
+  local dest="${1:-}"
+  [[ -n "$dest" ]] || return 1
+  : > "$dest"
+  local s pre
+  for s in "${SECTION_KEYS[@]}"; do
+    has_section "$s" || continue
+    pre=TRUE
+    if [[ "$s" == "fw" && "${INCLUDE_FIRMWARE:-0}" != "1" && "$(cfg_get apply_fw 0)" != "1" ]]; then
+      pre=FALSE
+    fi
+    printf '%s|%s|%s\n' "$pre" "$s" "$(section_label "$s")" >> "$dest"
+  done
 }
 
 # Consume zenity-compatible progress lines (# text / 0-100) via GTK UI (zenity fallback)
@@ -70,8 +93,8 @@ build_priv_jobs() {
         ;;
       snap) echo "snap_refresh" >> "$jobs" ;;
       fw)
-        if skip_firmware; then
-          echo "# skipped fw in --yes mode (pass --include-firmware to apply)" >> "$jobs"
+        if skip_firmware "$selected"; then
+          echo "# skipped fw (enable Apply firmware in Settings, or pass --include-firmware)" >> "$jobs"
         else
           echo "fwupd_update" >> "$jobs"
         fi
@@ -257,8 +280,7 @@ run_all_updates() {
   for s in "${SECTION_KEYS[@]}"; do
     has_section "$s" || continue
     section_is_selected "$s" "$selected" || continue
-    # --yes skips firmware unless --include-firmware
-    if [[ "$s" == "fw" ]] && skip_firmware; then
+    if [[ "$s" == "fw" ]] && skip_firmware "$selected"; then
       continue
     fi
     label=$(section_label "$s")
@@ -280,7 +302,7 @@ run_all_updates() {
     for s in dnf snap fw cursor; do
       has_section "$s" || continue
       section_is_selected "$s" "$selected" || continue
-      if [[ "$s" == "fw" ]] && skip_firmware; then
+      if [[ "$s" == "fw" ]] && skip_firmware "$selected"; then
         continue
       fi
       echo "$s:$priv_ec" >> "$results_file"
@@ -294,7 +316,7 @@ run_all_updates() {
         printf '%s\n' "$hist" > "$RUN_LOG_DIR/dnf-history.txt"
       fi
     fi
-    if has_section fw && section_is_selected fw "$selected" && ! skip_firmware && [[ $priv_ec -eq 0 ]]; then
+    if has_section fw && section_is_selected fw "$selected" && ! skip_firmware "$selected" && [[ $priv_ec -eq 0 ]]; then
       echo "reboot_needed:1" >> "$results_file"
       echo "reboot_reason:Firmware update applied — reboot recommended." >> "$results_file"
     fi
@@ -665,12 +687,7 @@ show_action_menu() {
     choice=""
     catalog_status_file "$status_f" || true
     : > "$sections_f"
-    local s label
-    for s in "${SECTION_KEYS[@]}"; do
-      has_section "$s" || continue
-      label=$(section_label "$s")
-      printf 'TRUE|%s|%s\n' "$s" "$label" >> "$sections_f"
-    done
+    write_apply_sections_file "$sections_f"
     if [[ -f "$_ui" ]] && command -v python3 &>/dev/null; then
       choice=$(python3 "$_ui" shell \
         --file "$results_pane" \

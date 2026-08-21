@@ -59,6 +59,7 @@ CURATED: dict[str, str] = {
     "mullvadbrowser": "net.mullvad.MullvadBrowser",
     "whatsapp": "com.rtosta.zapzap",
     "whatsappdesktop": "com.rtosta.zapzap",
+    "zapzap": "com.rtosta.zapzap",
     "microsoftteams": "com.github.IsmaelMartinez.teams_for_linux",
     "teams": "com.github.IsmaelMartinez.teams_for_linux",
     "threema": "ch.threema.threema-web-desktop",

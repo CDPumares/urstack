@@ -29,9 +29,7 @@ import app_meta  # noqa: E402
 
 # Catalog id → Wikipedia article title for vendor apps with no Flathub page.
 WIKI_TITLES: dict[str, str] = {
-    "skype": "Skype",
     "webex": "Webex",
-    "apple-music": "Apple Music",
     "davinci-resolve": "DaVinci Resolve",
     "cinebench": "Cinebench",
     "notion-prod": "Notion (productivity software)",
@@ -47,24 +45,18 @@ WIKI_TITLES: dict[str, str] = {
     "ngrok": "Ngrok",
     "teamviewer": "TeamViewer",
     "balena-etcher": "Etcher (software)",
-    "affinity": "Affinity (software)",
     "figma-linux": "Figma (software)",
-    "fusion360": "Autodesk Fusion",
     "tailscale": "Tailscale",
     "nordvpn": "NordVPN",
     "mullvad-vpn": "Mullvad",
     "virtualbox": "VirtualBox",
     "veracrypt": "VeraCrypt",
-    "battlenet": "Battle.net",
-    "ea-app": "EA app",
     "roblox": "Roblox",
     "purge-shutter-encoder": "Shutter Encoder",
 }
 
 DEVELOPERS: dict[str, str] = {
-    "skype": "Microsoft",
     "webex": "Cisco",
-    "apple-music": "Apple",
     "davinci-resolve": "Blackmagic Design",
     "cinebench": "Maxon",
     "notion-prod": "Notion Labs",
@@ -80,16 +72,12 @@ DEVELOPERS: dict[str, str] = {
     "ngrok": "ngrok",
     "teamviewer": "TeamViewer",
     "balena-etcher": "Balena",
-    "affinity": "Serif",
     "figma-linux": "Figma",
-    "fusion360": "Autodesk",
     "tailscale": "Tailscale",
     "nordvpn": "Nord Security",
     "mullvad-vpn": "Mullvad",
     "virtualbox": "Oracle",
     "veracrypt": "IDRIX",
-    "battlenet": "Blizzard Entertainment",
-    "ea-app": "Electronic Arts",
     "roblox": "Roblox Corporation",
     "purge-shutter-encoder": "Paul Pacifico",
 }

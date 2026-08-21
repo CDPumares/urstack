@@ -53,7 +53,7 @@ python3 scripts/vendor-app-icons.py
 python3 scripts/vendor-app-metadata.py
 ```
 
-Prefer Flatpak, DNF, or Snap when that is the realistic Fedora path. Vendor / browser install is a last resort.
+Prefer Flatpak, DNF, or Snap when that is the realistic Fedora path. Vendor / browser install is a last resort, and only when the vendor ships a Linux build. Do not add Windows-only apps (WinGet, iTunes, EA App, UniGetUI, and so on).
 
 ## Pull requests
 

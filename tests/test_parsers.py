@@ -130,8 +130,33 @@ printf '%s\\n' "${{SECTION_KEYS[@]}}"
         keys = set(out.split())
         self.assertIn("dnf", keys)
         self.assertIn("flatpak", keys)
+        self.assertIn("fw", keys)
         self.assertNotIn("cursor", keys)
         self.assertNotIn("npm", keys)
+
+
+class TestFirmwareApplyOptIn(unittest.TestCase):
+    def _skip(self, selected: str, env: str = "") -> int:
+        script = f"""
+set -euo pipefail
+source "{CORE}/common.sh"
+source "{CORE}/apply.sh"
+{env}
+if skip_firmware "{selected}"; then exit 0; else exit 1; fi
+"""
+        return subprocess.run(["bash", "-c", script], check=False).returncode
+
+    def test_all_skips_by_default(self) -> None:
+        self.assertEqual(self._skip("all"), 0)
+
+    def test_settings_opt_in_applies_all(self) -> None:
+        self.assertEqual(self._skip("all", 'printf -v CFG_apply_fw %s 1'), 1)
+
+    def test_cli_flag_applies_all(self) -> None:
+        self.assertEqual(self._skip("all", "INCLUDE_FIRMWARE=1"), 1)
+
+    def test_explicit_checklist_applies(self) -> None:
+        self.assertEqual(self._skip("dnf|fw"), 1)
 
 
 class TestCatalogRows(unittest.TestCase):

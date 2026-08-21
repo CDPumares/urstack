@@ -165,24 +165,11 @@
           "store": "vendor"
         },
         {
-          "id": "skype",
-          "name": "Skype",
-          "summary": "Video calls \u2014 Microsoft vendor download",
-          "method": "browser",
-          "package": "skypeforlinux",
-          "detect": "skypeforlinux",
-          "url": "https://www.skype.com/en/get-skype/",
-          "store": "vendor"
-        },
-        {
-          "id": "whatsapp-desktop",
-          "name": "WhatsApp",
-          "summary": "Unofficial desktop clients vary \u2014 official web + vendor options",
-          "method": "browser",
-          "package": "whatsapp",
-          "detect": "whatsapp-desktop",
-          "url": "https://www.whatsapp.com/download",
-          "store": "vendor"
+          "id": "zapzap",
+          "name": "ZapZap",
+          "summary": "WhatsApp Web client for Linux",
+          "method": "flatpak",
+          "package": "com.rtosta.zapzap"
         },
         {
           "id": "webex",
@@ -319,16 +306,6 @@
           "package": "tidal",
           "detect": "tidal",
           "url": "https://tidal.com/download",
-          "store": "vendor"
-        },
-        {
-          "id": "apple-music",
-          "name": "Apple Music",
-          "summary": "Apple Music for Linux clients / web \u2014 vendor links",
-          "method": "browser",
-          "package": "apple-music",
-          "detect": "apple-music",
-          "url": "https://music.apple.com/",
           "store": "vendor"
         },
         {
@@ -1021,23 +998,13 @@
           "package": "org.godotengine.Godot"
         },
         {
-          "id": "affinity",
-          "name": "Affinity (Photo/Designer)",
-          "summary": "Serif creative apps \u2014 vendor Linux beta/download when available",
-          "method": "browser",
-          "package": "affinity",
-          "detect": "affinity",
-          "url": "https://affinity.serif.com/en-us/download/",
-          "store": "vendor"
-        },
-        {
           "id": "figma-linux",
           "name": "Figma",
-          "summary": "Design tool \u2014 use web or community Linux clients",
+          "summary": "Design tool \u2014 use the web app in a browser on Linux",
           "method": "browser",
           "package": "figma",
           "detect": "figma-linux",
-          "url": "https://www.figma.com/downloads/",
+          "url": "https://www.figma.com/",
           "store": "vendor"
         },
         {
@@ -1053,16 +1020,6 @@
           "summary": "Photography workflow",
           "method": "flatpak",
           "package": "org.darktable.Darktable"
-        },
-        {
-          "id": "fusion360",
-          "name": "Fusion / CAD notes",
-          "summary": "Autodesk Fusion is Windows-focused \u2014 check vendor Linux options",
-          "method": "browser",
-          "package": "fusion360",
-          "detect": "fusion360",
-          "url": "https://www.autodesk.com/products/fusion-360/overview",
-          "store": "vendor"
         },
         {
           "id": "freecad",
@@ -1393,26 +1350,6 @@
           "summary": "Multi-instance Minecraft launcher",
           "method": "flatpak",
           "package": "org.prismlauncher.PrismLauncher"
-        },
-        {
-          "id": "battlenet",
-          "name": "Battle.net",
-          "summary": "Blizzard launcher \u2014 usually via Wine/Lutris, not native stores",
-          "method": "browser",
-          "package": "battle.net",
-          "detect": "battle.net",
-          "url": "https://download.battle.net/",
-          "store": "vendor"
-        },
-        {
-          "id": "ea-app",
-          "name": "EA App",
-          "summary": "EA games \u2014 Windows app via Proton/Lutris",
-          "method": "browser",
-          "package": "ea-app",
-          "detect": "ea-app",
-          "url": "https://www.ea.com/ea-app",
-          "store": "vendor"
         },
         {
           "id": "geforce-now",

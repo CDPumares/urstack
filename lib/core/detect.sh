@@ -225,10 +225,19 @@ write_detected_config() {
   fi
 
   local prev_appearance="system"
+  local prev_apply_fw="0"
   if [[ -n "$out" && "$out" != "-" && -f "$out" ]]; then
     prev_appearance="$(awk -F= '/^appearance=/{gsub(/[[:space:]]/, "", $2); print $2; exit}' "$out")"
     [[ "$prev_appearance" == "light" || "$prev_appearance" == "dark" || "$prev_appearance" == "system" ]] \
       || prev_appearance=system
+    prev_apply_fw="$(awk -F= '/^apply_fw=/{
+      val=$2
+      sub(/#.*/, "", val)
+      gsub(/[[:space:]]/, "", val)
+      print val
+      exit
+    }' "$out")"
+    [[ "$prev_apply_fw" == "1" ]] || prev_apply_fw=0
   fi
 
   local content
@@ -245,6 +254,7 @@ enable_dnf=${DETECT_enable_dnf}          # ${DETECT_reason_dnf:-not found}
 enable_flatpak=${DETECT_enable_flatpak}     # ${DETECT_reason_flatpak:-not found}
 enable_snap=${DETECT_enable_snap}        # ${DETECT_reason_snap:-not found}
 enable_fw=${DETECT_enable_fw}          # ${DETECT_reason_fw:-not found}
+apply_fw=${prev_apply_fw}            # install fwupd payloads (opt-in; reboot)
 enable_kernel_prune=${DETECT_enable_kernel_prune}
 exclude_discover=${DETECT_exclude_discover}   # ${DETECT_reason_exclude_discover}
 

@@ -627,14 +627,6 @@
       "icon": "https://dl.flathub.org/media/icons/128x128/com.github.IsmaelMartinez.teams_for_linux.png",
       "source": "curated"
     },
-    "skype": {
-      "icon": "https://www.google.com/s2/favicons?domain=www.skype.com&sz=128",
-      "source": "curated"
-    },
-    "whatsapp-desktop": {
-      "icon": "https://dl.flathub.org/media/icons/128x128/com.rtosta.zapzap.png",
-      "source": "curated"
-    },
     "webex": {
       "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/webex.svg",
       "source": "curated"
@@ -649,10 +641,6 @@
     },
     "tidal": {
       "icon": "https://dl.flathub.org/media/icons/128x128/com.mastermindzh.tidal-hifi.png",
-      "source": "curated"
-    },
-    "apple-music": {
-      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/applemusic.svg",
       "source": "curated"
     },
     "plexamp": {
@@ -783,10 +771,6 @@
       "icon": "https://dl.flathub.org/media/icons/128x128/com.rustdesk.RustDesk.png",
       "source": "curated"
     },
-    "fusion360": {
-      "icon": "https://www.google.com/s2/favicons?domain=www.autodesk.com&sz=128",
-      "source": "curated"
-    },
     "purge-shutter-encoder": {
       "icon": "https://www.google.com/s2/favicons?domain=www.shutterencoder.com&sz=128",
       "source": "curated"
@@ -817,14 +801,6 @@
     },
     "minecraft-launcher": {
       "icon": "https://dl.flathub.org/media/icons/128x128/org.prismlauncher.PrismLauncher.png",
-      "source": "curated"
-    },
-    "battlenet": {
-      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/battledotnet.svg",
-      "source": "curated"
-    },
-    "ea-app": {
-      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/ea.svg",
       "source": "curated"
     },
     "geforce-now": {
@@ -885,18 +861,6 @@
     },
     "winutil-viber": {
       "icon": "https://dl.flathub.org/media/icons/128x128/com.viber.Viber.png",
-      "source": "curated"
-    },
-    "winutil-whatsapp": {
-      "icon": "https://dl.flathub.org/media/icons/128x128/com.rtosta.zapzap.png",
-      "source": "curated"
-    },
-    "winutil-chatgpt": {
-      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/openai.svg",
-      "source": "curated"
-    },
-    "winutil-claude": {
-      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/anthropic.svg",
       "source": "curated"
     },
     "winutil-claude-code": {
@@ -1011,16 +975,8 @@
       "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/roblox.svg",
       "source": "curated"
     },
-    "winutil-nuget": {
-      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/nuget.svg",
-      "source": "curated"
-    },
     "winutil-powershell": {
       "icon": "https://www.google.com/s2/favicons?domain=learn.microsoft.com&sz=128",
-      "source": "curated"
-    },
-    "winutil-itunes": {
-      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/apple.svg",
       "source": "curated"
     },
     "winutil-cinebenchr23": {
@@ -1087,10 +1043,6 @@
       "icon": "https://dl.flathub.org/media/icons/128x128/com.dropbox.Client.png",
       "source": "curated"
     },
-    "winutil-googledrive": {
-      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/googledrive.svg",
-      "source": "curated"
-    },
     "winutil-hugo": {
       "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/hugo.svg",
       "source": "curated"
@@ -1119,24 +1071,12 @@
       "icon": "https://www.google.com/s2/favicons?domain=www.tightvnc.com&sz=128",
       "source": "curated"
     },
-    "affinity": {
-      "icon": "https://www.google.com/s2/favicons?domain=affinity.serif.com&sz=128",
-      "source": "manual"
-    },
     "figma-linux": {
       "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/figma.svg",
       "source": "manual"
     },
     "winutil-posh": {
       "icon": "https://www.google.com/s2/favicons?domain=ohmyposh.dev&sz=128",
-      "source": "manual"
-    },
-    "winutil-onedrive": {
-      "icon": "https://www.google.com/s2/favicons?domain=onedrive.live.com&sz=128",
-      "source": "manual"
-    },
-    "winutil-wingetui": {
-      "icon": "https://www.google.com/s2/favicons?domain=github.com/marticliment/UniGetUI&sz=128",
       "source": "manual"
     },
     "winutil-dorion": {
@@ -1503,6 +1443,11 @@
     "antimicrox": {
       "icon": "https://dl.flathub.org/media/icons/128x128/io.github.antimicrox.antimicrox.png",
       "icon_id": "io.github.antimicrox.antimicrox",
+      "source": "flatpak"
+    },
+    "zapzap": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.rtosta.zapzap.png",
+      "icon_id": "com.rtosta.zapzap",
       "source": "flatpak"
     }
   }

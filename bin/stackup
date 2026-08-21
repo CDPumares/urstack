@@ -273,11 +273,7 @@ if [[ $DO_REFRESH_CHECK -eq 1 ]]; then
   fi
   if [[ -n "$SECTIONS_FILE" ]]; then
     : > "$SECTIONS_FILE"
-    local_s=""
-    for local_s in "${SECTION_KEYS[@]}"; do
-      has_section "$local_s" || continue
-      printf 'TRUE|%s|%s\n' "$local_s" "$(section_label "$local_s")" >> "$SECTIONS_FILE"
-    done
+    write_apply_sections_file "$SECTIONS_FILE"
   fi
   echo "HAS_UPDATES=$has_any"
   echo "# Refresh complete"

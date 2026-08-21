@@ -2,6 +2,9 @@
 """Import Chris Titus Tech winutil applications into UrStack catalog format.
 
 Source: https://github.com/ChrisTitusTech/winutil (config/applications.json)
+
+Only titles with a Linux install method in LINUX_MAP are kept. Windows-only
+WinUtil apps are dropped.
 """
 
 from __future__ import annotations
@@ -34,7 +37,7 @@ LINUX_MAP: dict[str, tuple] = {
     # Browsers
     "brave": ("flatpak", "com.brave.Browser"),
     "chrome": ("dnf", "google-chrome-stable"),
-    "chromium": ("flatpak", "org.chromium.Chromium"),
+    "chromium": ("flatpak", "org.chromium.Chromium", "https://www.chromium.org/"),
     "edge": ("browser", "microsoft-edge", "https://www.microsoft.com/edge/download"),
     "firefox": ("flatpak", "org.mozilla.firefox"),
     "firefoxesr": ("flatpak", "org.mozilla.firefox"),
@@ -59,7 +62,7 @@ LINUX_MAP: dict[str, tuple] = {
     "betterbird": ("flatpak", "eu.betterbird.Betterbird"),
     "vesktop": ("flatpak", "dev.vencord.Vesktop"),
     "viber": ("browser", "viber", "https://www.viber.com/en/download/"),
-    "whatsapp": ("browser", "whatsapp", "https://www.whatsapp.com/download"),
+    "whatsapp": ("flatpak", "com.rtosta.zapzap"),
     "protonmail": ("flatpak", "me.proton.Mail"),
     "chatterino": ("flatpak", "com.chatterino.chatterino"),
     "qtox": ("flatpak", "io.github.qtox.qTox"),
@@ -96,24 +99,16 @@ LINUX_MAP: dict[str, tuple] = {
     "fnm": ("script", "fnm", "https://fnm.vercel.app/install"),
     "vagrant": ("dnf", "vagrant"),
     "unity": ("browser", "unityhub", "https://unity.com/download"),
-    # No Linux desktop build exists. The detect name must not be `claude`, or it
-    # matches the Claude Code CLI and reports a desktop app that cannot be here.
-    "claude": ("browser", "claude-desktop", "https://claude.ai/download"),
     "claude-code": ("browser", "claude", "https://code.claude.com/"),
-    "chatgpt": ("browser", "chatgpt", "https://chatgpt.com/"),
     "codex": ("browser", "codex", "https://developers.openai.com/codex/cli"),
     # Fedora 44 ships only java-latest-openjdk (25); the 8 and 21 packages were
     # retired, so point those at Adoptium builds instead of a failing install.
     "java8": ("browser", "temurin-8", "https://adoptium.net/temurin/releases/?version=8"),
     "java21": ("browser", "temurin-21", "https://adoptium.net/temurin/releases/?version=21"),
     "java25": ("dnf", "java-latest-openjdk"),
-    "Ruby": ("dnf", "ruby"),
-    "Lua": ("dnf", "lua"),
+    "Ruby": ("dnf", "ruby", "https://www.ruby-lang.org/"),
+    "Lua": ("dnf", "lua", "https://www.lua.org/"),
     "posh": ("browser", "oh-my-posh", "https://ohmyposh.dev/docs/installation/linux"),
-    "gitextensions": ("browser", "gitextensions", "https://gitextensions.github.io/"),
-    "systeminformer": ("browser", "systeminformer", "https://systeminformer.com/"),
-    "visualstudio2022": ("browser", "visualstudio", "https://visualstudio.microsoft.com/"),
-    "visualstudio2026": ("browser", "visualstudio", "https://visualstudio.microsoft.com/"),
     # Document / productivity
     "joplin": ("flatpak", "net.cozic.joplin_desktop"),
     "libreoffice": ("flatpak", "org.libreoffice.LibreOffice"),
@@ -122,31 +117,18 @@ LINUX_MAP: dict[str, tuple] = {
     "okular": ("flatpak", "org.kde.okular"),
     "zotero": ("flatpak", "org.zotero.Zotero"),
     "xournal": ("flatpak", "com.github.xournalpp.xournalpp"),
-    "pdfsam": ("browser", "pdfsam", "https://pdfsam.org/download-pdfsam-basic/"),
+    "pdfsam": ("flatpak", "org.pdfsam.PDFSam"),
     "simplenote": ("flatpak", "com.simplenote.Simplenote"),
-    "adobe": ("browser", "acrobat", "https://www.adobe.com/acrobat/pdf-reader.html"),
-    "foxpdfreader": ("browser", "foxit", "https://www.foxit.com/pdf-reader/"),
-    "naps2": ("browser", "naps2", "https://www.naps2.com/download"),
-    "pdf-xchange": ("browser", "pdfxchange", "https://www.pdf-xchange.com/"),
-    "pdf24creator": ("browser", "pdf24", "https://tools.pdf24.org/en/creator"),
-    "pdfgear": ("browser", "pdfgear", "https://www.pdfgear.com/"),
-    "sumatra": ("browser", "sumatra", "https://www.sumatrapdfreader.org/free-pdf-reader.html"),
+    "naps2": ("flatpak", "com.naps2.Naps2"),
     # Games
     "steam": ("flatpak", "com.valvesoftware.Steam"),
     "heroiclauncher": ("flatpak", "com.heroicgameslauncher.hgl"),
     "prismlauncher": ("flatpak", "org.prismlauncher.PrismLauncher"),
     "itch": ("browser", "itch", "https://itch.io/app"),
     "geforcenow": ("browser", "geforcenow", "https://www.nvidia.com/en-us/geforce-now/"),
-    "eaapp": ("browser", "ea-app", "https://www.ea.com/ea-app"),
-    "epicgames": ("browser", "epic", "https://store.epicgames.com/en-US/download"),
-    "gog": ("browser", "gog-galaxy", "https://www.gog.com/galaxy"),
-    "ubisoft": ("browser", "ubisoft", "https://ubisoftconnect.com/"),
     "roblox": ("browser", "sober", "https://sober.vinegarhq.org/"),
     "cemu": ("flatpak", "info.cemu.Cemu"),
     "modrinth": ("flatpak", "com.modrinth.ModrinthApp"),
-    "playnite": ("browser", "playnite", "https://playnite.link/"),
-    "Overwolf": ("browser", "overwolf", "https://www.overwolf.com/"),
-    "vrdesktopstreamer": ("browser", "virtual-desktop", "https://www.vrdesktop.net/"),
     # Media
     "audacity": ("flatpak", "org.audacityteam.Audacity"),
     "blender": ("flatpak", "org.blender.Blender"),
@@ -158,17 +140,7 @@ LINUX_MAP: dict[str, tuple] = {
     "mpv": ("flatpak", "io.mpv.Mpv"),
     "mpc-qt": ("flatpak", "io.github.mpc_qt.mpc-qt"),
     "nomacs": ("flatpak", "org.nomacs.ImageLounge"),
-    "aimp": ("browser", "aimp", "https://www.aimp.ru/"),
-    "foobar": ("browser", "foobar2000", "https://www.foobar2000.org/"),
-    "itunes": ("browser", "itunes", "https://www.apple.com/itunes/"),
-    "sharex": ("browser", "sharex", "https://getsharex.com/"),
-    "Paintdotnet": ("browser", "paint.net", "https://www.getpaint.net/"),
-    "imageglass": ("browser", "imageglass", "https://imageglass.org/"),
-    "irfanview": ("browser", "irfanview", "https://www.irfanview.com/"),
-    "klite": ("browser", "klite", "https://www.codecguide.com/"),
-    "mpchc": ("browser", "mpc-hc", "https://github.com/clsid2/mpc-hc"),
-    "notepadplus": ("flatpak", "com.notepadqq.Notepadqq"),  # Linux alternative note via summary
-    "eartrumpet": ("browser", "eartrumpet", "https://eartrumpet.app/"),
+    "notepadplus": ("flatpak", "com.notepadqq.Notepadqq"),  # Linux alternative
     # Pro tools
     "nmap": ("dnf", "nmap"),
     "wireshark": ("dnf", "wireshark"),
@@ -178,17 +150,8 @@ LINUX_MAP: dict[str, tuple] = {
     "protonvpn": ("flatpak", "com.protonvpn.www"),
     "OpenVPN": ("dnf", "openvpn"),
     "ventoy": ("browser", "ventoy", "https://www.ventoy.net/en/download.html"),
-    "winscp": ("browser", "winscp", "https://winscp.net/"),
     "angryipscanner": ("flatpak", "org.angryip.ipscan"),
-    "advancedip": ("browser", "advanced-ip-scanner", "https://www.advanced-ip-scanner.com/"),
-    "cpuz": ("browser", "cpu-z", "https://www.cpuid.com/softwares/cpu-z.html"),
-    "gpuz": ("browser", "gpu-z", "https://www.techpowerup.com/gpuz/"),
-    "hwinfo": ("browser", "hwinfo", "https://www.hwinfo.com/"),
-    "hwmonitor": ("browser", "hwmonitor", "https://www.cpuid.com/softwares/hwmonitor.html"),
     "cinebenchr23": ("browser", "cinebench", "https://www.maxon.net/en/downloads/cinebench-2024-downloads"),
-    "ddu": ("browser", "ddu", "https://www.wagnardsoft.com/"),
-    "simplewall": ("browser", "simplewall", "https://github.com/henrypp/simplewall"),
-    "gsudo": ("browser", "gsudo", "https://github.com/gerardog/gsudo"),
     # Self-hosted
     "jellyfinmediaplayer": ("flatpak", "com.github.iwalton3.jellyfin-media-player"),
     "jellyfinserver": ("browser", "jellyfin", "https://jellyfin.org/downloads/"),
@@ -215,27 +178,18 @@ LINUX_MAP: dict[str, tuple] = {
     "7zip": ("dnf", "7zip"),
     "parsec": ("browser", "parsec", "https://parsec.app/downloads"),
     "openrgb": ("flatpak", "org.openrgb.OpenRGB"),
-    "googledrive": ("browser", "google-drive", "https://www.google.com/drive/download/"),
     "protonpass": ("flatpak", "me.proton.Pass"),
     "protondrive": ("browser", "proton-drive", "https://proton.me/drive/download"),
     "protonauth": ("browser", "proton-authenticator", "https://proton.me/authenticator"),
     "enteauth": ("flatpak", "io.ente.auth"),
     "hugo": ("dnf", "hugo"),
-    "rufus": ("browser", "rufus", "https://rufus.ie/"),  # Windows imager — Ventoy is Linux alternative
-    "tightvnc": ("dnf", "tigervnc"),
+    "tightvnc": ("dnf", "tigervnc", "https://tigervnc.org/"),
     "deskflow": ("flatpak", "org.deskflow.deskflow"),
-    "flux": ("browser", "flux", "https://justgetflux.com/"),
-    "everything": ("browser", "everything", "https://www.voidtools.com/"),
-    "autohotkey": ("browser", "autohotkey", "https://www.autohotkey.com/"),
-    "wingetui": ("browser", "unigetui", "https://www.marticliment.com/unigetui/"),
-    # Microsoft tools — mostly Windows-only; keep download links
     "powershell": ("browser", "powershell", "https://learn.microsoft.com/powershell/scripting/install/install-rhel"),
-    "onedrive": ("browser", "onedrive", "https://www.microsoft.com/microsoft-365/onedrive/download"),
-    "terminal": ("browser", "windows-terminal", "https://aka.ms/terminal"),
-    "powertoys": ("browser", "powertoys", "https://github.com/microsoft/PowerToys"),
-    "nuget": ("browser", "nuget", "https://www.nuget.org/downloads"),
 }
 
+# WinUtil keys with no Linux desktop (or only a Wine/Proton story). Dropped
+# unless LINUX_MAP remaps them to Flatpak/DNF/script.
 WINDOWS_ONLY = {
     "autoruns", "processexplorer", "processmonitor", "tcpview", "rdcman",
     "vc2015_32", "vc2015_64", "powertoys", "terminal", "ntlite", "dismtools",
@@ -250,10 +204,11 @@ WINDOWS_ONLY = {
     "winscp", "putty", "gsudo", "simplewall", "cpuz", "gpuz", "hwinfo",
     "hwmonitor", "ddu", "advancedip", "sumatra", "pdf-xchange", "pdf24creator",
     "pdfgear", "foxpdfreader", "adobe", "gitextensions", "systeminformer",
-    "visualstudio2022", "visualstudio2026", "Lua", "dotnet6", "dotnet8",
+    "visualstudio2022", "visualstudio2026", "dotnet6", "dotnet8",
     "dotnet9", "dotnet10", "playnite", "Overwolf", "vrdesktopstreamer",
     "ubisoft", "gog", "epicgames", "eaapp", "rufus", "everything", "autohotkey",
-    "flux",
+    "flux", "itunes", "wingetui", "chatgpt", "claude", "nuget", "onedrive",
+    "googledrive",
 }
 
 
@@ -285,10 +240,6 @@ def map_app(key: str, entry: dict) -> dict:
     elif method == "dnf":
         store = "fedora"
 
-    if key in WINDOWS_ONLY and method == "browser":
-        summary = f"{summary} (Windows-focused in winutil — Linux alternative/link when available)"
-        store = "windows"
-
     out = {
         "id": f"winutil-{key}",
         "name": name,
@@ -313,6 +264,13 @@ def main() -> None:
 
     buckets: dict[str, dict] = {}
     for key, entry in data.items():
+        # UrStack is Fedora/Linux: skip unmapped WinUtil titles and Windows-only
+        # tools unless LINUX_MAP remaps them to a real Linux install method.
+        if key not in LINUX_MAP:
+            continue
+        mapped = LINUX_MAP[key]
+        if key in WINDOWS_ONLY and mapped[0] == "browser":
+            continue
         wcat = entry.get("category", "Utilities")
         cid, cname = CAT_MAP.get(wcat, ("utilities", "Utilities"))
         # Merge into the same category ids/names as curated apps.json
@@ -320,11 +278,7 @@ def main() -> None:
             buckets[cid] = {"id": cid, "name": cname, "apps": []}
         buckets[cid]["apps"].append(map_app(key, entry))
 
-    # Drop Windows-only apps — UrStack is Fedora/Linux
     for cid, bucket in list(buckets.items()):
-        bucket["apps"] = [
-            a for a in bucket["apps"] if a.get("store") != "windows"
-        ]
         if not bucket["apps"]:
             del buckets[cid]
 
@@ -350,7 +304,7 @@ def main() -> None:
         "version": 1,
         "source": "https://github.com/ChrisTitusTech/winutil",
         "source_file": "config/applications.json",
-        "note": "Imported from Chris Titus Tech winutil; Linux install methods mapped where possible.",
+        "note": "Imported from Chris Titus Tech winutil; only Linux install methods are kept.",
         "categories": categories,
     }
     out_path.parent.mkdir(parents=True, exist_ok=True)

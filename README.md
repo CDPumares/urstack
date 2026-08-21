@@ -79,7 +79,7 @@ UrStack aggregates pending updates in parallel and lets you apply them from one 
 - **PolicyKit:** elevated DNF, Snap, firmware, and similar steps use the native authentication dialog.
 - **Play well with other updaters:** optional quieting of GNOME Software while UrStack runs, and DNF excludes for Plasma Discover if you removed it.
 
-Firmware apply is skipped in non-interactive `--yes` mode unless you pass `--include-firmware`.
+Firmware is **checked** by default (`enable_fw`). **Applying** fwupd payloads is off unless you turn on **Apply firmware updates** in Settings, tick Firmware on the Apply screen, or pass `--include-firmware` with `--yes`. A firmware flash may need a reboot.
 
 ### Apps catalog (install with previews)
 
@@ -92,7 +92,7 @@ Each listing can include:
 - **Screenshots** shown inside UrStack — you can step through them without leaving the app or opening a browser.
 - **The install method that actually works on Fedora:** Flatpak (Flathub), DNF, Snap, or a vendor URL / AppImage when that is the realistic Linux path.
 
-Categories include browsers, communication, media, productivity, developer tools, graphics, utilities, gaming, and vendor / direct downloads. Linux-mapped profiles inspired by [Chris Titus Tech’s winutil](https://github.com/ChrisTitusTech/winutil) sit beside the native catalog for one-click batch installs. Filters cover installed vs available.
+Categories include browsers, communication, media, productivity, developer tools, graphics, utilities, gaming, and vendor / direct downloads. Linux-mapped profiles inspired by [Chris Titus Tech’s winutil](https://github.com/ChrisTitusTech/winutil) sit beside the native catalog. Windows-only titles from that list are not imported.
 
 That is the difference after a fresh OS: you rebuild the toolbox by browsing apps you recognize, with pictures and descriptions, instead of remembering package names.
 
@@ -214,7 +214,7 @@ With no flags, UrStack opens the GUI (and detaches from the terminal). Flags sta
 ```text
 urstack                         # GUI
 urstack --check                 # Print results; exit 1 if anything is pending
-urstack --yes                   # Non-interactive apply (skips firmware)
+urstack --yes                   # Non-interactive apply (skips firmware unless Settings apply_fw=1)
 urstack --yes --include-firmware
 urstack --log                   # History viewer
 urstack --config                # Config path, enabled sources, dump file
@@ -260,7 +260,8 @@ Keys are `1` / `0`. Shipped templates live in `config/default.conf` and `config/
 | `enable_dnf` | 1 | RPM updates |
 | `enable_flatpak` | 1 | Flatpak apps and runtimes |
 | `enable_snap` | 1 | Snap refresh |
-| `enable_fw` | 1 | fwupd |
+| `enable_fw` | 1 | Check fwupd for device firmware |
+| `apply_fw` | 0 | Apply firmware when updating (Settings toggle; also `--include-firmware`) |
 | `enable_kernel_prune` | 1 | Drop old kernels after DNF (see `keep_kernels`) |
 | `exclude_discover` | 1 | DNF `--exclude` for Plasma Discover packages |
 | `quiet_gnome_software` | 1 | Pause GNOME Software’s background service during a GUI run |
