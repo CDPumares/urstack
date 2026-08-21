@@ -18,6 +18,7 @@
   <a href="#configuration">Configuration</a> ·
   <a href="#roadmap">Roadmap</a> ·
   <a href="#project-layout">Layout</a> ·
+  <a href="#ai-use">AI use</a> ·
   <a href="#contributing">Contributing</a>
 </p>
 
@@ -339,6 +340,14 @@ Flatpak packaging is a poor fit: DNF and fwupd need host privileges. An RPM (for
 UrStack is Fedora-first today. I want to add **other Linux operating systems** so this is not a Fedora-only tool — Ubuntu, Debian, Arch, openSUSE, and the rest should be able to use the same app for updates, the catalog, health, and backup.
 
 The GTK desktop, Flatpak/Snap/firmware, and much of the catalog already travel well. What still needs work is distro-native packages (DNF vs apt vs pacman vs zypper), PolicyKit helpers, health checks, and restore. Help on those ports is welcome.
+
+---
+
+## AI use
+
+Most of this repository was written with AI coding assistants, under my direction. I set the product goals, reviewed the output, and I am responsible for what ships.
+
+That is here so users and contributors are not guessing. Please treat the code the same way you would any other project: read the parts you rely on, run the tests, and open an issue or a PR if something is wrong.
 
 ---
 

@@ -2,6 +2,8 @@
 
 Thanks for helping. The most useful changes keep privileged work in `lib/core/priv.sh`, stay Fedora-workstation-shaped, and do not widen the pkexec attack surface.
 
+Most of this repo was written with AI coding assistants; see [AI use](README.md#ai-use) in the README. Please still read and test the code you touch.
+
 ## Development setup
 
 ```bash
