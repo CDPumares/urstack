@@ -179,18 +179,45 @@ _valid_pkg_name() {
   [[ "$1" =~ ^[A-Za-z0-9][A-Za-z0-9._+-]*$ ]]
 }
 
-# Run one privileged restore job through the hardened helper. Nothing the caller
+# Run privileged restore jobs through the hardened helper. Nothing the caller
 # controls reaches a root shell: priv.sh reads a jobs file, re-validates the
 # decoded path's ownership, and maps the destination from a fixed allowlist.
-_priv_restore() {
+# Multiple jobs share one pkexec prompt; #env lines wire cancel/undo paths.
+_RESTORE_CANCEL=""
+_RESTORE_UNDO=""
+
+_restore_init_cancel_undo() {
+  local state="${XDG_STATE_HOME:-$HOME/.local/state}/urstack"
+  mkdir -p "$state" || return 1
+  _RESTORE_UNDO=$(mktemp -d "$state/restore-undo.XXXXXX") || return 1
+  chmod 700 "$_RESTORE_UNDO"
+  _RESTORE_CANCEL="$_RESTORE_UNDO/cancel"
+}
+
+_restore_run_priv_batch() {
   local jobs ec
   jobs=$(mktemp) || return 1
   chmod 600 "$jobs"
-  printf '%s\n' "$*" > "$jobs"
+  {
+    [[ -n "${_RESTORE_CANCEL:-}" ]] && printf '#env URSTACK_RESTORE_CANCEL=%s\n' "$_RESTORE_CANCEL"
+    [[ -n "${_RESTORE_UNDO:-}" ]] && printf '#env URSTACK_RESTORE_UNDO=%s\n' "$_RESTORE_UNDO"
+    printf '%s\n' "$@"
+  } > "$jobs"
   pkexec_priv "$jobs" 2>&1
   ec=$?
   rm -f "$jobs"
   return "$ec"
+}
+
+_priv_restore() {
+  _restore_run_priv_batch "$*"
+}
+
+_restore_unwind_userspace() {
+  if [[ -n "${_PRE_RESTORE_DIR:-}" && -d "$_PRE_RESTORE_DIR" ]]; then
+    echo "# Previous home files were copied aside under $_PRE_RESTORE_DIR" >&2
+  fi
+  _restore_run_priv_batch restore_session_unwind || true
 }
 
 # ── Blueprint integrity ──────────────────────────────────────────────────────
@@ -2063,7 +2090,13 @@ _restore_driver_packages() {
     _restore_fail "Driver packages (rejected ${#rejected[@]} invalid name(s))"
   fi
   [[ ${#pkgs[@]} -gt 0 ]] || return 0
-  pkexec dnf install -y -- "${pkgs[@]}" 2>&1
+  local list
+  list=$(mktemp)
+  printf '%s\n' "${pkgs[@]}" > "$list"
+  _priv_restore dnf_install_list drivers "$(_b64 "$list")"
+  local ec=$?
+  rm -f "$list"
+  return "$ec"
 }
 
 _filter_grub_for_nvidia() {
@@ -2427,6 +2460,7 @@ fedora_setup_restore_from() {
   local logf report_path failc
   logf=$(mktemp)
   _restore_track_init
+  _restore_init_cancel_undo || true
   {
     echo "=== Restore $(date -Iseconds) ==="
     echo "Include opts: ${URSTACK_BACKUP_OPTS:-(defaults)}"
@@ -2474,7 +2508,7 @@ fedora_setup_restore_from() {
           _restore_fail "DNF user packages (rejected $pkg_rejected invalid name(s))"
         fi
         if [[ -s "$filtered" ]]; then
-          if pkexec xargs -a "$filtered" -r -n 80 dnf install -y -- 2>&1; then
+          if _priv_restore dnf_install_list user "$(_b64 "$filtered")"; then
             _restore_ok "DNF user packages"
           else
             _restore_fail "DNF user packages (some may have failed)"
@@ -2522,12 +2556,11 @@ fedora_setup_restore_from() {
         else
           # One at a time: usermod is all-or-nothing, so a single bad entry would
           # otherwise silently drop every group.
-          local gfail=0
-          for g in "${add[@]}"; do
-            pkexec usermod -aG "$g" "$me" 2>&1 || { gfail=1; echo "# Failed to add group: $g"; }
-          done
-          [[ $gfail -eq 0 ]] && _restore_ok "User groups (${add[*]})" \
-                             || _restore_fail "User groups (one or more failed)"
+          if _priv_restore usermod_add_groups "$me" "$(IFS=,; echo "${add[*]}")"; then
+            _restore_ok "User groups (${add[*]})"
+          else
+            _restore_fail "User groups (one or more failed)"
+          fi
         fi
       fi
 
@@ -2569,8 +2602,8 @@ fedora_setup_restore_from() {
         local lang keymap
         lang=$(grep -E 'LANG=' "$dest/manifests/system-locale.txt" | head -1 | awk '{print $NF}')
         keymap=$(grep -E 'VC Keymap:' "$dest/manifests/system-locale.txt" | awk '{print $NF}')
-        [[ -n "$lang" ]] && pkexec localectl set-locale "LANG=$lang" 2>&1 && _restore_ok "Locale LANG" || true
-        [[ -n "$keymap" && "$keymap" != "n/a" ]] && pkexec localectl set-keymap "$keymap" 2>&1 && _restore_ok "Keymap" || true
+        [[ -n "$lang" ]] && _priv_restore set_locale "$lang" && _restore_ok "Locale LANG" || true
+        [[ -n "$keymap" && "$keymap" != "n/a" ]] && _priv_restore set_keymap "$keymap" && _restore_ok "Keymap" || true
       fi
     else
       _restore_skip "System config (disabled)"
@@ -2595,12 +2628,18 @@ fedora_setup_restore_from() {
     if [[ "$(_backup_include snap 1)" == "1" ]]; then
       _fs_progress "Snap..."
       if [[ -f "$dest/manifests/snap-packages.txt" ]]; then
-        local snap_fail=0
+        local snap_jobs=()
         while read -r name rest; do
           [[ "$name" == Name || -z "$name" || "$name" == "Name" ]] && continue
-          pkexec snap install "$name" 2>&1 || snap_fail=1
+          snap_jobs+=("snap_install $name")
         done < <(tail -n +2 "$dest/manifests/snap-packages.txt")
-        [[ $snap_fail -eq 0 ]] && _restore_ok "Snap packages" || _restore_fail "Snap packages (one or more failed)"
+        if [[ ${#snap_jobs[@]} -eq 0 ]]; then
+          _restore_skip "Snap packages (empty)"
+        elif _restore_run_priv_batch "${snap_jobs[@]}"; then
+          _restore_ok "Snap packages"
+        else
+          _restore_fail "Snap packages (one or more failed)"
+        fi
       fi
       if [[ -d "$dest/config/snap" ]]; then
         mkdir -p "$HOME/snap"

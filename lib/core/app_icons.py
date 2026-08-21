@@ -170,16 +170,18 @@ def _fetch_url(url: str) -> tuple[bytes, str] | None:
 
 def _write_png(pix, png_path: Path) -> bool:
     try:
+        from gi.repository import GdkPixbuf, GLib
+    except (ImportError, AttributeError, ValueError):
+        return False
+    try:
         w, h = pix.get_width(), pix.get_height()
         if max(w, h) > 128:
             scale = 128 / float(max(w, h))
-            from gi.repository import GdkPixbuf
-
             pix = pix.scale_simple(int(w * scale), int(h * scale), GdkPixbuf.InterpType.BILINEAR)
         png_path.parent.mkdir(parents=True, exist_ok=True)
         pix.savev(str(png_path), "png", [], [])
         return png_path.is_file() and png_path.stat().st_size > 0
-    except Exception:
+    except (OSError, RuntimeError, ValueError, GLib.GError):
         return False
 
 
@@ -189,8 +191,8 @@ def _rasterize_to_png(data: bytes, ctype: str, url: str, png_path: Path) -> bool
         import gi
 
         gi.require_version("GdkPixbuf", "2.0")
-        from gi.repository import GdkPixbuf
-    except Exception:
+        from gi.repository import GdkPixbuf, GLib
+    except (ImportError, AttributeError, ValueError):
         return False
 
     is_svg = (
@@ -210,7 +212,7 @@ def _rasterize_to_png(data: bytes, ctype: str, url: str, png_path: Path) -> bool
         if pix is None:
             return False
         return _write_png(pix, png_path)
-    except Exception:
+    except (OSError, RuntimeError, ValueError, GLib.GError):
         return False
 
 

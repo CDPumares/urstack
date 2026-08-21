@@ -200,14 +200,14 @@ def url_ok(url: str) -> bool:
         req = urllib.request.Request(url, method="HEAD", headers={"user-agent": UA["user-agent"]})
         with urllib.request.urlopen(req, timeout=10, context=CTX) as r:
             return 200 <= r.status < 400
-    except Exception:
+    except (urllib.error.URLError, TimeoutError, OSError):
         # Some CDNs dislike HEAD — try a tiny GET
         try:
             req = urllib.request.Request(url, headers={"user-agent": UA["user-agent"]})
             with urllib.request.urlopen(req, timeout=10, context=CTX) as r:
                 r.read(32)
                 return True
-        except Exception:
+        except (urllib.error.URLError, TimeoutError, OSError):
             return False
 
 

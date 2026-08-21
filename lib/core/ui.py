@@ -3326,7 +3326,7 @@ def _detail_fact_row(title: str, value: str) -> Adw.ActionRow:
         pass
     try:
         row.set_subtitle_lines(4)
-    except Exception:  # noqa: BLE001
+    except AttributeError:
         pass
     return row
 
@@ -5953,7 +5953,7 @@ def build_backup_restore_content(
     )
     try:
         path_row.set_subtitle_lines(3)
-    except Exception:
+    except AttributeError:
         pass
     pick_btn = mk_btn("Choose folder", "fu-row-suffix", "folder-symbolic")
     pick_btn.set_valign(Gtk.Align.CENTER)
@@ -5986,7 +5986,7 @@ def build_backup_restore_content(
         row = Adw.ActionRow(title=opt_title, subtitle=subtitle)
         try:
             row.set_subtitle_lines(3)
-        except Exception:
+        except AttributeError:
             pass
         sw = Gtk.Switch()
         sw.set_valign(Gtk.Align.CENTER)
@@ -6062,7 +6062,7 @@ def build_backup_restore_content(
                     row = Adw.ActionRow(title=path_str, subtitle=kind)
                     try:
                         row.set_subtitle_lines(2)
-                    except Exception:
+                    except AttributeError:
                         pass
                     rm = Gtk.Button.new_from_icon_name("list-remove-symbolic")
                     rm.add_css_class("flat")
@@ -6312,7 +6312,7 @@ def build_settings_content(
     )
     try:
         arow.set_subtitle_lines(2)
-    except Exception:
+    except AttributeError:
         pass
     toggles = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
     toggles.add_css_class("linked")
@@ -6355,7 +6355,7 @@ def build_settings_content(
         row = Adw.ActionRow(title=title, subtitle=subtitle)
         try:
             row.set_subtitle_lines(4)
-        except Exception:
+        except AttributeError:
             pass
         sw = Gtk.Switch()
         sw.set_valign(Gtk.Align.CENTER)
@@ -6376,7 +6376,7 @@ def build_settings_content(
     )
     try:
         krow.set_subtitle_lines(3)
-    except Exception:
+    except AttributeError:
         pass
     kentry = Gtk.Entry()
     kentry.set_text(str(values.get("keep_kernels", "3")))
@@ -7739,7 +7739,7 @@ def mode_shell(args: argparse.Namespace) -> int:
                     )
                     try:
                         info.set_subtitle_lines(12)
-                    except Exception:
+                    except AttributeError:
                         pass
                     row.add_row(info)
                     listbox.append(row)

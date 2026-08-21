@@ -81,17 +81,17 @@ catalog_install_app() {
       if ! _catalog_valid_pkg_name "$package"; then
         echo "# Refusing suspicious package name: $package"; return 1
       fi
-      pkexec snap install -- "$package" 2>&1
+      _catalog_priv snap_install "$package"
       ;;
     dnf)
       if ! _catalog_valid_pkg_name "$package"; then
         echo "# Refusing suspicious package name: $package"; return 1
       fi
-      pkexec dnf install -y -- "$package" 2>&1
+      _catalog_priv dnf_install_pkg "$package"
       ;;
     cursor_rpm)
       catalog_ensure_cursor_repo || true
-      if pkexec dnf install -y cursor 2>&1; then
+      if _catalog_priv dnf_install_pkg cursor; then
         return 0
       fi
       # Fallback: update API → direct RPM

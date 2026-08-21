@@ -303,7 +303,7 @@ class TestStyleSheet(unittest.TestCase):
 
             gi.require_version("Gtk", "4.0")
             from gi.repository import Gtk
-        except Exception as exc:  # noqa: BLE001
+        except (ImportError, ValueError) as exc:
             raise unittest.SkipTest(f"GTK unavailable: {exc}") from exc
 
         errors: list[str] = []
