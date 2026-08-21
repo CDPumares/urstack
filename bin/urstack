@@ -1,0 +1,537 @@
+#!/usr/bin/env bash
+# UrStack — desktop app entrypoint
+#
+# Usage:
+#   fedora-updates                    GUI check + apply
+#   fedora-updates --check            Print results; exit 1 if updates available
+#   fedora-updates --yes              Non-interactive apply (skips firmware)
+#   fedora-updates --yes --include-firmware
+#   fedora-updates --log              View history
+#   fedora-updates --backup [dir]     Backup module (if enabled in config)
+#   fedora-updates --restore [dir]
+#   fedora-updates --install-timer    Daily user systemd timer
+#   fedora-updates --config           Print config path / enabled sources
+#   fedora-updates --detect           Scan workstation; print what would be enabled
+#   fedora-updates --detect --write-config
+#                                     Scan and write ~/.config/.../config.conf
+#   fedora-updates --detect --write-config --include-backup
+#
+# Config: ~/.config/stackup/config.conf
+
+set -uo pipefail
+
+# ---------------------------------------------------------------------------
+# Self-relaunch: detach from terminal for GUI modes
+# ---------------------------------------------------------------------------
+if [[ -z "${_FEDORA_UPDATES_RELAUNCHED:-}" ]]; then
+  is_cli=0
+  for _a in "${@:-}"; do
+    case "$_a" in
+      --check|--yes|-y|--log|--backup|--restore|--install-timer|--include-firmware|--config|--detect|--write-config|--include-backup|--apply-sections|--catalog-choice|--check-dir|--refresh-check|--results-file|--sections-file|--health-scan|--health-apply|--health-status|--health-restore-point|--health-restore|--health-restore-list)
+        is_cli=1; break ;;
+    esac
+  done
+
+  # Child jobs spawned from the in-app shell must not detach into the background.
+  if [[ "${URSTACK_EMBEDDED_PROGRESS:-0}" == "1" ]]; then
+    is_cli=1
+  fi
+
+  if [[ $is_cli -eq 0 ]] && { command -v python3 &>/dev/null || command -v zenity &>/dev/null; }; then
+    export _FEDORA_UPDATES_RELAUNCHED=1
+    nohup setsid bash "$0" "$@" </dev/null &>/dev/null &
+    disown
+    exit 0
+  fi
+fi
+
+FEDORA_UPDATES_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+STACKUP_ROOT="$FEDORA_UPDATES_ROOT"
+FEDORA_UPDATES_LIB="$FEDORA_UPDATES_ROOT/lib/core"
+FEDORA_UPDATES_PLUGINS="$FEDORA_UPDATES_ROOT/lib/plugins"
+export STACKUP_ROOT FEDORA_UPDATES_ROOT FEDORA_UPDATES_LIB FEDORA_UPDATES_PLUGINS
+
+# Associate GUI windows with our .desktop + icon (taskbar / alt-tab)
+if [[ -z "${GIO_LAUNCHED_DESKTOP_FILE:-}" ]]; then
+  for _desk in \
+    "${XDG_DATA_HOME:-$HOME/.local/share}/applications/com.local.stackup.desktop" \
+    "${XDG_DATA_HOME:-$HOME/.local/share}/applications/stackup.desktop" \
+    "/usr/local/share/applications/com.local.stackup.desktop" \
+    "/usr/local/share/applications/stackup.desktop"
+  do
+    if [[ -f "$_desk" ]]; then
+      export GIO_LAUNCHED_DESKTOP_FILE="$_desk"
+      export GIO_LAUNCHED_DESKTOP_FILE_PID=$$
+      break
+    fi
+  done
+fi
+
+# shellcheck source=/dev/null
+source "$FEDORA_UPDATES_LIB/common.sh"
+# shellcheck source=/dev/null
+source "$FEDORA_UPDATES_LIB/detect.sh"
+# shellcheck source=/dev/null
+source "$FEDORA_UPDATES_LIB/catalog.sh"
+ensure_user_config
+load_updater_config
+
+# Backup / restore helpers (UI always offers them)
+# shellcheck source=/dev/null
+source "$FEDORA_UPDATES_PLUGINS/backup.sh"
+# shellcheck source=/dev/null
+source "$FEDORA_UPDATES_PLUGINS/health.sh"
+# shellcheck source=/dev/null
+source "$FEDORA_UPDATES_LIB/checks.sh"
+# shellcheck source=/dev/null
+source "$FEDORA_UPDATES_LIB/apply.sh"
+
+prepend_user_toolchain_path
+export DISPLAY="${DISPLAY:-:0}"
+export XAUTHORITY="${XAUTHORITY:-$HOME/.Xauthority}"
+if [[ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ]]; then
+  _bus_socket="/run/user/$(id -u)/bus"
+  [[ -S "$_bus_socket" ]] && export DBUS_SESSION_BUS_ADDRESS="unix:path=$_bus_socket"
+fi
+export MESA_LOG_LEVEL="${MESA_LOG_LEVEL:-error}"
+export GTK_A11Y=none 2>/dev/null || true
+
+chmod +x "$FEDORA_UPDATES_LIB/priv.sh" 2>/dev/null || true
+
+tmp=$(mktemp)
+check_dir=$(mktemp -d)
+OWNED_CHECK_DIR=1
+prog_fifo=$(mktemp -u)
+results_file=""
+prog_pid=""
+
+cleanup() {
+  restore_competing_updaters
+  rm -f "$tmp" "$results_file" "$prog_fifo"
+  if [[ "${OWNED_CHECK_DIR:-1}" -eq 1 ]]; then
+    rm -rf "$check_dir"
+  fi
+  exec 4>&- 2>/dev/null || true
+  kill "$prog_pid" 2>/dev/null || true
+}
+trap cleanup EXIT
+
+sections=()
+advisory_sections=()
+has_any=0
+msg=""
+CHECK_ONLY=0
+AUTO_YES=0
+INCLUDE_FIRMWARE=0
+SHOW_LOG=0
+DO_BACKUP=0
+DO_RESTORE=0
+INSTALL_TIMER=0
+SHOW_CONFIG=0
+DO_DETECT=0
+WRITE_CONFIG=0
+INCLUDE_BACKUP_DETECT=0
+BACKUP_PARENT=""
+RESTORE_DIR=""
+DO_APPLY_SECTIONS=0
+APPLY_SECTIONS=""
+DO_CATALOG_CHOICE=0
+CATALOG_CHOICE=""
+DO_REFRESH_CHECK=0
+RESULTS_FILE=""
+SECTIONS_FILE=""
+DO_HEALTH_SCAN=0
+DO_HEALTH_APPLY=0
+DO_HEALTH_RP=0
+DO_HEALTH_RESTORE=0
+DO_HEALTH_RP_LIST=0
+HEALTH_APPLY_IDS=""
+HEALTH_STATUS_FILE=""
+HEALTH_RESTORE_ID="latest"
+
+_args=("$@")
+_i=0
+while [[ $_i -lt ${#_args[@]} ]]; do
+  case "${_args[$_i]}" in
+    --check) CHECK_ONLY=1 ;;
+    --yes|-y) AUTO_YES=1 ;;
+    --include-firmware) INCLUDE_FIRMWARE=1 ;;
+    --log)   SHOW_LOG=1 ;;
+    --config) SHOW_CONFIG=1 ;;
+    --detect) DO_DETECT=1 ;;
+    --write-config) WRITE_CONFIG=1 ;;
+    --include-backup) INCLUDE_BACKUP_DETECT=1 ;;
+    --install-timer) INSTALL_TIMER=1 ;;
+    --refresh-check) DO_REFRESH_CHECK=1 ;;
+    --health-scan) DO_HEALTH_SCAN=1 ;;
+    --health-restore-point) DO_HEALTH_RP=1 ;;
+    --health-restore-list) DO_HEALTH_RP_LIST=1 ;;
+    --health-restore)
+      DO_HEALTH_RESTORE=1
+      _next="${_args[$((_i + 1))]:-}"
+      if [[ -n "$_next" && "$_next" != --* ]]; then
+        HEALTH_RESTORE_ID="$_next"
+        _i=$((_i + 1))
+      fi
+      ;;
+    --health-apply)
+      DO_HEALTH_APPLY=1
+      _next="${_args[$((_i + 1))]:-}"
+      if [[ -n "$_next" && "$_next" != --* ]]; then
+        HEALTH_APPLY_IDS="$_next"
+        _i=$((_i + 1))
+      fi
+      ;;
+    --health-status)
+      _next="${_args[$((_i + 1))]:-}"
+      if [[ -n "$_next" && "$_next" != --* ]]; then
+        HEALTH_STATUS_FILE="$_next"
+        _i=$((_i + 1))
+      fi
+      ;;
+    --results-file)
+      _next="${_args[$((_i + 1))]:-}"
+      if [[ -n "$_next" && "$_next" != --* ]]; then
+        RESULTS_FILE="$_next"
+        _i=$((_i + 1))
+      fi
+      ;;
+    --sections-file)
+      _next="${_args[$((_i + 1))]:-}"
+      if [[ -n "$_next" && "$_next" != --* ]]; then
+        SECTIONS_FILE="$_next"
+        _i=$((_i + 1))
+      fi
+      ;;
+    --check-dir)
+      _next="${_args[$((_i + 1))]:-}"
+      if [[ -n "$_next" && "$_next" != --* ]]; then
+        if [[ "${OWNED_CHECK_DIR:-1}" -eq 1 ]]; then
+          rm -rf "$check_dir"
+        fi
+        check_dir="$_next"
+        OWNED_CHECK_DIR=0
+        _i=$((_i + 1))
+      fi
+      ;;
+    --apply-sections)
+      DO_APPLY_SECTIONS=1
+      _next="${_args[$((_i + 1))]:-}"
+      if [[ -n "$_next" && "$_next" != --* ]]; then
+        APPLY_SECTIONS="$_next"
+        _i=$((_i + 1))
+      else
+        APPLY_SECTIONS="all"
+      fi
+      ;;
+    --catalog-choice)
+      DO_CATALOG_CHOICE=1
+      _next="${_args[$((_i + 1))]:-}"
+      if [[ -n "$_next" && "$_next" != --* ]]; then
+        CATALOG_CHOICE="$_next"
+        _i=$((_i + 1))
+      fi
+      ;;
+    --backup)
+      DO_BACKUP=1
+      _next="${_args[$((_i + 1))]:-}"
+      if [[ -n "$_next" && "$_next" != --* ]]; then
+        BACKUP_PARENT="$_next"
+        _i=$((_i + 1))
+      fi
+      ;;
+    --restore)
+      DO_RESTORE=1
+      _next="${_args[$((_i + 1))]:-}"
+      if [[ -n "$_next" && "$_next" != --* ]]; then
+        RESTORE_DIR="$_next"
+        _i=$((_i + 1))
+      fi
+      ;;
+  esac
+  _i=$((_i + 1))
+done
+
+export INCLUDE_FIRMWARE AUTO_YES CHECK_ONLY
+export KEEP_KERNELS="${KEEP_KERNELS:-3}"
+
+mkdir -p "$LOG_DIR" 2>/dev/null || true
+
+# Re-scan into an existing session check dir (used after in-app Apply)
+if [[ $DO_REFRESH_CHECK -eq 1 ]]; then
+  if [[ ! -d "$check_dir" ]]; then
+    echo "Missing check directory for refresh." >&2
+    exit 2
+  fi
+  # Drop previous section files so cleared sources disappear from the hub
+  find "$check_dir" -mindepth 1 -delete 2>/dev/null || true
+  echo "# Refreshing update list…"
+  run_all_checks_parallel
+  build_results_message
+  if [[ -n "$RESULTS_FILE" ]]; then
+    printf '%s' "$msg" > "$RESULTS_FILE"
+  fi
+  if [[ -n "$SECTIONS_FILE" ]]; then
+    : > "$SECTIONS_FILE"
+    write_apply_sections_file "$SECTIONS_FILE"
+  fi
+  echo "HAS_UPDATES=$has_any"
+  echo "# Refresh complete"
+  echo "100"
+  exit 0
+fi
+
+# In-app apply / catalog jobs (keep main window open; progress on stdout)
+if [[ $DO_APPLY_SECTIONS -eq 1 ]]; then
+  if [[ ! -d "$check_dir" ]]; then
+    echo "Missing check directory for apply." >&2
+    exit 2
+  fi
+  export URSTACK_EMBEDDED_PROGRESS="${URSTACK_EMBEDDED_PROGRESS:-1}"
+  run_all_updates "${APPLY_SECTIONS:-all}"
+  exit 0
+fi
+if [[ $DO_CATALOG_CHOICE -eq 1 ]]; then
+  if [[ -z "$CATALOG_CHOICE" ]]; then
+    echo "Missing catalog choice." >&2
+    exit 2
+  fi
+  export URSTACK_EMBEDDED_PROGRESS="${URSTACK_EMBEDDED_PROGRESS:-1}"
+  _status="${URSTACK_CATALOG_STATUS:-$(mktemp)}"
+  catalog_consume_choice "$CATALOG_CHOICE" "$_status" || true
+  exit 0
+fi
+
+# System Health scan / apply (in-app Health page)
+if [[ $DO_HEALTH_SCAN -eq 1 ]]; then
+  export URSTACK_EMBEDDED_PROGRESS="${URSTACK_EMBEDDED_PROGRESS:-1}"
+  _hs="${HEALTH_STATUS_FILE:-${URSTACK_HEALTH_STATUS:-}}"
+  if [[ -z "$_hs" ]]; then
+    echo "Missing --health-status <file> for scan." >&2
+    exit 2
+  fi
+  echo "# Scanning workstation health…"
+  echo "10"
+  fedora_health_scan "$_hs"
+  echo "HEALTH_STATUS=$_hs"
+  echo "# Health scan complete"
+  echo "100"
+  exit 0
+fi
+if [[ $DO_HEALTH_APPLY -eq 1 ]]; then
+  if [[ -z "$HEALTH_APPLY_IDS" ]]; then
+    echo "Missing health action ids." >&2
+    exit 2
+  fi
+  export URSTACK_EMBEDDED_PROGRESS="${URSTACK_EMBEDDED_PROGRESS:-1}"
+  _hs="${HEALTH_STATUS_FILE:-${URSTACK_HEALTH_STATUS:-}}"
+  [[ -n "$_hs" ]] && export URSTACK_HEALTH_STATUS="$_hs"
+  fedora_health_apply "$HEALTH_APPLY_IDS" "$_hs"
+  exit $?
+fi
+if [[ $DO_HEALTH_RP_LIST -eq 1 ]]; then
+  fedora_health_restore_point_list
+  exit 0
+fi
+if [[ $DO_HEALTH_RP -eq 1 ]]; then
+  export URSTACK_EMBEDDED_PROGRESS="${URSTACK_EMBEDDED_PROGRESS:-1}"
+  fedora_health_restore_point_create "manual"
+  exit $?
+fi
+if [[ $DO_HEALTH_RESTORE -eq 1 ]]; then
+  export URSTACK_EMBEDDED_PROGRESS="${URSTACK_EMBEDDED_PROGRESS:-1}"
+  fedora_health_restore_point_apply "${HEALTH_RESTORE_ID:-latest}"
+  exit $?
+fi
+
+if [[ $DO_DETECT -eq 1 ]]; then
+  print_detection_report
+  if [[ $WRITE_CONFIG -eq 1 ]]; then
+    write_detected_config "$FEDORA_UPDATES_USER_CONFIG" "$INCLUDE_BACKUP_DETECT"
+    echo
+    echo "Reload with: fedora-updates --config"
+  else
+    echo
+    echo "Write this config with: fedora-updates --detect --write-config"
+  fi
+  exit 0
+fi
+
+# Allow --write-config alone as alias for detect+write
+if [[ $WRITE_CONFIG -eq 1 ]]; then
+  print_detection_report
+  echo
+  write_detected_config "$FEDORA_UPDATES_USER_CONFIG" "$INCLUDE_BACKUP_DETECT"
+  exit 0
+fi
+
+if [[ $SHOW_CONFIG -eq 1 ]]; then
+  echo "User config: $FEDORA_UPDATES_USER_CONFIG"
+  echo "App root:    $FEDORA_UPDATES_ROOT"
+  echo "Enabled:     ${SECTION_KEYS[*]:-(none)}"
+  echo "Backup:      $ENABLE_BACKUP"
+  [[ -f "$FEDORA_UPDATES_USER_CONFIG" ]] && echo && cat "$FEDORA_UPDATES_USER_CONFIG"
+  exit 0
+fi
+
+install_systemd_timer() {
+  local unit_dir="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user"
+  mkdir -p "$unit_dir"
+  local exec_path="$FEDORA_UPDATES_ROOT/bin/stackup"
+  if command -v stackup &>/dev/null; then
+    exec_path="$(command -v stackup)"
+  fi
+  cat > "$unit_dir/stackup-check.service" <<EOF
+[Unit]
+Description=UrStack — check for workstation updates
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=$exec_path --check
+SuccessExitStatus=0 1
+EOF
+  cat > "$unit_dir/stackup-check.timer" <<'EOF'
+[Unit]
+Description=Daily UrStack update check
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=30m
+
+[Install]
+WantedBy=timers.target
+EOF
+  # Disable legacy timer name if present
+  systemctl --user disable --now fedora-updates-check.timer 2>/dev/null || true
+  systemctl --user daemon-reload
+  systemctl --user enable --now stackup-check.timer
+  echo "Installed and started stackup-check.timer (daily)."
+  systemctl --user list-timers stackup-check.timer --no-pager 2>/dev/null || true
+}
+
+if [[ $INSTALL_TIMER -eq 1 ]]; then
+  install_systemd_timer
+  exit 0
+fi
+
+if [[ $DO_BACKUP -eq 1 ]]; then
+  if [[ -n "$BACKUP_PARENT" ]]; then
+    fedora_setup_backup_to "$BACKUP_PARENT"
+  else
+    fedora_setup_backup_ui
+  fi
+  exit 0
+fi
+if [[ $DO_RESTORE -eq 1 ]]; then
+  if [[ -n "$RESTORE_DIR" ]]; then
+    fedora_setup_restore_from "$RESTORE_DIR"
+  else
+    fedora_setup_restore_ui
+  fi
+  exit 0
+fi
+
+if [[ $SHOW_LOG -eq 1 ]]; then
+  _ui="$FEDORA_UPDATES_LIB/ui.py"
+  if [[ -f "$LOG_FILE" ]]; then
+    if [[ -n "${DISPLAY:-}" && -f "$_ui" ]]; then
+      python3 "$_ui" text --title "$APP_NAME — History" --file "$LOG_FILE" --ok-label "Close" 2>/dev/null || true
+    elif command -v zenity &>/dev/null; then
+      zenity --text-info --title="$APP_NAME — History" --filename="$LOG_FILE" --width=750 --height=600 2>/dev/null || true
+    else
+      cat "$LOG_FILE"
+    fi
+  else
+    echo "No update history found yet."
+  fi
+  exit 0
+fi
+
+acquire_update_lock || exit 3
+
+if [[ $CHECK_ONLY -eq 0 ]]; then
+  disable_competing_updaters
+fi
+
+preflight_checks || true
+if [[ $CHECK_ONLY -eq 0 && $AUTO_YES -eq 0 && -f "$check_dir/preflight_errors" ]]; then
+  _ui="$FEDORA_UPDATES_LIB/ui.py"
+  err=$(read_check preflight_errors)
+  if [[ -n "${DISPLAY:-}" && -f "$_ui" ]]; then
+    python3 "$_ui" ask --title "Preflight warning" \
+      --text "Problems detected:"$'\n\n'"$err"$'\n\n'"Continue checking for updates anyway?" \
+      2>/dev/null || exit 1
+  elif command -v zenity &>/dev/null; then
+    zenity --question --title="Preflight warning" --text="Problems detected:\n\n$err\n\nContinue anyway?" 2>/dev/null || exit 1
+  fi
+fi
+
+_FEDORA_UI="$FEDORA_UPDATES_LIB/ui.py"
+# Open the main window first and check inside it (no separate splash window).
+if [[ $CHECK_ONLY -eq 0 && $AUTO_YES -eq 0 && -n "${DISPLAY:-}" && -f "$_FEDORA_UI" ]] \
+   && command -v python3 &>/dev/null; then
+  : > "$tmp"
+  URSTACK_PENDING_CHECK=1 show_action_menu 0 "$tmp"
+  exit 0
+fi
+
+if [[ $CHECK_ONLY -eq 0 && $AUTO_YES -eq 0 && -n "${DISPLAY:-}" ]]; then
+  mkfifo "$prog_fifo"
+  if command -v zenity &>/dev/null; then
+    zenity --progress --pulsate --text="Checking for updates..." \
+      --no-cancel --title="$APP_NAME" --width=700 --height=220 < "$prog_fifo" 2>/dev/null &
+    prog_pid=$!
+  fi
+  if [[ -n "$prog_pid" ]]; then
+    exec 4>"$prog_fifo"
+    echo "# Checking for updates..." >&4 || true
+  fi
+fi
+
+run_all_checks_parallel
+
+exec 4>&- 2>/dev/null || true
+kill "$prog_pid" 2>/dev/null || true
+wait "$prog_pid" 2>/dev/null || true
+prog_pid=""
+rm -f "$prog_fifo"
+
+build_results_message
+
+if [[ $CHECK_ONLY -eq 0 && $AUTO_YES -eq 0 && $has_any -eq 1 ]]; then
+  notify "Updates available" "Open $APP_NAME to review and apply."
+fi
+
+if [[ $CHECK_ONLY -eq 1 ]]; then
+  echo -e "$msg"
+  if [[ $has_any -eq 1 ]]; then
+    notify "Updates available" "Run $APP_NAME to review and apply." "normal"
+  fi
+  exit "$has_any"
+fi
+
+if [[ $AUTO_YES -eq 1 ]]; then
+  echo -e "$msg"
+  if [[ $has_any -eq 1 ]]; then
+    run_all_updates "all"
+  else
+    echo "Nothing to apply."
+  fi
+  exit 0
+fi
+
+printf '%s' "$msg" > "$tmp"
+
+if command -v zenity &>/dev/null; then
+  show_action_menu "$has_any" "$tmp"
+else
+  echo -e "$msg"
+  if [[ $has_any -eq 1 ]]; then
+    read -rp "Apply all updates? [y/N] " _r
+    [[ "${_r:-}" =~ ^[yY] ]] && run_all_updates "all"
+  fi
+  echo "Also: $0 --backup | --restore | --yes | --install-timer | --config"
+fi
