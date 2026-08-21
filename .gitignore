@@ -47,18 +47,15 @@ id_ed25519.*
 *.keystore
 credentials.json
 credentials.*
+.git-credentials
 secrets.*
 *.secret
 auth.json
 token
 token.*
-*token*
-*secret*
-*password*
-*passwd*
-*apikey*
-*api_key*
 *.netrc
+# Do not use unanchored *password* / *secret* / *token* — they hide catalog
+# icons such as data/catalog/icons/1password.png and secrets.png.
 .npmrc
 .pypirc
 .aws/
@@ -86,9 +83,10 @@ tmp/
 temp/
 .cache/
 
-# Generated / machine-local desktop launcher (absolute home paths)
-Install UrStack.desktop
-Install*.desktop
+# Generated / machine-local desktop launchers (absolute home paths)
+/install.desktop
+/Install UrStack.desktop
+/Install*.desktop
 
 # Local override configs (ship only config/*.conf templates)
 config.local.conf

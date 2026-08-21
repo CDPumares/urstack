@@ -1,0 +1,44 @@
+name: Catalog app
+description: Add or fix an app in the Apps catalog
+labels: ["catalog"]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Request
+      options:
+        - Add an app
+        - Fix install method or detection
+        - Fix icon or metadata
+    validations:
+      required: true
+  - type: input
+    id: app-name
+    attributes:
+      label: App name
+    validations:
+      required: true
+  - type: dropdown
+    id: method
+    attributes:
+      label: Preferred Fedora install method
+      options:
+        - Flatpak (Flathub)
+        - DNF
+        - Snap
+        - Vendor / AppImage / browser download
+        - Unsure
+    validations:
+      required: true
+  - type: input
+    id: package
+    attributes:
+      label: Package, Flathub ID, or URL
+      placeholder: "org.mozilla.firefox or https://…"
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Why this method is the realistic Linux path, and any detect command.

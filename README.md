@@ -15,12 +15,14 @@
   <a href="#the-desktop-app">Desktop App</a> ·
   <a href="#cli-usage">CLI</a> ·
   <a href="#configuration">Configuration</a> ·
-  <a href="#project-layout">Layout</a>
+  <a href="#project-layout">Layout</a> ·
+  <a href="#contributing">Contributing</a>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/OS-Fedora_Linux-blue?logo=fedora" alt="Fedora">
   <img src="https://img.shields.io/badge/GUI-GTK4%2Flibadwaita-3584e4?logo=gnome" alt="GTK4 / libadwaita">
+  <img src="https://github.com/CDPumares/urstack/actions/workflows/ci.yml/badge.svg" alt="CI">
   <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
 </p>
 
@@ -119,7 +121,7 @@ urstack
 stackup
 ```
 
-Double-clicking `Install UrStack.desktop` from a file manager opens a terminal so installer output is visible.
+The installer is meant to be run from a terminal (`./install.sh --user`). A local `Install UrStack.desktop` with an absolute `Icon=` path is machine-specific and is not in git.
 
 ### Install modes
 
@@ -292,7 +294,13 @@ Flatpak packaging is a poor fit: DNF and fwupd need host privileges. An RPM (for
 
 ---
 
-## Development
+## Contributing
+
+Bug reports, catalog additions, and patches are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, tests, and the PolicyKit rules.
+
+- [Open an issue](https://github.com/CDPumares/urstack/issues/new/choose)
+- Keep privileged operations in `lib/core/priv.sh`
+- Do not add `auth_admin_keep` to PolicyKit policy
 
 Parser tests (need GTK / libadwaita on the machine):
 
@@ -310,8 +318,6 @@ python3 scripts/vendor-app-metadata.py
 ```
 
 `vendor-app-metadata.py` pulls Flathub AppStream (description, developer, license, links, screenshot URLs) into `data/catalog/metadata.json`. Screenshot images are cached on first view under `~/.cache/stackup/app-meta/`.
-
-Contributions that keep privileged operations in `priv.sh`, avoid expanding the attack surface of pkexec, and stay Fedora-workstation-shaped are the most useful.
 
 ---
 

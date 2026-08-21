@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security-sensitive PolicyKit / pkexec issue
+    url: https://github.com/CDPumares/urstack/security/advisories/new
+    about: Do not file a public issue for a privilege-escalation report.

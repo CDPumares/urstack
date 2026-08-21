@@ -1,0 +1,54 @@
+name: Bug report
+description: Something in UrStack does not work as expected
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for a report. Logs live under `~/.local/state/stackup/` (do not paste secrets, SSH keys, or backup blueprints).
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you got.
+    validations:
+      required: true
+  - type: dropdown
+    id: install-mode
+    attributes:
+      label: Install mode
+      options:
+        - User (`./install.sh --user`)
+        - System (`./install.sh --system`)
+        - Running from the git clone
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: fedora
+    attributes:
+      label: Fedora version and desktop
+      placeholder: "Fedora 42, GNOME 48 (or KDE Plasma, …)"
+    validations:
+      required: true
+  - type: input
+    id: urstack
+    attributes:
+      label: UrStack version or commit
+      placeholder: "git rev-parse --short HEAD, or leave blank if unknown"
+  - type: textarea
+    id: repro
+    attributes:
+      label: Repro steps
+      placeholder: |
+        1. Launch `urstack`
+        2. Open Health
+        3. …
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log excerpt
+      description: From `~/.local/state/stackup/stackup.log` or a per-run folder. Redact hostnames and account names if you want.
+      render: text
