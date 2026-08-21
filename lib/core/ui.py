@@ -65,11 +65,53 @@ PAGE_ICON_CANDIDATES: dict[str, tuple[str, ...]] = {
     "health": ("computer-symbolic", "applications-system-symbolic"),
     "backup": ("document-save-symbolic",),
     "restore": ("document-revert-symbolic", "edit-undo-symbolic"),
-    "settings": ("preferences-system-symbolic",),
+    "settings": ("configure-symbolic", "preferences-system-symbolic"),
     "log": ("document-open-recent-symbolic",),
     "runs": ("folder-documents-symbolic", "folder-symbolic"),
     "close": ("window-close-symbolic", "application-exit-symbolic"),
 }
+
+_SVG_FILL_RE = re.compile(
+    r"""(?:fill\s*=\s*["']([^"']+)["']|fill\s*:\s*([^;}]+))""",
+    re.IGNORECASE,
+)
+
+
+def svg_reads_as_symbolic(svg: str) -> bool:
+    """True if this SVG is a monochrome/symbolic icon, not a full-color drawing.
+
+    Breeze sometimes ships full-color panel artwork under a ``*-symbolic`` name.
+    Those must not win over a real outline icon later in the candidate list.
+    """
+    if not svg:
+        return True
+    if "currentColor" in svg or "ColorScheme-Text" in svg:
+        return True
+    fills: set[str] = set()
+    for match in _SVG_FILL_RE.finditer(svg):
+        val = (match.group(1) or match.group(2) or "").strip().lower()
+        if not val or val in {"none", "currentcolor", "transparent"}:
+            continue
+        fills.add(val)
+    return len(fills) <= 1
+
+
+def _theme_icon_svg(theme: Gtk.IconTheme, name: str) -> str:
+    """Read the SVG bytes for a theme icon, or '' if it is not an SVG file."""
+    try:
+        flags = Gtk.IconLookupFlags(0)
+        icon = theme.lookup_icon(name, None, 16, 1, Gtk.TextDirection.NONE, flags)
+        if icon is None:
+            return ""
+        gfile = icon.get_file()
+        if gfile is None:
+            return ""
+        path = gfile.get_path()
+        if not path or not str(path).endswith(".svg"):
+            return ""
+        return Path(path).read_text(encoding="utf-8", errors="replace")
+    except (AttributeError, OSError, TypeError, ValueError, GLib.Error):
+        return ""
 
 
 def pick_icon(*names: str) -> str:
@@ -81,8 +123,12 @@ def pick_icon(*names: str) -> str:
         else Gtk.IconTheme.new()
     )
     for name in names:
-        if name and theme.has_icon(name):
-            return name
+        if not name or not theme.has_icon(name):
+            continue
+        svg = _theme_icon_svg(theme, name)
+        if svg and not svg_reads_as_symbolic(svg):
+            continue
+        return name
     return names[0] if names else "image-missing-symbolic"
 
 
@@ -5821,6 +5867,50 @@ RESTORE_INCLUDE_OPTIONS: list[tuple[str, str, str, bool]] = [
     ),
 ]
 
+# Quick include combinations shown above the per-section switches.
+BACKUP_PRESETS: list[tuple[str, str, dict[str, bool]]] = [
+    ("this", "This computer", {key: True for key, *_rest in BACKUP_INCLUDE_OPTIONS}),
+    (
+        "packages",
+        "Packages only",
+        {key: key == "manifests" for key, *_rest in BACKUP_INCLUDE_OPTIONS},
+    ),
+    (
+        "no_secrets",
+        "No secrets",
+        {key: key != "secrets" for key, *_rest in BACKUP_INCLUDE_OPTIONS},
+    ),
+]
+RESTORE_PRESETS: list[tuple[str, str, dict[str, bool]]] = [
+    ("this", "This computer", {key: True for key, *_rest in RESTORE_INCLUDE_OPTIONS}),
+    (
+        "new",
+        "New computer",
+        {
+            key: key not in {"drivers", "system"}
+            for key, *_rest in RESTORE_INCLUDE_OPTIONS
+        },
+    ),
+    (
+        "packages",
+        "Packages only",
+        {
+            key: key in {"packages", "flatpak", "snap", "programs"}
+            for key, *_rest in RESTORE_INCLUDE_OPTIONS
+        },
+    ),
+    (
+        "no_secrets",
+        "No secrets",
+        {key: key != "secrets" for key, *_rest in RESTORE_INCLUDE_OPTIONS},
+    ),
+]
+DESKTOP_PRESETS: list[tuple[str, str]] = [
+    ("all", "All desktops"),
+    ("kde", "KDE"),
+    ("gnome", "GNOME"),
+]
+
 
 def _backup_opts_path(mode: str) -> Path:
     return Path.home() / ".config" / "urstack" / f"last-{mode}-opts.conf"
@@ -5879,10 +5969,14 @@ def _load_include_defaults(
     return defaults
 
 
-def _save_include_defaults(mode: str, values: dict[str, bool]) -> None:
+def _save_include_defaults(
+    mode: str, values: dict[str, bool], extra: dict[str, str] | None = None
+) -> None:
     path = _backup_opts_path(mode)
     path.parent.mkdir(parents=True, exist_ok=True)
     lines = [f"{k}={'1' if v else '0'}" for k, v in values.items()]
+    if extra:
+        lines.extend(f"{k}={v}" for k, v in extra.items())
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
@@ -5996,6 +6090,59 @@ def build_backup_restore_content(
         include_group.add(row)
         switches[key] = sw
 
+    presets = BACKUP_PRESETS if is_backup else RESTORE_PRESETS
+    preset_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+    preset_row.set_halign(Gtk.Align.START)
+    preset_row.set_margin_top(8)
+    preset_row.set_margin_start(12)
+
+    def apply_preset(flags: dict[str, bool]) -> None:
+        for key, sw in switches.items():
+            sw.set_active(bool(flags.get(key, False)))
+
+    for _pid, plabel, flags in presets:
+        pbtn = mk_btn(plabel, "flat", None)
+        pbtn.connect("clicked", lambda *_a, f=flags: apply_preset(f))
+        preset_row.append(pbtn)
+    include_wrap.append(include_group)
+    include_wrap.append(preset_row)
+
+    desktop_state = {"v": "all"}
+    if is_backup:
+        saved_desktop = ""
+        dpath = _backup_opts_path("backup")
+        if dpath.is_file():
+            saved_desktop = read_config_map(dpath).get("desktop", "all")
+        if saved_desktop not in {k for k, _ in DESKTOP_PRESETS}:
+            saved_desktop = "all"
+        desktop_state["v"] = saved_desktop
+        desk_grp = Adw.PreferencesGroup(
+            title="Desktop environment",
+            description="Limit settings capture to one desktop, or keep both.",
+        )
+        drow = Adw.ActionRow(title="Capture settings for")
+        dtoggles = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        dtoggles.add_css_class("linked")
+        group_btn: Gtk.ToggleButton | None = None
+        for key, label in DESKTOP_PRESETS:
+            btn = Gtk.ToggleButton(label=label)
+            if group_btn is None:
+                group_btn = btn
+            else:
+                try:
+                    btn.set_group(group_btn)
+                except AttributeError:
+                    pass
+            btn.set_active(key == desktop_state["v"])
+            btn.connect(
+                "toggled",
+                lambda b, k=key: desktop_state.__setitem__("v", k) if b.get_active() else None,
+            )
+            dtoggles.append(btn)
+        drow.add_suffix(dtoggles)
+        desk_grp.add(drow)
+        include_wrap.append(desk_grp)
+
     quick = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
     quick.set_halign(Gtk.Align.END)
     quick.set_margin_top(4)
@@ -6012,7 +6159,6 @@ def build_backup_restore_content(
     quick.append(none_btn)
     quick.set_margin_end(16)
 
-    include_wrap.append(include_group)
     include_wrap.append(quick)
     col.append(include_wrap)
 
@@ -6223,9 +6369,14 @@ def build_backup_restore_content(
         elif not any_include_on():
             return
         opts = current_opts()
-        _save_include_defaults(mode, opts)
+        extra = {"desktop": desktop_state["v"]} if is_backup else None
+        _save_include_defaults(mode, opts, extra)
         prefix = "backup" if is_backup else "restore"
-        on_start(f"{prefix}|{chosen['path']}|{_encode_include_opts(opts)}")
+        parts = [_encode_include_opts(opts)]
+        if extra:
+            parts.extend(f"{k}={v}" for k, v in extra.items())
+        encoded = ",".join(p for p in parts if p)
+        on_start(f"{prefix}|{chosen['path']}|{encoded}")
 
     start_btn.connect("clicked", do_start)
 

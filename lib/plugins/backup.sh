@@ -116,6 +116,46 @@ _backup_include() {
   printf '%s' "$default"
 }
 
+# Value of a named include/preset key (desktop=kde, …). Unlike _backup_include,
+# this returns the raw value rather than 0/1.
+_backup_opt() {
+  local key="$1"
+  local default="${2:-}"
+  local opts="${URSTACK_BACKUP_OPTS:-}"
+  if [[ -z "$opts" ]]; then
+    printf '%s' "$default"
+    return
+  fi
+  local part
+  local IFS=','
+  # shellcheck disable=SC2086
+  for part in $opts; do
+    case "$part" in
+      "$key="*) printf '%s' "${part#*=}"; return ;;
+    esac
+  done
+  printf '%s' "$default"
+}
+
+# Whether this backup should capture settings for a desktop (kde|gnome).
+# URSTACK_BACKUP_OPTS may include desktop=all|kde|gnome from DESKTOP_PRESETS.
+_desktop_wants() {
+  local de="$1"
+  local preset
+  preset="$(_backup_opt desktop all)"
+  case "$preset" in
+    all|"") return 0 ;;
+    "$de") return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+_kde_py() {
+  local py="${FEDORA_UPDATES_LIB:-$_FEDORA_SETUP_ROOT/lib/core}/adapt_kde_restore.py"
+  [[ -f "$py" ]] || return 0
+  python3 "$py" "$@"
+}
+
 # Restore step tracking (files survive pipeline subshells)
 _RESTORE_OK_FILE=""
 _RESTORE_FAIL_FILE=""
@@ -135,7 +175,10 @@ _restore_track_cleanup() {
 }
 
 _restore_ok() { echo "$1" >> "${_RESTORE_OK_FILE:-/dev/null}"; }
-_restore_fail() { echo "$1" >> "${_RESTORE_FAIL_FILE:-/dev/null}"; }
+_restore_fail() {
+  echo "$1" >> "${_RESTORE_FAIL_FILE:-/dev/null}"
+  echo "# Failed: $1" >&2
+}
 _restore_skip() { echo "$1" >> "${_RESTORE_SKIP_FILE:-/dev/null}"; }
 
 # Run a restore step; on failure record label (does not abort the restore).
@@ -147,7 +190,6 @@ _restore_try() {
     return 0
   fi
   _restore_fail "$label"
-  echo "# FAILED: $label" >&2
   return 1
 }
 
@@ -361,6 +403,35 @@ _restore_write_report() {
     fi
   } > "$report"
   printf '%s' "$report"
+}
+
+_restore_failed_bullets() {
+  local f="${_RESTORE_FAIL_FILE:-}"
+  [[ -s "$f" ]] || return 0
+  while IFS= read -r line; do
+    [[ -n "$line" ]] && printf '• %s\n' "$line"
+  done < "$f"
+}
+
+_restore_finish_ui() {
+  local dest="$1" report_path="$2" logf="$3" failc="$4"
+  local reboot_note=""
+  [[ ${want_nvidia:-0} -eq 1 ]] && reboot_note=$'\n\nReboot recommended for NVIDIA drivers.'
+  if [[ "${URSTACK_EMBEDDED_PROGRESS:-0}" == "1" ]]; then
+    echo "# Restore finished"
+    echo "100"
+    echo "REPORT=$report_path"
+    echo "FAILS=${failc:-0}"
+    return 0
+  fi
+  if [[ -n "${DISPLAY:-}" ]] && command -v python3 &>/dev/null && [[ -x "$_FEDORA_UI" ]] && [[ -f "$report_path" ]]; then
+    _fs_ui text --title "Restore report" --file "$report_path" --ok-label "Close" 2>/dev/null || true
+  fi
+  if [[ "${failc:-0}" != "0" ]]; then
+    _fs_err "Restore finished with ${failc} failed step(s).$reboot_note\n\n$(_restore_failed_bullets)\n\nReport:\n$report_path\nLog:\n${logf:-$dest/RESTORE_LOG.txt}"
+  else
+    _fs_msg "Restore finished from:\n$dest$reboot_note\n\nReport:\n$report_path\n\nReview vendor-launchers list if any outside-store apps need a manual installer."
+  fi
 }
 
 # NVIDIA PCI vendor, AMD, Intel
@@ -1252,6 +1323,7 @@ _backup_config() {
 
   if [[ "$want_settings" == "1" ]]; then
   # KDE / Plasma
+  if _desktop_wants kde; then
   local kde_files=(
     .config/plasma-org.kde.plasma.desktop-appletsrc
     .config/plasmashellrc .config/plasmarc .config/kdeglobals
@@ -1263,6 +1335,14 @@ _backup_config() {
     .config/powermanagementprofilesrc .config/powerdevilrc
     .config/mimeapps.list .config/konsolerc .config/klipperrc .config/spectaclerc
     .config/kwalletrc .config/kwalletmanagerrc
+    .config/kdedefaults
+    .config/kactivitymanagerdrc
+    .config/kactivitymanagerd-statsrc
+    .config/kactivitymanagerd-pluginsrc
+    .config/kactivitymanagerd-switcherrc
+    .config/ksplashrc
+    .config/breezerc
+    .config/krunnerrc
   )
   local p
   for p in "${kde_files[@]}"; do
@@ -1279,6 +1359,8 @@ _backup_config() {
   _overlay_home "$HOME/.local/share/dolphin" "$dest"
   _overlay_home "$HOME/.local/share/user-places.xbel" "$dest"
   _overlay_home "$HOME/.local/share/kwalletd" "$dest"
+  fi
+
   _overlay_home "$HOME/.local/share/flatpak/overrides" "$dest"
   _overlay_home "$HOME/.local/share/applications" "$dest"
   _overlay_home "$HOME/.icons" "$dest"
@@ -1293,6 +1375,9 @@ _backup_config() {
   _overlay_home "$HOME/.config/nushell" "$dest"
   _overlay_home "$HOME/.config/dconf" "$dest"
   _overlay_home "$HOME/.config/gnome-control-center" "$dest"
+  if _desktop_wants gnome; then
+    _overlay_home "$HOME/.local/share/gnome-shell" "$dest"
+  fi
   fi
 
   # Secrets / identity (optional)
@@ -1388,6 +1473,13 @@ _backup_config() {
       _copy_file "$ffprofile/favicons.sqlite" "$dest/config/firefox-bookmarks/favicons.sqlite"
       basename "$ffprofile" > "$dest/config/firefox-bookmarks/profile-name.txt"
     fi
+  fi
+
+  if [[ "$want_settings" == "1" ]]; then
+    if _desktop_wants kde; then
+      _kde_py collect-media --home "$HOME" --overlay "$ov" 2>/dev/null || true
+    fi
+    _kde_py portable-backup --home "$HOME" --root "$dest" 2>/dev/null || true
   fi
 
   # Broader ~/.config + ~/.local/share (caches excluded) — makes restore closer to "same machine"
@@ -2702,6 +2794,10 @@ fedora_setup_restore_from() {
           _restore_fail "Home settings overlay"
         fi
         _repair_secret_modes
+        _kde_py materialize-home --home "$HOME" --backup "$dest" 2>/dev/null || true
+        _kde_py adapt-home --home "$HOME" 2>/dev/null || true
+        _kde_py export-colorscheme --home "$HOME" 2>/dev/null || true
+        _kde_py prune-launchers --home "$HOME" 2>/dev/null || true
       fi
     else
       _restore_skip "Home settings overlay (disabled)"
@@ -2809,25 +2905,8 @@ fedora_setup_restore_from() {
   # Keep a copy of the log next to the report
   cp -a "$logf" "$dest/RESTORE_LOG.txt" 2>/dev/null || true
   failc=$(wc -l < "${_RESTORE_FAIL_FILE:-/dev/null}" 2>/dev/null | tr -d ' ')
+  _restore_finish_ui "$dest" "$report_path" "$dest/RESTORE_LOG.txt" "${failc:-0}"
   _restore_track_cleanup
-
-  local reboot_note=""
-  [[ $want_nvidia -eq 1 ]] && reboot_note=$'\n\nReboot recommended for NVIDIA drivers.'
-  if [[ "${URSTACK_EMBEDDED_PROGRESS:-0}" == "1" ]]; then
-    echo "# Restore finished"
-    echo "100"
-    echo "REPORT=$report_path"
-    echo "FAILS=${failc:-0}"
-  else
-    if [[ -n "${DISPLAY:-}" ]] && command -v python3 &>/dev/null && [[ -x "$_FEDORA_UI" ]] && [[ -f "$report_path" ]]; then
-      _fs_ui text --title "Restore report" --file "$report_path" --ok-label "Close" 2>/dev/null || true
-    fi
-    if [[ "${failc:-0}" != "0" ]]; then
-      _fs_err "Restore finished with ${failc} failed step(s).$reboot_note\n\nReport:\n$report_path\nLog:\n$dest/RESTORE_LOG.txt"
-    else
-      _fs_msg "Restore finished from:\n$dest$reboot_note\n\nReport:\n$report_path\n\nReview vendor-launchers list if any outside-store apps need a manual installer."
-    fi
-  fi
   rm -f "$logf"
 }
 
