@@ -48,7 +48,9 @@ I also wanted a **unified updater**. Fedora does not have one: DNF, Flatpak, Sna
 | If you are tired of… | UrStack |
 | --- | --- |
 | Running `dnf`, GNOME Software, Snap, `fwupdmgr`, and toolchain CLIs separately | One Updates page (and CLI) for the whole stack |
-| Spending a day reinstalling apps after a clean Fedora | Catalog + backup manifests so you can batch-install what you actually use |
+| Spending a day reinstalling apps after a clean Fedora | Catalog with descriptions and screenshots, plus backup manifests for batch install |
+| Guessing which store has an app, or installing blind | Apps page: summary, full description, and Flathub screenshots before you click Install |
+| Not knowing what to clean or tune after months of use | Health scan with a score, optional actions, and undo via restore points |
 | Disk clones for “move me to a fresh OS” | Backup / restore as a blueprint, not an image |
 | Blind system tweaks with no undo | Health actions with restore points |
 | Pasting `sudo` into a terminal for every privileged step | PolicyKit prompts for DNF, firmware, and similar jobs |
@@ -57,8 +59,8 @@ I also wanted a **unified updater**. Fedora does not have one: DNF, Flatpak, Sna
 
 - **Unified updates** — DNF, Flatpak, Snap, firmware, plus optional developer sources, checked in parallel and applied from one dashboard.
 - **Rebuild without cloning** — export package lists, projects, AppImages, and desktop settings; restore them on a clean Fedora.
-- **Curated apps** — category catalog (Flatpak / DNF / Snap / vendor) instead of hunting each store yourself.
-- **Workstation health** — cleanup, codecs, zram, power profiles, with a restore point before aggressive changes.
+- **Apps with real listings** — a category catalog where each app has a description, screenshots, and the install path that actually works on Fedora (not a raw Flathub dump).
+- **Health page** — a scan of cleanup, codecs, memory, and power; you pick the fixes, UrStack takes a restore point before aggressive ones.
 - **Native desktop app** — GTK4 / libadwaita, plus a CLI for scripts and a daily check timer.
 
 The sections below are the detail. If you only need a reinstall kit and one updater, start at [Quick Start](#quick-start), then enable Backup in Settings.
@@ -79,32 +81,36 @@ UrStack aggregates pending updates in parallel and lets you apply them from one 
 
 Firmware apply is skipped in non-interactive `--yes` mode unless you pass `--include-firmware`.
 
-### Curated app catalog
+### Apps catalog (install with previews)
 
-The Apps page is a category browser, not a dump of every Flathub listing:
+The Apps page is a **download/install browser**, not a dump of every Flathub listing. You pick a category, see what is already installed, and open an app for details before it hits the disk.
 
-- Categories include browsers, communication, media, productivity, developer tools, graphics, utilities, gaming, and vendor / direct downloads.
-- Install methods are mapped per app: Flatpak (Flathub), DNF, Snap, or a vendor URL / AppImage when that is the realistic Linux path.
-- Linux-mapped profiles inspired by [Chris Titus Tech’s winutil](https://github.com/ChrisTitusTech/winutil) sit alongside the native catalog for one-click batch installs.
-- Filters for installed vs available, plus bundled app logos from the catalog.
+Each listing can include:
 
-### Workstation health and tuning
+- **Name, icon, and short summary** so you can scan quickly.
+- **Full description** (developer, license, and Flathub/AppStream text where we have it).
+- **Screenshots** shown inside UrStack — you can step through them without leaving the app or opening a browser.
+- **The install method that actually works on Fedora:** Flatpak (Flathub), DNF, Snap, or a vendor URL / AppImage when that is the realistic Linux path.
 
-The Health page scans the machine and offers optional, selectable actions:
+Categories include browsers, communication, media, productivity, developer tools, graphics, utilities, gaming, and vendor / direct downloads. Linux-mapped profiles inspired by [Chris Titus Tech’s winutil](https://github.com/ChrisTitusTech/winutil) sit beside the native catalog for one-click batch installs. Filters cover installed vs available.
 
-| Area | Examples |
+That is the difference after a fresh OS: you rebuild the toolbox by browsing apps you recognize, with pictures and descriptions, instead of remembering package names.
+
+### Health page
+
+The Health page is a **workstation checkup**, not an auto-tweaker. It scans the machine, shows a **health score** on Overview, and lists optional actions you can select.
+
+That helps when Fedora has been running for months (or you just restored a blueprint onto a new disk): old kernels and caches pile up, codecs or Flathub may be missing, memory pressure and power profiles are easy to leave on defaults, and a random blog “optimization” is hard to undo.
+
+| Area | What it is for |
 | --- | --- |
-| Cleanup | Old kernels, DNF cache, journal vacuum, unused Flatpak runtimes, orphan `~/.var/app` data |
-| Workstation | Flathub remote, RPM Fusion, multimedia codecs |
-| Memory | zram-generator, EarlyOOM |
-| Power | `power-profiles-daemon` profiles; TLP vs ppd conflict |
+| Cleanup | Old kernels, DNF cache, journal vacuum, unused Flatpak runtimes, orphan `~/.var/app` data — reclaim space without guessing commands |
+| Workstation | Flathub remote, RPM Fusion, multimedia codecs — the usual “media and apps actually work” baseline |
+| Memory | zram-generator, EarlyOOM — stay usable when RAM is tight |
+| Power | `power-profiles-daemon` profiles; warn if TLP and ppd both want control |
 | Advanced | `fstrim`, DNF parallel downloads, sysctl drop-in (`/etc/sysctl.d/99-urstack.conf`) |
 
-Aggressive tweaks take a restore point first (see [Safety nets](#safety-nets)).
-
-### Safety nets
-
-Before applying health actions, UrStack records a restore point under `~/.local/state/stackup/health-restore-points/`: DNF state, selected unit enablement, and UrStack sysctl drop-ins. You can list, create, and apply restore points from the Health page or the CLI.
+You choose what to apply. Aggressive tweaks take a **restore point** first (DNF state, unit enablement, UrStack sysctl drop-ins) under `~/.local/state/stackup/health-restore-points/`. You can list, create, and roll those back from the Health page or the CLI — so Health is a guided cleanup, not a one-way script.
 
 ### Backup and rebuild
 
