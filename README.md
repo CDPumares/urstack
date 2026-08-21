@@ -102,7 +102,7 @@ rpm-ostree / Silverblue-style immutable Fedora is not the target; UrStack expect
 Clone the repository (or open the project directory) and run the installer:
 
 ```bash
-git clone https://github.com/ChrisPumares/urstack.git
+git clone https://github.com/CDPumares/urstack.git
 cd urstack
 ./install.sh --user
 ```
