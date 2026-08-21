@@ -1,0 +1,775 @@
+window.fedora-updates {
+  font-size: 14px;
+}
+
+.fu-hero {
+  padding: 20px 24px 12px 24px;
+}
+
+.fu-app-icon {
+  background: transparent;
+  background-color: transparent;
+  padding: 0;
+  margin: 0;
+}
+
+/* Hide decorative CSD app icon in the titlebar; keep min/max/close buttons. */
+window.fedora-updates headerbar > image:first-child,
+window.fedora-updates headerbar windowcontrols.start > image {
+  opacity: 0;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+}
+
+
+.fu-hero-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.fu-hero-sub {
+  opacity: 0.7;
+  margin-top: 2px;
+}
+
+.fu-splash {
+  padding: 28px 28px 8px 28px;
+}
+
+.fu-splash-icon {
+  margin-bottom: 12px;
+}
+
+.fu-splash-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
+.fu-splash-status {
+  opacity: 0.75;
+  margin-bottom: 18px;
+}
+
+.fu-hub-scroll {
+  margin-top: 4px;
+}
+
+.fu-badge {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.fu-badge-ok {
+  background-color: alpha(@success_color, 0.18);
+  color: @success_color;
+}
+
+.fu-badge-warn {
+  background-color: alpha(@warning_color, 0.20);
+  color: @warning_color;
+}
+
+.fu-method {
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin-left: 6px;
+}
+
+.fu-method-flatpak {
+  background-color: alpha(@accent_bg_color, 0.18);
+  color: @accent_color;
+}
+
+.fu-method-dnf {
+  background-color: alpha(@success_color, 0.16);
+  color: @success_color;
+}
+
+.fu-method-snap {
+  background-color: alpha(@warning_color, 0.16);
+  color: @warning_color;
+}
+
+.fu-method-vendor,
+.fu-method-link,
+.fu-method-outside {
+  background-color: alpha(@borders, 0.55);
+}
+
+.fu-method-windows {
+  background-color: alpha(@destructive_color, 0.14);
+  color: @destructive_color;
+}
+
+.fu-search {
+  margin: 0;
+}
+
+.fu-apps-search {
+  min-width: 220px;
+  min-height: 38px;
+}
+
+.fu-apps-chrome {
+  padding: 0 16px 8px 16px;
+}
+
+.fu-cat-rail {
+  margin: 2px 0 2px 0;
+}
+
+.fu-cat-rail > flowboxchild {
+  padding: 0;
+  margin: 0;
+}
+
+button.fu-cat-pill {
+  padding: 2px 10px 2px 8px;
+  border-radius: 999px;
+  min-height: 32px;
+  font-weight: 500;
+  background-image: none;
+  background-color: alpha(@card_bg_color, 0.92);
+  border: 1px solid alpha(@borders, 0.5);
+  box-shadow: none;
+}
+
+button.fu-cat-pill:hover {
+  background-image: none;
+  background-color: alpha(@accent_bg_color, 0.12);
+  border-color: alpha(@accent_bg_color, 0.32);
+}
+
+button.fu-cat-pill:checked {
+  background-image: none;
+  background-color: alpha(@accent_bg_color, 0.24);
+  border-color: alpha(@accent_bg_color, 0.50);
+  color: @accent_color;
+  font-weight: 650;
+}
+
+.fu-cat-count {
+  font-size: 11px;
+  font-weight: 650;
+  opacity: 0.58;
+  min-width: 1.2em;
+}
+
+button.fu-cat-pill:checked .fu-cat-count {
+  opacity: 0.9;
+}
+
+.fu-filter-toolbar {
+  padding: 6px 0 4px 0;
+}
+
+.fu-filter-count {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.62;
+}
+
+.fu-source-drop {
+  min-width: 148px;
+}
+
+.fu-shell-sidebar {
+  background-color: alpha(@card_bg_color, 0.55);
+  border-right: 1px solid alpha(@borders, 0.7);
+  min-width: 200px;
+  padding: 8px 0 12px 0;
+}
+
+.fu-shell-sidebar-brand {
+  padding: 12px 14px 10px 14px;
+}
+
+.fu-shell-sidebar-title {
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+
+.fu-shell-sidebar-sub {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.55;
+  margin-top: 2px;
+}
+
+.fu-shell-nav-section {
+  font-weight: 650;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.55;
+  margin: 10px 16px 4px 16px;
+}
+
+.fu-section-card {
+  margin: 0 16px 10px 16px;
+}
+
+.fu-section-title {
+  font-weight: 650;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.65;
+  margin-bottom: 6px;
+}
+
+.fu-section-head {
+  margin-bottom: 2px;
+}
+
+.fu-section-head .fu-section-title {
+  margin-bottom: 0;
+}
+
+.fu-section-select {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+/* Shared page chrome (Health-style; used across Updates / Backup / Settings / …) */
+.fu-page-hero,
+.fu-health-hero {
+  margin: 4px 16px 8px 16px;
+  padding: 22px 22px 18px 22px;
+  border-radius: 18px;
+  background-image: linear-gradient(
+    135deg,
+    alpha(@accent_bg_color, 0.22),
+    alpha(@success_color, 0.10) 55%,
+    alpha(@window_bg_color, 0.0)
+  );
+  border: 1px solid alpha(@accent_bg_color, 0.18);
+}
+
+.fu-page-hero-head {
+  min-width: 0;
+  padding-right: 16px;
+}
+
+.fu-page-hero-body {
+  min-width: 0;
+  padding-left: 16px;
+}
+
+.fu-page-hero-sep {
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+.fu-page-hero-warn,
+.fu-health-hero-warn {
+  background-image: linear-gradient(
+    135deg,
+    alpha(@warning_color, 0.22),
+    alpha(@accent_bg_color, 0.08) 55%,
+    alpha(@window_bg_color, 0.0)
+  );
+  border: 1px solid alpha(@warning_color, 0.22);
+}
+
+.fu-page-score,
+.fu-health-score {
+  font-size: 34px;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+}
+
+.fu-page-score-label,
+.fu-health-score-label {
+  font-size: 13px;
+  opacity: 0.72;
+  margin-top: 2px;
+}
+
+.fu-page-card,
+.fu-health-card {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background-color: alpha(@card_bg_color, 0.9);
+  border: 1px solid alpha(@borders, 0.55);
+}
+
+.fu-overview-flow {
+  margin: 0 12px 4px 12px;
+}
+
+.fu-overview-flow > flowboxchild {
+  padding: 0;
+  min-width: 240px;
+}
+
+.fu-health-items {
+  margin-top: 8px;
+}
+
+.fu-health-item {
+  padding: 8px 0 6px 0;
+  border-top: 1px solid alpha(@borders, 0.32);
+}
+
+.fu-health-items > .fu-health-item:first-child {
+  border-top: none;
+  padding-top: 2px;
+}
+
+.fu-health-item-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.fu-health-item-sub {
+  font-size: 11.5px;
+  opacity: 0.68;
+}
+
+button.fu-health-item-btn {
+  padding: 0;
+  margin: 0;
+  min-height: 0;
+  font-weight: inherit;
+  border-radius: 10px;
+}
+
+button.fu-health-item-btn:hover {
+  background-image: none;
+  background-color: alpha(@accent_bg_color, 0.12);
+}
+
+.fu-overview-card {
+  margin: 0;
+  padding: 18px 16px 14px 16px;
+  border-radius: 16px;
+  min-width: 0;
+  background-color: alpha(@card_bg_color, 0.94);
+  border: 1px solid alpha(@borders, 0.55);
+  background-image: linear-gradient(
+    160deg,
+    alpha(@accent_bg_color, 0.10),
+    alpha(@card_bg_color, 0.0) 42%
+  );
+}
+
+.fu-overview-card-warn {
+  background-image: linear-gradient(
+    160deg,
+    alpha(@warning_color, 0.14),
+    alpha(@card_bg_color, 0.0) 45%
+  );
+  border: 1px solid alpha(@warning_color, 0.22);
+}
+
+.fu-overview-card-ok {
+  background-image: linear-gradient(
+    160deg,
+    alpha(@success_color, 0.12),
+    alpha(@card_bg_color, 0.0) 45%
+  );
+}
+
+.fu-overview-card-title {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.fu-overview-card-status {
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0.88;
+  margin-top: 2px;
+}
+
+.fu-overview-card-blurb {
+  font-size: 12.5px;
+  opacity: 0.72;
+  margin-top: 8px;
+}
+
+.fu-overview-card-line {
+  font-size: 12px;
+  opacity: 0.7;
+  margin-top: 2px;
+}
+
+.fu-overview-card-icon {
+  margin-top: 2px;
+}
+
+@keyframes fu-spin {
+  from {
+    -gtk-icon-transform: rotate(0deg);
+  }
+  to {
+    -gtk-icon-transform: rotate(360deg);
+  }
+}
+
+.fu-icon-spin {
+  animation: fu-spin 0.95s linear infinite;
+}
+
+.fu-app-mini {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background-color: alpha(@card_bg_color, 0.92);
+  border: 1px solid alpha(@borders, 0.5);
+  min-width: 210px;
+}
+
+.fu-app-mini:hover {
+  background-color: alpha(@accent_bg_color, 0.10);
+  border-color: alpha(@accent_bg_color, 0.35);
+}
+
+.fu-app-mini:active {
+  background-color: alpha(@accent_bg_color, 0.16);
+}
+
+.fu-app-mini-title {
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.fu-app-mini-sub {
+  opacity: 0.68;
+  font-size: 11px;
+  margin-top: 1px;
+}
+
+.fu-app-mini-chevron {
+  opacity: 0.42;
+}
+
+.fu-app-desc {
+  font-size: 13.5px;
+  line-height: 1.5;
+  opacity: 0.88;
+}
+
+.fu-app-byline {
+  font-size: 12.5px;
+  opacity: 0.72;
+  margin-top: 4px;
+}
+
+.fu-shot-strip {
+  margin: 0 4px 4px 4px;
+}
+
+.fu-shot {
+  border-radius: 10px;
+  border: 1px solid alpha(@borders, 0.55);
+  background-color: alpha(@card_bg_color, 0.6);
+}
+
+button.fu-shot-btn {
+  padding: 0;
+  margin: 0 8px 0 0;
+  min-height: 0;
+  border-radius: 10px;
+}
+
+.fu-shot-view {
+  background-color: alpha(@window_bg_color, 0.92);
+  min-height: 280px;
+}
+
+.fu-shot-view-picture {
+  margin: 8px 12px 16px 12px;
+}
+
+.fu-app-flow {
+  margin: 0 12px 4px 12px;
+}
+
+.fu-page-card-title,
+.fu-health-rec-title {
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.fu-page-card-sub,
+.fu-health-rec-why {
+  opacity: 0.72;
+  font-size: 12.5px;
+  margin-top: 2px;
+}
+
+.fu-health-rec-cmd {
+  font-family: monospace;
+  font-size: 11px;
+  opacity: 0.65;
+  margin-top: 6px;
+}
+
+.fu-page-callout,
+.fu-health-rp {
+  margin: 0 16px 10px 16px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background-color: alpha(@card_bg_color, 0.85);
+  border: 1px dashed alpha(@borders, 0.7);
+}
+
+.fu-page-body {
+  margin-left: 16px;
+  margin-right: 16px;
+}
+
+.fu-mono {
+  font-family: monospace;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.fu-actions {
+  padding: 12px 40px 16px 40px;
+  border-top: 1px solid alpha(@borders, 0.6);
+}
+
+.fu-action-grid {
+  margin-top: 4px;
+}
+
+.fu-primary {
+  min-height: 44px;
+  font-weight: 600;
+}
+
+.fu-secondary {
+  min-height: 40px;
+}
+
+.fu-row-suffix {
+  min-height: 28px;
+  padding: 2px 10px;
+  margin-top: 6px;
+  margin-bottom: 6px;
+  margin-right: 8px;
+}
+
+.fu-page-toolbar {
+  padding: 12px 16px 8px 16px;
+}
+
+.fu-page-hero-actions {
+  padding: 8px 40px 0 40px;
+}
+
+.fu-page-title {
+  font-weight: 650;
+  font-size: 1.35rem;
+}
+
+.fu-page-sub {
+  opacity: 0.75;
+  margin-top: 2px;
+}
+
+.fu-checking {
+  padding: 48px 24px 32px 24px;
+}
+
+.fu-checking-title {
+  font-weight: 650;
+  font-size: 1.5rem;
+  margin-top: 12px;
+}
+
+.fu-checking-status {
+  opacity: 0.8;
+  margin-top: 8px;
+  margin-bottom: 20px;
+}
+
+.fu-status-page {
+  margin: 12px 20px;
+}
+
+.fu-uptodate {
+  padding: 48px 24px 32px 24px;
+}
+
+.fu-uptodate-icon {
+  color: @success_color;
+  margin-bottom: 8px;
+}
+
+.fu-uptodate-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-top: 8px;
+}
+
+.fu-uptodate-sub {
+  opacity: 0.7;
+  margin-top: 6px;
+}
+
+.fu-body {
+  margin: 8px 20px 4px 20px;
+}
+
+.fu-check-row {
+  min-height: 48px;
+}
+
+.fu-theme-toggles {
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
+/* Light: stronger chrome so cards and the sidebar don't wash out. */
+window.fedora-updates.fu-light .fu-shell-sidebar {
+  background-color: alpha(@card_bg_color, 0.96);
+  border-right: 1px solid alpha(@borders, 0.95);
+}
+
+window.fedora-updates.fu-light .fu-overview-card,
+window.fedora-updates.fu-light .fu-page-card,
+window.fedora-updates.fu-light .fu-health-card,
+window.fedora-updates.fu-light .fu-app-mini {
+  background-color: @card_bg_color;
+  border: 1px solid alpha(@borders, 0.9);
+}
+
+window.fedora-updates.fu-light .fu-app-mini:hover {
+  background-color: alpha(@accent_bg_color, 0.10);
+  border-color: alpha(@accent_bg_color, 0.38);
+}
+
+window.fedora-updates.fu-light .fu-page-hero,
+window.fedora-updates.fu-light .fu-health-hero {
+  background-image: linear-gradient(
+    135deg,
+    alpha(@accent_bg_color, 0.18),
+    alpha(@success_color, 0.08) 55%,
+    @card_bg_color
+  );
+  border: 1px solid alpha(@accent_bg_color, 0.32);
+}
+
+window.fedora-updates.fu-light .fu-page-hero-warn,
+window.fedora-updates.fu-light .fu-health-hero-warn {
+  background-image: linear-gradient(
+    135deg,
+    alpha(@warning_color, 0.20),
+    alpha(@accent_bg_color, 0.06) 55%,
+    @card_bg_color
+  );
+  border: 1px solid alpha(@warning_color, 0.38);
+}
+
+window.fedora-updates.fu-light .fu-page-callout,
+window.fedora-updates.fu-light .fu-health-rp {
+  background-color: alpha(@card_bg_color, 0.98);
+  border: 1px dashed alpha(@borders, 0.9);
+}
+
+window.fedora-updates.fu-light button.fu-cat-pill {
+  background-color: @card_bg_color;
+  border: 1px solid alpha(@borders, 0.85);
+}
+
+window.fedora-updates.fu-light .fu-badge-ok {
+  background-color: alpha(@success_color, 0.16);
+}
+
+window.fedora-updates.fu-light .fu-badge-warn {
+  background-color: alpha(@warning_color, 0.18);
+}
+
+/* Dark: keep the existing glow, a bit more depth on the sidebar. */
+window.fedora-updates.fu-dark .fu-shell-sidebar {
+  background-color: alpha(@card_bg_color, 0.40);
+}
+
+window.fedora-updates.fu-dark .fu-page-hero,
+window.fedora-updates.fu-dark .fu-health-hero {
+  background-image: linear-gradient(
+    135deg,
+    alpha(@accent_bg_color, 0.28),
+    alpha(@success_color, 0.12) 55%,
+    alpha(@window_bg_color, 0.0)
+  );
+}
+
+.fu-storage {
+  margin: 0 16px 10px 16px;
+  padding: 16px 18px 14px 18px;
+  border-radius: 16px;
+}
+
+.fu-storage-meter {
+  margin-top: 10px;
+}
+
+.fu-storage-meter-top {
+  margin-bottom: 4px;
+}
+
+.fu-storage-name {
+  font-weight: 650;
+  font-size: 13px;
+}
+
+.fu-storage-free {
+  font-size: 12px;
+  opacity: 0.72;
+}
+
+.fu-storage-hog {
+  padding: 6px 0;
+  border-top: 1px solid alpha(@borders, 0.32);
+}
+
+.fu-storage-hogs > .fu-storage-hog:first-child {
+  border-top: none;
+  padding-top: 2px;
+}
+
+.fu-storage-hog-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.fu-storage-hog-path {
+  font-size: 11px;
+  opacity: 0.62;
+}
+
+.fu-storage-hog-size {
+  font-weight: 650;
+  font-size: 13px;
+}
+
+progressbar.fu-storage-bar-hot > trough > progress {
+  background-color: @warning_color;
+}
+
+progressbar.fu-storage-bar-crit > trough > progress {
+  background-color: @error_color;
+}

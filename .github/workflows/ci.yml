@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  shell:
+    name: Shell
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Syntax check
+        run: |
+          status=0
+          while IFS= read -r -d '' f; do
+            bash -n "$f" || { echo "syntax error: $f"; status=1; }
+          done < <(find . -name '*.sh' -not -path './.git/*' -print0)
+          bash -n bin/stackup || status=1
+          bash -n install.sh || status=1
+          exit $status
+
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+      # Blocking: the codebase is clean at this severity, so anything new is a
+      # regression. Warnings were promoted from advisory once the backlog hit zero.
+      - name: shellcheck (errors and warnings)
+        run: shellcheck -S warning -x lib/core/*.sh lib/plugins/*.sh bin/stackup install.sh
+
+      # Advisory: style and info-level suggestions, still a backlog.
+      - name: shellcheck (info, advisory)
+        continue-on-error: true
+        run: shellcheck -S style -x lib/core/*.sh lib/plugins/*.sh bin/stackup install.sh
+
+  python:
+    name: Python
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install ruff
+        run: pip install ruff
+
+      # Blocking: correctness rules only. Clean today, so failures are new bugs.
+      - name: ruff (correctness)
+        run: ruff check --isolated --select F,E9,B .
+
+      # Advisory: full ruleset from pyproject.toml, including known style debt.
+      - name: ruff (full, advisory)
+        continue-on-error: true
+        run: ruff check .
+
+      - name: Compile all modules
+        run: python -m compileall -q lib scripts tests
+
+      # GTK-dependent tests skip themselves when libadwaita is missing.
+      - name: Install GTK for UI tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-gi gir1.2-gtk-4.0 gir1.2-adw-1
+
+      - name: Unit tests
+        run: python -m unittest discover -s tests -v
+
+  polkit:
+    name: PolicyKit policy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate policy XML
+        run: |
+          for f in data/polkit/*.policy; do
+            python3 -c "import sys,xml.dom.minidom; xml.dom.minidom.parse(sys.argv[1])" "$f"
+            echo "ok: $f"
+          done
+
+      # The privileged helper must never regain cached authorization: it accepts a
+      # jobs file from an unprivileged caller, so every invocation has to re-prompt.
+      - name: Reject auth_admin_keep
+        run: |
+          if grep -q "auth_admin_keep" data/polkit/*.policy; then
+            echo "auth_admin_keep found in a polkit policy - refusing"
+            exit 1
+          fi
+          echo "no cached authorization"

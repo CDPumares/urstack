@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Fedora Workstation Updater
+GenericName=System Updates
+Comment=Check and apply DNF, Flatpak, Snap, firmware, and optional tool updates
+Exec=fedora-updates
+Icon=fedora-updates
+Terminal=false
+Type=Application
+Categories=System;Settings;PackageManager;
+Keywords=update;dnf;flatpak;fedora;upgrade;
+StartupNotify=true

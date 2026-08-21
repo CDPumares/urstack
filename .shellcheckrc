@@ -1,0 +1,12 @@
+# Libraries are sourced by bin/stackup, so let shellcheck follow them.
+source-path=SCRIPTDIR
+source-path=SCRIPTDIR/../..
+external-sources=true
+
+# SC2034: config keys (enable_dnf, KEEP_KERNELS, …) are set in one file and read
+#         in another after sourcing, so shellcheck cannot see the use site.
+disable=SC2034
+
+# SC2154: check_dir and friends are globals assigned by bin/stackup before the
+#         libraries are sourced.
+disable=SC2154

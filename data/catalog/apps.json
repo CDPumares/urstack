@@ -1,0 +1,1537 @@
+{
+  "version": 1,
+  "categories": [
+    {
+      "id": "browsers",
+      "name": "Browsers",
+      "apps": [
+        {
+          "id": "firefox",
+          "name": "Firefox",
+          "summary": "Private, fast web browser from Mozilla",
+          "method": "flatpak",
+          "package": "org.mozilla.firefox"
+        },
+        {
+          "id": "chrome",
+          "name": "Google Chrome",
+          "summary": "Google\u2019s web browser \u2014 vendor yum repo",
+          "method": "dnf",
+          "package": "google-chrome-stable",
+          "store": "vendor",
+          "repo_hint": "Needs the google-chrome yum repo"
+        },
+        {
+          "id": "brave",
+          "name": "Brave",
+          "summary": "Privacy-focused Chromium browser",
+          "method": "flatpak",
+          "package": "com.brave.Browser"
+        },
+        {
+          "id": "vivaldi",
+          "name": "Vivaldi",
+          "summary": "Feature-rich Chromium browser",
+          "method": "flatpak",
+          "package": "com.vivaldi.Vivaldi"
+        },
+        {
+          "id": "ungoogled",
+          "name": "Ungoogled Chromium",
+          "summary": "Chromium without Google services",
+          "method": "flatpak",
+          "package": "io.github.ungoogled_software.ungoogled_chromium"
+        },
+        {
+          "id": "edge",
+          "name": "Microsoft Edge",
+          "summary": "Microsoft\u2019s browser \u2014 vendor RPM (not Fedora)",
+          "method": "browser",
+          "package": "microsoft-edge-stable",
+          "detect": "microsoft-edge",
+          "url": "https://www.microsoft.com/edge/download",
+          "store": "vendor"
+        },
+        {
+          "id": "opera",
+          "name": "Opera",
+          "summary": "Opera browser \u2014 vendor download",
+          "method": "browser",
+          "package": "opera",
+          "detect": "opera",
+          "url": "https://www.opera.com/download",
+          "store": "vendor"
+        },
+        {
+          "id": "floorp",
+          "name": "Floorp",
+          "summary": "Firefox-based browser \u2014 vendor download",
+          "method": "browser",
+          "package": "floorp",
+          "detect": "floorp",
+          "url": "https://floorp.app/en/download",
+          "store": "vendor"
+        },
+        {
+          "id": "tor-browser",
+          "name": "Tor Browser",
+          "summary": "Anonymous browsing \u2014 official Tor Project download",
+          "method": "browser",
+          "package": "tor-browser",
+          "detect": "tor-browser",
+          "url": "https://www.torproject.org/download/",
+          "store": "vendor"
+        },
+        {
+          "id": "mullvad-browser",
+          "name": "Mullvad Browser",
+          "summary": "Privacy browser from Mullvad \u2014 vendor download",
+          "method": "browser",
+          "package": "mullvad-browser",
+          "detect": "mullvad-browser",
+          "url": "https://mullvad.net/en/download/browser",
+          "store": "vendor"
+        },
+        {
+          "id": "librewolf",
+          "name": "LibreWolf",
+          "summary": "Privacy-focused Firefox fork",
+          "method": "flatpak",
+          "package": "io.gitlab.librewolf-community"
+        },
+        {
+          "id": "chromium",
+          "name": "Chromium",
+          "summary": "Open-source Chromium browser",
+          "method": "flatpak",
+          "package": "org.chromium.Chromium"
+        }
+      ]
+    },
+    {
+      "id": "communication",
+      "name": "Communication",
+      "apps": [
+        {
+          "id": "discord",
+          "name": "Discord",
+          "summary": "Voice, video and chat for communities",
+          "method": "flatpak",
+          "package": "com.discordapp.Discord"
+        },
+        {
+          "id": "slack",
+          "name": "Slack",
+          "summary": "Team messaging",
+          "method": "flatpak",
+          "package": "com.slack.Slack"
+        },
+        {
+          "id": "telegram",
+          "name": "Telegram",
+          "summary": "Fast cloud messaging",
+          "method": "flatpak",
+          "package": "org.telegram.desktop"
+        },
+        {
+          "id": "signal",
+          "name": "Signal",
+          "summary": "Private messenger",
+          "method": "flatpak",
+          "package": "org.signal.Signal"
+        },
+        {
+          "id": "zoom",
+          "name": "Zoom",
+          "summary": "Video meetings",
+          "method": "flatpak",
+          "package": "us.zoom.Zoom"
+        },
+        {
+          "id": "element",
+          "name": "Element",
+          "summary": "Matrix chat client",
+          "method": "flatpak",
+          "package": "im.riot.Riot"
+        },
+        {
+          "id": "teams",
+          "name": "Microsoft Teams",
+          "summary": "Work chat & meetings \u2014 vendor package",
+          "method": "browser",
+          "package": "teams",
+          "detect": "teams-for-linux",
+          "url": "https://www.microsoft.com/microsoft-teams/download-app",
+          "store": "vendor"
+        },
+        {
+          "id": "skype",
+          "name": "Skype",
+          "summary": "Video calls \u2014 Microsoft vendor download",
+          "method": "browser",
+          "package": "skypeforlinux",
+          "detect": "skypeforlinux",
+          "url": "https://www.skype.com/en/get-skype/",
+          "store": "vendor"
+        },
+        {
+          "id": "whatsapp-desktop",
+          "name": "WhatsApp",
+          "summary": "Unofficial desktop clients vary \u2014 official web + vendor options",
+          "method": "browser",
+          "package": "whatsapp",
+          "detect": "whatsapp-desktop",
+          "url": "https://www.whatsapp.com/download",
+          "store": "vendor"
+        },
+        {
+          "id": "webex",
+          "name": "Cisco Webex",
+          "summary": "Meetings \u2014 Cisco vendor download",
+          "method": "browser",
+          "package": "webex",
+          "detect": "webex",
+          "url": "https://www.webex.com/downloads.html",
+          "store": "vendor"
+        },
+        {
+          "id": "threema",
+          "name": "Threema",
+          "summary": "Private messenger \u2014 vendor download",
+          "method": "browser",
+          "package": "threema",
+          "detect": "threema",
+          "url": "https://threema.ch/en/download",
+          "store": "vendor"
+        },
+        {
+          "id": "viber",
+          "name": "Viber",
+          "summary": "Messaging & calls \u2014 vendor download",
+          "method": "browser",
+          "package": "viber",
+          "detect": "viber",
+          "url": "https://www.viber.com/en/download/",
+          "store": "vendor"
+        },
+        {
+          "id": "thunderbird",
+          "name": "Thunderbird",
+          "summary": "Email, calendar, and contacts from Mozilla",
+          "method": "flatpak",
+          "package": "org.mozilla.Thunderbird"
+        },
+        {
+          "id": "fractal",
+          "name": "Fractal",
+          "summary": "Matrix messenger for GNOME",
+          "method": "flatpak",
+          "package": "org.gnome.Fractal"
+        },
+        {
+          "id": "tuba",
+          "name": "Tuba",
+          "summary": "Browse the Fediverse (Mastodon and friends)",
+          "method": "flatpak",
+          "package": "dev.geopjr.Tuba"
+        },
+        {
+          "id": "fluffychat",
+          "name": "FluffyChat",
+          "summary": "Cute Matrix client",
+          "method": "flatpak",
+          "package": "im.fluffychat.Fluffychat"
+        },
+        {
+          "id": "delta-chat",
+          "name": "Delta Chat",
+          "summary": "Decentralized chat over email",
+          "method": "flatpak",
+          "package": "chat.delta.desktop"
+        },
+        {
+          "id": "briar",
+          "name": "Briar",
+          "summary": "Peer-to-peer encrypted messaging",
+          "method": "flatpak",
+          "package": "org.briarproject.Briar"
+        },
+        {
+          "id": "webcord",
+          "name": "WebCord",
+          "summary": "Open-source Discord client",
+          "method": "flatpak",
+          "package": "io.github.spacingbat3.webcord"
+        }
+      ]
+    },
+    {
+      "id": "media",
+      "name": "Media",
+      "apps": [
+        {
+          "id": "vlc",
+          "name": "VLC",
+          "summary": "Plays almost every media format",
+          "method": "flatpak",
+          "package": "org.videolan.VLC"
+        },
+        {
+          "id": "spotify",
+          "name": "Spotify",
+          "summary": "Music streaming",
+          "method": "flatpak",
+          "package": "com.spotify.Client"
+        },
+        {
+          "id": "obs",
+          "name": "OBS Studio",
+          "summary": "Streaming and recording",
+          "method": "flatpak",
+          "package": "com.obsproject.Studio"
+        },
+        {
+          "id": "audacity",
+          "name": "Audacity",
+          "summary": "Audio editor",
+          "method": "flatpak",
+          "package": "org.audacityteam.Audacity"
+        },
+        {
+          "id": "handbrake",
+          "name": "HandBrake",
+          "summary": "Video transcoder",
+          "method": "flatpak",
+          "package": "fr.handbrake.ghb"
+        },
+        {
+          "id": "mpv",
+          "name": "mpv",
+          "summary": "Minimal video player",
+          "method": "flatpak",
+          "package": "io.mpv.Mpv"
+        },
+        {
+          "id": "tidal",
+          "name": "TIDAL",
+          "summary": "HiFi music streaming \u2014 vendor AppImage",
+          "method": "browser",
+          "package": "tidal",
+          "detect": "tidal",
+          "url": "https://tidal.com/download",
+          "store": "vendor"
+        },
+        {
+          "id": "apple-music",
+          "name": "Apple Music",
+          "summary": "Apple Music for Linux clients / web \u2014 vendor links",
+          "method": "browser",
+          "package": "apple-music",
+          "detect": "apple-music",
+          "url": "https://music.apple.com/",
+          "store": "vendor"
+        },
+        {
+          "id": "plexamp",
+          "name": "Plexamp",
+          "summary": "Plex music player \u2014 vendor AppImage",
+          "method": "browser",
+          "package": "plexamp",
+          "detect": "plexamp",
+          "url": "https://www.plex.tv/media-server-downloads/?cat=computer&plat=linux#plexamp",
+          "store": "vendor"
+        },
+        {
+          "id": "plex-desktop",
+          "name": "Plex Desktop",
+          "summary": "Plex media player \u2014 vendor download",
+          "method": "browser",
+          "package": "plex-desktop",
+          "detect": "plex-desktop",
+          "url": "https://www.plex.tv/media-server-downloads/",
+          "store": "vendor"
+        },
+        {
+          "id": "davinci-resolve",
+          "name": "DaVinci Resolve",
+          "summary": "Pro video editor \u2014 Blackmagic vendor installer",
+          "method": "browser",
+          "package": "davinci-resolve",
+          "detect": "resolve",
+          "url": "https://www.blackmagicdesign.com/products/davinciresolve",
+          "store": "vendor"
+        },
+        {
+          "id": "cinebench",
+          "name": "Cinebench",
+          "summary": "CPU/GPU render benchmark \u2014 Maxon download",
+          "method": "browser",
+          "package": "cinebench",
+          "detect": "cinebench",
+          "url": "https://www.maxon.net/en/downloads/cinebench-2024-downloads",
+          "store": "vendor"
+        },
+        {
+          "id": "kdenlive",
+          "name": "Kdenlive",
+          "summary": "Powerful open-source video editor",
+          "method": "flatpak",
+          "package": "org.kde.kdenlive"
+        },
+        {
+          "id": "shotcut",
+          "name": "Shotcut",
+          "summary": "Cross-platform video editor",
+          "method": "flatpak",
+          "package": "org.shotcut.Shotcut"
+        },
+        {
+          "id": "pitivi",
+          "name": "Pitivi",
+          "summary": "GNOME video editor",
+          "method": "flatpak",
+          "package": "org.pitivi.Pitivi"
+        },
+        {
+          "id": "celluloid",
+          "name": "Celluloid",
+          "summary": "Simple GTK frontend for mpv",
+          "method": "flatpak",
+          "package": "io.github.celluloid_player.Celluloid"
+        },
+        {
+          "id": "amberol",
+          "name": "Amberol",
+          "summary": "Small and thoughtful music player",
+          "method": "flatpak",
+          "package": "io.bassi.Amberol"
+        },
+        {
+          "id": "strawberry",
+          "name": "Strawberry",
+          "summary": "Music player and collection organizer",
+          "method": "flatpak",
+          "package": "org.strawberrymusicplayer.strawberry"
+        },
+        {
+          "id": "easyeffects",
+          "name": "Easy Effects",
+          "summary": "Audio effects for PipeWire applications",
+          "method": "flatpak",
+          "package": "com.github.wwmm.easyeffects"
+        },
+        {
+          "id": "blanket",
+          "name": "Blanket",
+          "summary": "Listen to ambient sounds for focus or sleep",
+          "method": "flatpak",
+          "package": "com.rafaelmardojai.Blanket"
+        },
+        {
+          "id": "parabolic",
+          "name": "Parabolic",
+          "summary": "Download web video and audio",
+          "method": "flatpak",
+          "package": "org.nickvision.tubeconverter"
+        },
+        {
+          "id": "kooha",
+          "name": "Kooha",
+          "summary": "Simple screen recorder for GNOME",
+          "method": "flatpak",
+          "package": "io.github.seadve.Kooha"
+        },
+        {
+          "id": "peek",
+          "name": "Peek",
+          "summary": "Simple animated GIF screen recorder",
+          "method": "flatpak",
+          "package": "com.uploadedlobster.peek"
+        }
+      ]
+    },
+    {
+      "id": "productivity",
+      "name": "Productivity",
+      "apps": [
+        {
+          "id": "libreoffice",
+          "name": "LibreOffice",
+          "summary": "Office suite",
+          "method": "flatpak",
+          "package": "org.libreoffice.LibreOffice"
+        },
+        {
+          "id": "onlyoffice",
+          "name": "ONLYOFFICE",
+          "summary": "Office editors compatible with MS formats",
+          "method": "flatpak",
+          "package": "org.onlyoffice.desktopeditors"
+        },
+        {
+          "id": "obsidian",
+          "name": "Obsidian",
+          "summary": "Markdown knowledge base",
+          "method": "flatpak",
+          "package": "md.obsidian.Obsidian"
+        },
+        {
+          "id": "joplin",
+          "name": "Joplin",
+          "summary": "Notes and to-dos",
+          "method": "flatpak",
+          "package": "net.cozic.joplin_desktop"
+        },
+        {
+          "id": "calibre",
+          "name": "Calibre",
+          "summary": "E-book manager",
+          "method": "flatpak",
+          "package": "com.calibre_ebook.calibre"
+        },
+        {
+          "id": "notion-prod",
+          "name": "Notion",
+          "summary": "Notes & docs \u2014 vendor desktop app",
+          "method": "browser",
+          "package": "notion",
+          "detect": "notion-app",
+          "url": "https://www.notion.com/desktop",
+          "store": "vendor"
+        },
+        {
+          "id": "evernote",
+          "name": "Evernote",
+          "summary": "Notes \u2014 vendor download",
+          "method": "browser",
+          "package": "evernote",
+          "detect": "evernote",
+          "url": "https://evernote.com/download",
+          "store": "vendor"
+        },
+        {
+          "id": "todoist",
+          "name": "Todoist",
+          "summary": "Task manager \u2014 vendor / AppImage options",
+          "method": "browser",
+          "package": "todoist",
+          "detect": "todoist",
+          "url": "https://www.todoist.com/downloads",
+          "store": "vendor"
+        },
+        {
+          "id": "logseq",
+          "name": "Logseq",
+          "summary": "Local-first knowledge base \u2014 GitHub releases",
+          "method": "browser",
+          "package": "logseq",
+          "detect": "logseq",
+          "url": "https://github.com/logseq/logseq/releases",
+          "store": "vendor"
+        },
+        {
+          "id": "zotero",
+          "name": "Zotero",
+          "summary": "Research references \u2014 vendor tarball",
+          "method": "browser",
+          "package": "zotero",
+          "detect": "zotero",
+          "url": "https://www.zotero.org/download/",
+          "store": "vendor"
+        },
+        {
+          "id": "wps-office",
+          "name": "WPS Office",
+          "summary": "Office suite \u2014 Kingsoft vendor RPM",
+          "method": "browser",
+          "package": "wps-office",
+          "detect": "wps",
+          "url": "https://www.wps.com/office/linux/",
+          "store": "vendor"
+        },
+        {
+          "id": "master-pdf",
+          "name": "Master PDF Editor",
+          "summary": "PDF editor \u2014 Code Industry vendor download",
+          "method": "browser",
+          "package": "master-pdf-editor",
+          "detect": "masterpdfeditor5",
+          "url": "https://code-industry.net/free-pdf-editor/",
+          "store": "vendor"
+        },
+        {
+          "id": "foliate",
+          "name": "Foliate",
+          "summary": "Beautiful e-book reader",
+          "method": "flatpak",
+          "package": "com.github.johnfactotum.Foliate"
+        },
+        {
+          "id": "apostrophe",
+          "name": "Apostrophe",
+          "summary": "Distraction-free Markdown editor",
+          "method": "flatpak",
+          "package": "org.gnome.gitlab.somas.Apostrophe"
+        },
+        {
+          "id": "nextcloud",
+          "name": "Nextcloud Desktop",
+          "summary": "Sync files with your Nextcloud server",
+          "method": "flatpak",
+          "package": "com.nextcloud.desktopclient.nextcloud"
+        },
+        {
+          "id": "gnucash",
+          "name": "GnuCash",
+          "summary": "Personal and small-business accounting",
+          "method": "flatpak",
+          "package": "org.gnucash.GnuCash"
+        },
+        {
+          "id": "pdfarranger",
+          "name": "PDF Arranger",
+          "summary": "Merge, split, and rearrange PDF pages",
+          "method": "flatpak",
+          "package": "com.github.jeromerobert.pdfarranger"
+        },
+        {
+          "id": "xournalpp",
+          "name": "Xournal++",
+          "summary": "Handwriting and PDF annotation",
+          "method": "flatpak",
+          "package": "com.github.xournalpp.xournalpp"
+        },
+        {
+          "id": "okular",
+          "name": "Okular",
+          "summary": "Universal document viewer from KDE",
+          "method": "flatpak",
+          "package": "org.kde.okular"
+        },
+        {
+          "id": "dialect",
+          "name": "Dialect",
+          "summary": "Translate between languages",
+          "method": "flatpak",
+          "package": "app.drey.Dialect"
+        }
+      ]
+    },
+    {
+      "id": "developer",
+      "name": "Developer",
+      "apps": [
+        {
+          "id": "cursor",
+          "name": "Cursor",
+          "summary": "AI code editor \u2014 vendor RPM (not in Fedora/Flathub)",
+          "method": "cursor_rpm",
+          "package": "cursor",
+          "detect": "cursor",
+          "store": "vendor"
+        },
+        {
+          "id": "jetbrains-toolbox",
+          "name": "JetBrains Toolbox",
+          "summary": "Install & update IntelliJ, PyCharm, WebStorm, etc.",
+          "method": "toolbox_tarball",
+          "package": "jetbrains-toolbox",
+          "detect": "jetbrains-toolbox",
+          "store": "vendor"
+        },
+        {
+          "id": "zed",
+          "name": "Zed",
+          "summary": "Fast collaborative code editor",
+          "method": "flatpak",
+          "package": "dev.zed.Zed"
+        },
+        {
+          "id": "vscode",
+          "name": "Visual Studio Code",
+          "summary": "Code editor from Microsoft",
+          "method": "flatpak",
+          "package": "com.visualstudio.code"
+        },
+        {
+          "id": "vscodium",
+          "name": "VSCodium",
+          "summary": "Open-source VS Code builds",
+          "method": "flatpak",
+          "package": "com.vscodium.codium"
+        },
+        {
+          "id": "sublime-text",
+          "name": "Sublime Text",
+          "summary": "Sophisticated text editor \u2014 download from sublimetext.com",
+          "method": "browser",
+          "package": "sublime-text",
+          "detect": "subl",
+          "url": "https://www.sublimetext.com/download",
+          "store": "vendor"
+        },
+        {
+          "id": "warp",
+          "name": "Warp",
+          "summary": "Modern terminal \u2014 vendor RPM (not in Fedora stores)",
+          "method": "rpm_url",
+          "package": "warp-terminal",
+          "detect": "warp-terminal",
+          "url": "https://app.warp.dev/download?package=rpm",
+          "store": "vendor"
+        },
+        {
+          "id": "github-desktop",
+          "name": "GitHub Desktop",
+          "summary": "Git GUI for GitHub",
+          "method": "flatpak",
+          "package": "io.github.shiftey.Desktop"
+        },
+        {
+          "id": "gitkraken",
+          "name": "GitKraken",
+          "summary": "Git client \u2014 download from gitkraken.com",
+          "method": "browser",
+          "package": "gitkraken",
+          "detect": "gitkraken",
+          "url": "https://www.gitkraken.com/download",
+          "store": "vendor"
+        },
+        {
+          "id": "podman-desktop",
+          "name": "Podman Desktop",
+          "summary": "Containers and Kubernetes GUI",
+          "method": "flatpak",
+          "package": "io.podman_desktop.PodmanDesktop"
+        },
+        {
+          "id": "docker-desktop",
+          "name": "Docker Desktop",
+          "summary": "Docker Desktop for Linux \u2014 vendor package",
+          "method": "browser",
+          "package": "docker-desktop",
+          "detect": "docker-desktop",
+          "url": "https://docs.docker.com/desktop/setup/install/linux/",
+          "store": "vendor"
+        },
+        {
+          "id": "postman",
+          "name": "Postman",
+          "summary": "API development platform",
+          "method": "flatpak",
+          "package": "com.getpostman.Postman"
+        },
+        {
+          "id": "bruno",
+          "name": "Bruno",
+          "summary": "Git-friendly API client",
+          "method": "flatpak",
+          "package": "com.usebruno.Bruno"
+        },
+        {
+          "id": "insomnia",
+          "name": "Insomnia",
+          "summary": "API design and testing",
+          "method": "flatpak",
+          "package": "rest.insomnia.Insomnia"
+        },
+        {
+          "id": "dbeaver",
+          "name": "DBeaver Community",
+          "summary": "Universal database tool",
+          "method": "flatpak",
+          "package": "io.dbeaver.DBeaverCommunity"
+        },
+        {
+          "id": "beekeeper",
+          "name": "Beekeeper Studio",
+          "summary": "Modern SQL editor",
+          "method": "flatpak",
+          "package": "io.beekeeperstudio.Studio"
+        },
+        {
+          "id": "android-studio",
+          "name": "Android Studio",
+          "summary": "Official Android IDE",
+          "method": "flatpak",
+          "package": "com.google.AndroidStudio"
+        },
+        {
+          "id": "ollama",
+          "name": "Ollama",
+          "summary": "Run local LLMs \u2014 vendor install script",
+          "method": "script",
+          "package": "ollama",
+          "detect": "ollama",
+          "url": "https://ollama.com/install.sh",
+          "store": "vendor"
+        },
+        {
+          "id": "lmstudio",
+          "name": "LM Studio",
+          "summary": "Local LLM desktop app \u2014 download AppImage",
+          "method": "browser",
+          "package": "lm-studio",
+          "detect": "lm-studio",
+          "url": "https://lmstudio.ai/download",
+          "store": "vendor"
+        },
+        {
+          "id": "ngrok",
+          "name": "ngrok",
+          "summary": "Secure tunnels to localhost \u2014 vendor download",
+          "method": "browser",
+          "package": "ngrok",
+          "detect": "ngrok",
+          "url": "https://ngrok.com/download",
+          "store": "vendor"
+        },
+        {
+          "id": "gnome-builder",
+          "name": "Builder",
+          "summary": "IDE for GNOME application development",
+          "method": "flatpak",
+          "package": "org.gnome.Builder"
+        },
+        {
+          "id": "kate",
+          "name": "Kate",
+          "summary": "Advanced text editor from KDE",
+          "method": "flatpak",
+          "package": "org.kde.kate"
+        },
+        {
+          "id": "meld",
+          "name": "Meld",
+          "summary": "Visual diff and merge tool",
+          "method": "flatpak",
+          "package": "org.gnome.meld"
+        },
+        {
+          "id": "wireshark",
+          "name": "Wireshark",
+          "summary": "Network protocol analyzer",
+          "method": "flatpak",
+          "package": "org.wireshark.Wireshark"
+        },
+        {
+          "id": "filezilla",
+          "name": "FileZilla",
+          "summary": "FTP, FTPS and SFTP client",
+          "method": "flatpak",
+          "package": "org.filezillaproject.Filezilla"
+        },
+        {
+          "id": "pods",
+          "name": "Pods",
+          "summary": "Manage Podman containers with a GTK UI",
+          "method": "flatpak",
+          "package": "com.github.marhkb.Pods"
+        },
+        {
+          "id": "ptyxis",
+          "name": "Ptyxis",
+          "summary": "Container-oriented terminal from GNOME",
+          "method": "flatpak",
+          "package": "app.devsuite.Ptyxis"
+        },
+        {
+          "id": "blackbox",
+          "name": "Black Box",
+          "summary": "Elegant GTK terminal",
+          "method": "flatpak",
+          "package": "com.raggesilver.BlackBox"
+        },
+        {
+          "id": "konsole",
+          "name": "Konsole",
+          "summary": "Terminal emulator from KDE",
+          "method": "flatpak",
+          "package": "org.kde.konsole"
+        },
+        {
+          "id": "commit",
+          "name": "Commit",
+          "summary": "Commit message editor",
+          "method": "flatpak",
+          "package": "re.sonny.Commit"
+        }
+      ]
+    },
+    {
+      "id": "direct",
+      "name": "Outside app stores",
+      "apps": [
+        {
+          "id": "cursor-direct",
+          "name": "Cursor",
+          "summary": "AI code editor via Cursor\u2019s own RPM repo",
+          "method": "cursor_rpm",
+          "package": "cursor",
+          "detect": "cursor",
+          "store": "vendor"
+        },
+        {
+          "id": "toolbox-direct",
+          "name": "JetBrains Toolbox",
+          "summary": "Direct from JetBrains (not Flathub/DNF)",
+          "method": "toolbox_tarball",
+          "package": "jetbrains-toolbox",
+          "detect": "jetbrains-toolbox",
+          "store": "vendor"
+        },
+        {
+          "id": "warp-direct",
+          "name": "Warp Terminal",
+          "summary": "Vendor RPM from Warp",
+          "method": "rpm_url",
+          "package": "warp-terminal",
+          "detect": "warp-terminal",
+          "url": "https://app.warp.dev/download?package=rpm",
+          "store": "vendor"
+        },
+        {
+          "id": "ollama-direct",
+          "name": "Ollama",
+          "summary": "Official install script from ollama.com",
+          "method": "script",
+          "package": "ollama",
+          "detect": "ollama",
+          "url": "https://ollama.com/install.sh",
+          "store": "vendor"
+        },
+        {
+          "id": "chrome-direct",
+          "name": "Google Chrome",
+          "summary": "Google\u2019s own yum repo (not Fedora)",
+          "method": "dnf",
+          "package": "google-chrome-stable",
+          "store": "vendor",
+          "repo_hint": "Needs google-chrome.repo"
+        },
+        {
+          "id": "1password",
+          "name": "1Password",
+          "summary": "Password manager \u2014 vendor download",
+          "method": "browser",
+          "package": "1password",
+          "detect": "1password",
+          "url": "https://1password.com/downloads/linux/",
+          "store": "vendor"
+        },
+        {
+          "id": "dropbox",
+          "name": "Dropbox",
+          "summary": "Cloud sync \u2014 vendor download",
+          "method": "browser",
+          "package": "dropbox",
+          "detect": "dropbox",
+          "url": "https://www.dropbox.com/install-linux",
+          "store": "vendor"
+        },
+        {
+          "id": "notion",
+          "name": "Notion",
+          "summary": "Notes & docs \u2014 vendor AppImage / download",
+          "method": "browser",
+          "package": "notion",
+          "detect": "notion-app",
+          "url": "https://www.notion.com/desktop",
+          "store": "vendor"
+        },
+        {
+          "id": "anydesk",
+          "name": "AnyDesk",
+          "summary": "Remote desktop \u2014 vendor RPM",
+          "method": "browser",
+          "package": "anydesk",
+          "detect": "anydesk",
+          "url": "https://anydesk.com/en/downloads/linux",
+          "store": "vendor"
+        },
+        {
+          "id": "teamviewer",
+          "name": "TeamViewer",
+          "summary": "Remote support \u2014 vendor RPM",
+          "method": "browser",
+          "package": "teamviewer",
+          "detect": "teamviewer",
+          "url": "https://www.teamviewer.com/en/download/linux/",
+          "store": "vendor"
+        },
+        {
+          "id": "balena-etcher",
+          "name": "balenaEtcher",
+          "summary": "Flash OS images \u2014 AppImage from balena",
+          "method": "browser",
+          "package": "balena-etcher",
+          "detect": "balena-etcher",
+          "url": "https://etcher.balena.io/",
+          "store": "vendor"
+        },
+        {
+          "id": "rustdesk",
+          "name": "RustDesk",
+          "summary": "Open-source remote desktop \u2014 vendor AppImage/RPM",
+          "method": "browser",
+          "package": "rustdesk",
+          "detect": "rustdesk",
+          "url": "https://rustdesk.com/",
+          "store": "vendor"
+        }
+      ]
+    },
+    {
+      "id": "graphics",
+      "name": "Graphics and design",
+      "apps": [
+        {
+          "id": "gimp",
+          "name": "GIMP",
+          "summary": "Image editor",
+          "method": "flatpak",
+          "package": "org.gimp.GIMP"
+        },
+        {
+          "id": "inkscape",
+          "name": "Inkscape",
+          "summary": "Vector graphics",
+          "method": "flatpak",
+          "package": "org.inkscape.Inkscape"
+        },
+        {
+          "id": "krita",
+          "name": "Krita",
+          "summary": "Digital painting",
+          "method": "flatpak",
+          "package": "org.kde.krita"
+        },
+        {
+          "id": "blender",
+          "name": "Blender",
+          "summary": "3D creation suite",
+          "method": "flatpak",
+          "package": "org.blender.Blender"
+        },
+        {
+          "id": "godot",
+          "name": "Godot Engine",
+          "summary": "Game engine",
+          "method": "flatpak",
+          "package": "org.godotengine.Godot"
+        },
+        {
+          "id": "affinity",
+          "name": "Affinity (Photo/Designer)",
+          "summary": "Serif creative apps \u2014 vendor Linux beta/download when available",
+          "method": "browser",
+          "package": "affinity",
+          "detect": "affinity",
+          "url": "https://affinity.serif.com/en-us/download/",
+          "store": "vendor"
+        },
+        {
+          "id": "figma-linux",
+          "name": "Figma",
+          "summary": "Design tool \u2014 use web or community Linux clients",
+          "method": "browser",
+          "package": "figma",
+          "detect": "figma-linux",
+          "url": "https://www.figma.com/downloads/",
+          "store": "vendor"
+        },
+        {
+          "id": "rawtherapee",
+          "name": "RawTherapee",
+          "summary": "RAW photo processing \u2014 often via Flatpak; vendor builds also exist",
+          "method": "flatpak",
+          "package": "com.rawtherapee.RawTherapee"
+        },
+        {
+          "id": "darktable",
+          "name": "darktable",
+          "summary": "Photography workflow",
+          "method": "flatpak",
+          "package": "org.darktable.Darktable"
+        },
+        {
+          "id": "fusion360",
+          "name": "Fusion / CAD notes",
+          "summary": "Autodesk Fusion is Windows-focused \u2014 check vendor Linux options",
+          "method": "browser",
+          "package": "fusion360",
+          "detect": "fusion360",
+          "url": "https://www.autodesk.com/products/fusion-360/overview",
+          "store": "vendor"
+        },
+        {
+          "id": "freecad",
+          "name": "FreeCAD",
+          "summary": "Open-source parametric CAD",
+          "method": "flatpak",
+          "package": "org.freecad.FreeCAD"
+        },
+        {
+          "id": "purge-shutter-encoder",
+          "name": "Shutter Encoder",
+          "summary": "Pro media converter \u2014 vendor Linux download",
+          "method": "browser",
+          "package": "shutter-encoder",
+          "detect": "Shutter Encoder",
+          "url": "https://www.shutterencoder.com/en/",
+          "store": "vendor"
+        },
+        {
+          "id": "pinta",
+          "name": "Pinta",
+          "summary": "Simple painting and image editing",
+          "method": "flatpak",
+          "package": "com.github.PintaProject.Pinta"
+        },
+        {
+          "id": "scribus",
+          "name": "Scribus",
+          "summary": "Open-source desktop publishing",
+          "method": "flatpak",
+          "package": "net.scribus.Scribus"
+        },
+        {
+          "id": "drawio",
+          "name": "draw.io",
+          "summary": "Diagrams and flowcharts",
+          "method": "flatpak",
+          "package": "com.jgraph.drawio.desktop"
+        },
+        {
+          "id": "openscad",
+          "name": "OpenSCAD",
+          "summary": "Programmers\u2019 solid 3D CAD modeller",
+          "method": "flatpak",
+          "package": "org.openscad.OpenSCAD"
+        },
+        {
+          "id": "qgis",
+          "name": "QGIS",
+          "summary": "Geographic information system",
+          "method": "flatpak",
+          "package": "org.qgis.qgis"
+        },
+        {
+          "id": "digikam",
+          "name": "digiKam",
+          "summary": "Professional photo management",
+          "method": "flatpak",
+          "package": "org.kde.digikam"
+        },
+        {
+          "id": "gwenview",
+          "name": "Gwenview",
+          "summary": "KDE image viewer",
+          "method": "flatpak",
+          "package": "org.kde.gwenview"
+        }
+      ]
+    },
+    {
+      "id": "utilities",
+      "name": "Utilities",
+      "apps": [
+        {
+          "id": "flatseal",
+          "name": "Flatseal",
+          "summary": "Manage Flatpak permissions",
+          "method": "flatpak",
+          "package": "com.github.tchx84.Flatseal"
+        },
+        {
+          "id": "bitwarden",
+          "name": "Bitwarden",
+          "summary": "Password manager",
+          "method": "flatpak",
+          "package": "com.bitwarden.desktop"
+        },
+        {
+          "id": "keepassxc",
+          "name": "KeePassXC",
+          "summary": "Offline password manager",
+          "method": "flatpak",
+          "package": "org.keepassxc.KeePassXC"
+        },
+        {
+          "id": "extension-manager",
+          "name": "Extension Manager",
+          "summary": "Browse GNOME Shell extensions",
+          "method": "flatpak",
+          "package": "com.mattjakeman.ExtensionManager"
+        },
+        {
+          "id": "resources",
+          "name": "Resources",
+          "summary": "System monitor",
+          "method": "flatpak",
+          "package": "net.nokyan.Resources"
+        },
+        {
+          "id": "boxes",
+          "name": "GNOME Boxes",
+          "summary": "Simple virtual machines",
+          "method": "flatpak",
+          "package": "org.gnome.Boxes"
+        },
+        {
+          "id": "1password-util",
+          "name": "1Password",
+          "summary": "Password manager \u2014 vendor RPM/AppImage",
+          "method": "browser",
+          "package": "1password",
+          "detect": "1password",
+          "url": "https://1password.com/downloads/linux/",
+          "store": "vendor"
+        },
+        {
+          "id": "nordvpn",
+          "name": "NordVPN",
+          "summary": "VPN \u2014 vendor repo/script (not Fedora)",
+          "method": "browser",
+          "package": "nordvpn",
+          "detect": "nordvpn",
+          "url": "https://nordvpn.com/download/linux/",
+          "store": "vendor"
+        },
+        {
+          "id": "mullvad-vpn",
+          "name": "Mullvad VPN",
+          "summary": "VPN \u2014 Mullvad vendor package",
+          "method": "browser",
+          "package": "mullvad-vpn",
+          "detect": "mullvad-vpn",
+          "url": "https://mullvad.net/en/download/vpn/linux",
+          "store": "vendor"
+        },
+        {
+          "id": "tailscale",
+          "name": "Tailscale",
+          "summary": "Mesh VPN \u2014 vendor install script/repo",
+          "method": "script",
+          "package": "tailscale",
+          "detect": "tailscale",
+          "url": "https://tailscale.com/install.sh",
+          "store": "vendor"
+        },
+        {
+          "id": "virtualbox",
+          "name": "VirtualBox",
+          "summary": "Oracle VM \u2014 vendor RPM (not Fedora App Store)",
+          "method": "browser",
+          "package": "VirtualBox",
+          "detect": "VirtualBox",
+          "url": "https://www.virtualbox.org/wiki/Linux_Downloads",
+          "store": "vendor"
+        },
+        {
+          "id": "veracrypt",
+          "name": "VeraCrypt",
+          "summary": "Disk encryption \u2014 vendor download",
+          "method": "browser",
+          "package": "veracrypt",
+          "detect": "veracrypt",
+          "url": "https://www.veracrypt.fr/en/Downloads.html",
+          "store": "vendor"
+        },
+        {
+          "id": "syncthing-tray",
+          "name": "Syncthing",
+          "summary": "P2P file sync \u2014 also on Flathub; vendor builds available",
+          "method": "flatpak",
+          "package": "com.github.zocker_160.SyncThingy"
+        },
+        {
+          "id": "mission-center",
+          "name": "Mission Center",
+          "summary": "Monitor CPU, GPU, memory, and apps",
+          "method": "flatpak",
+          "package": "io.missioncenter.MissionCenter"
+        },
+        {
+          "id": "pika-backup",
+          "name": "Pika Backup",
+          "summary": "Simple backups powered by Borg",
+          "method": "flatpak",
+          "package": "org.gnome.World.PikaBackup"
+        },
+        {
+          "id": "deja-dup",
+          "name": "D\u00e9j\u00e0 Dup Backups",
+          "summary": "Simple backup tool for GNOME",
+          "method": "flatpak",
+          "package": "org.gnome.DejaDup"
+        },
+        {
+          "id": "localsend",
+          "name": "LocalSend",
+          "summary": "Share files to nearby devices with no account",
+          "method": "flatpak",
+          "package": "org.localsend.localsend_app"
+        },
+        {
+          "id": "qbittorrent",
+          "name": "qBittorrent",
+          "summary": "Open-source BitTorrent client",
+          "method": "flatpak",
+          "package": "org.qbittorrent.qBittorrent"
+        },
+        {
+          "id": "transmission",
+          "name": "Transmission",
+          "summary": "Easy, free BitTorrent client",
+          "method": "flatpak",
+          "package": "com.transmissionbt.Transmission"
+        },
+        {
+          "id": "fragments",
+          "name": "Fragments",
+          "summary": "Easy BitTorrent client for GNOME",
+          "method": "flatpak",
+          "package": "de.haeckerfelix.Fragments"
+        },
+        {
+          "id": "bleachbit",
+          "name": "BleachBit",
+          "summary": "Clean junk files and free disk space",
+          "method": "flatpak",
+          "package": "org.bleachbit.BleachBit"
+        },
+        {
+          "id": "warehouse",
+          "name": "Warehouse",
+          "summary": "Manage Flatpak apps, runtimes, and data",
+          "method": "flatpak",
+          "package": "io.github.flattool.Warehouse"
+        },
+        {
+          "id": "authenticator",
+          "name": "Authenticator",
+          "summary": "Two-factor authentication codes",
+          "method": "flatpak",
+          "package": "com.belmoussaoui.Authenticator"
+        },
+        {
+          "id": "secrets",
+          "name": "Secrets",
+          "summary": "Password manager for GNOME (Password Safe)",
+          "method": "flatpak",
+          "package": "org.gnome.World.Secrets"
+        },
+        {
+          "id": "metadata-cleaner",
+          "name": "Metadata Cleaner",
+          "summary": "View and remove metadata from files",
+          "method": "flatpak",
+          "package": "fr.romainvigier.MetadataCleaner"
+        },
+        {
+          "id": "simple-scan",
+          "name": "Document Scanner",
+          "summary": "Scan documents and photos",
+          "method": "flatpak",
+          "package": "org.gnome.SimpleScan"
+        },
+        {
+          "id": "nicotine",
+          "name": "Nicotine+",
+          "summary": "Soulseek client for file sharing",
+          "method": "flatpak",
+          "package": "org.nicotine_plus.Nicotine"
+        }
+      ]
+    },
+    {
+      "id": "gaming",
+      "name": "Gaming",
+      "apps": [
+        {
+          "id": "steam",
+          "name": "Steam",
+          "summary": "Game store and launcher",
+          "method": "flatpak",
+          "package": "com.valvesoftware.Steam"
+        },
+        {
+          "id": "heroic",
+          "name": "Heroic Games Launcher",
+          "summary": "Epic / GOG / Amazon games",
+          "method": "flatpak",
+          "package": "com.heroicgameslauncher.hgl"
+        },
+        {
+          "id": "lutris",
+          "name": "Lutris",
+          "summary": "Game manager for Linux",
+          "method": "flatpak",
+          "package": "net.lutris.Lutris"
+        },
+        {
+          "id": "protonup",
+          "name": "ProtonUp-Qt",
+          "summary": "Manage Proton versions",
+          "method": "flatpak",
+          "package": "net.davidotek.pupgui2"
+        },
+        {
+          "id": "minecraft-launcher",
+          "name": "Minecraft Launcher",
+          "summary": "Official Minecraft launcher \u2014 Mojang/Microsoft vendor",
+          "method": "browser",
+          "package": "minecraft-launcher",
+          "detect": "minecraft-launcher",
+          "url": "https://www.minecraft.net/en-us/download",
+          "store": "vendor"
+        },
+        {
+          "id": "prism-launcher",
+          "name": "Prism Launcher",
+          "summary": "Multi-instance Minecraft launcher",
+          "method": "flatpak",
+          "package": "org.prismlauncher.PrismLauncher"
+        },
+        {
+          "id": "battlenet",
+          "name": "Battle.net",
+          "summary": "Blizzard launcher \u2014 usually via Wine/Lutris, not native stores",
+          "method": "browser",
+          "package": "battle.net",
+          "detect": "battle.net",
+          "url": "https://download.battle.net/",
+          "store": "vendor"
+        },
+        {
+          "id": "ea-app",
+          "name": "EA App",
+          "summary": "EA games \u2014 Windows app via Proton/Lutris",
+          "method": "browser",
+          "package": "ea-app",
+          "detect": "ea-app",
+          "url": "https://www.ea.com/ea-app",
+          "store": "vendor"
+        },
+        {
+          "id": "geforce-now",
+          "name": "GeForce NOW",
+          "summary": "NVIDIA cloud gaming \u2014 browser / Electron clients",
+          "method": "browser",
+          "package": "geforcenow",
+          "detect": "geforcenow",
+          "url": "https://www.nvidia.com/en-us/geforce-now/",
+          "store": "vendor"
+        },
+        {
+          "id": "itch",
+          "name": "itch.io app",
+          "summary": "Indie games \u2014 vendor AppImage",
+          "method": "browser",
+          "package": "itch",
+          "detect": "itch",
+          "url": "https://itch.io/app",
+          "store": "vendor"
+        },
+        {
+          "id": "osu",
+          "name": "osu!",
+          "summary": "Rhythm game \u2014 official Linux build from osu.ppy.sh",
+          "method": "browser",
+          "package": "osu",
+          "detect": "osu!",
+          "url": "https://osu.ppy.sh/home/cpumares",
+          "store": "vendor"
+        },
+        {
+          "id": "roblox",
+          "name": "Roblox (Sober / Vinegar)",
+          "summary": "Community Linux clients \u2014 not official Fedora packages",
+          "method": "browser",
+          "package": "roblox",
+          "detect": "sober",
+          "url": "https://sober.vinegarhq.org/",
+          "store": "vendor"
+        },
+        {
+          "id": "bottles",
+          "name": "Bottles",
+          "summary": "Run Windows software and games in isolated prefixes",
+          "method": "flatpak",
+          "package": "com.usebottles.bottles"
+        },
+        {
+          "id": "retroarch",
+          "name": "RetroArch",
+          "summary": "Frontend for emulators and game engines",
+          "method": "flatpak",
+          "package": "org.libretro.RetroArch"
+        },
+        {
+          "id": "dolphin-emu",
+          "name": "Dolphin Emulator",
+          "summary": "GameCube and Wii emulator",
+          "method": "flatpak",
+          "package": "org.DolphinEmu.dolphin-emu"
+        },
+        {
+          "id": "pcsx2",
+          "name": "PCSX2",
+          "summary": "PlayStation 2 emulator",
+          "method": "flatpak",
+          "package": "net.pcsx2.PCSX2"
+        },
+        {
+          "id": "duckstation",
+          "name": "DuckStation",
+          "summary": "PlayStation 1 emulator",
+          "method": "flatpak",
+          "package": "org.duckstation.DuckStation"
+        },
+        {
+          "id": "ppsspp",
+          "name": "PPSSPP",
+          "summary": "PSP emulator",
+          "method": "flatpak",
+          "package": "org.ppsspp.PPSSPP"
+        },
+        {
+          "id": "minetest",
+          "name": "Luanti (Minetest)",
+          "summary": "Open-source voxel game engine",
+          "method": "flatpak",
+          "package": "net.minetest.Minetest"
+        },
+        {
+          "id": "wesnoth",
+          "name": "Battle for Wesnoth",
+          "summary": "Turn-based fantasy strategy game",
+          "method": "flatpak",
+          "package": "org.wesnoth.Wesnoth"
+        },
+        {
+          "id": "0ad",
+          "name": "0 A.D.",
+          "summary": "Historical real-time strategy game",
+          "method": "flatpak",
+          "package": "com.play0ad.zeroad"
+        },
+        {
+          "id": "supertuxkart",
+          "name": "SuperTuxKart",
+          "summary": "Kart racing with free software characters",
+          "method": "flatpak",
+          "package": "net.supertuxkart.SuperTuxKart"
+        },
+        {
+          "id": "antimicrox",
+          "name": "AntiMicroX",
+          "summary": "Map gamepad buttons to keyboard and mouse",
+          "method": "flatpak",
+          "package": "io.github.antimicrox.antimicrox"
+        }
+      ]
+    }
+  ]
+}

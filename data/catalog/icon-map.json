@@ -1,0 +1,1509 @@
+{
+  "version": 1,
+  "icons": {
+    "firefox": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.mozilla.firefox.png",
+      "icon_id": "org.mozilla.firefox",
+      "source": "flatpak"
+    },
+    "brave": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.brave.Browser.png",
+      "icon_id": "com.brave.Browser",
+      "source": "flatpak"
+    },
+    "vivaldi": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.vivaldi.Vivaldi.png",
+      "icon_id": "com.vivaldi.Vivaldi",
+      "source": "flatpak"
+    },
+    "ungoogled": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/io.github.ungoogled_software.ungoogled_chromium.png",
+      "icon_id": "io.github.ungoogled_software.ungoogled_chromium",
+      "source": "flatpak"
+    },
+    "discord": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.discordapp.Discord.png",
+      "icon_id": "com.discordapp.Discord",
+      "source": "flatpak"
+    },
+    "slack": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.slack.Slack.png",
+      "icon_id": "com.slack.Slack",
+      "source": "flatpak"
+    },
+    "telegram": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.telegram.desktop.png",
+      "icon_id": "org.telegram.desktop",
+      "source": "flatpak"
+    },
+    "signal": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.signal.Signal.png",
+      "icon_id": "org.signal.Signal",
+      "source": "flatpak"
+    },
+    "zoom": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/us.zoom.Zoom.png",
+      "icon_id": "us.zoom.Zoom",
+      "source": "flatpak"
+    },
+    "element": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/im.riot.Riot.png",
+      "icon_id": "im.riot.Riot",
+      "source": "flatpak"
+    },
+    "vlc": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.videolan.VLC.png",
+      "icon_id": "org.videolan.VLC",
+      "source": "flatpak"
+    },
+    "spotify": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.spotify.Client.png",
+      "icon_id": "com.spotify.Client",
+      "source": "flatpak"
+    },
+    "obs": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.obsproject.Studio.png",
+      "icon_id": "com.obsproject.Studio",
+      "source": "flatpak"
+    },
+    "audacity": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.audacityteam.Audacity.png",
+      "icon_id": "org.audacityteam.Audacity",
+      "source": "flatpak"
+    },
+    "handbrake": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/fr.handbrake.ghb.png",
+      "icon_id": "fr.handbrake.ghb",
+      "source": "flatpak"
+    },
+    "mpv": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/io.mpv.Mpv.png",
+      "icon_id": "io.mpv.Mpv",
+      "source": "flatpak"
+    },
+    "libreoffice": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.libreoffice.LibreOffice.png",
+      "icon_id": "org.libreoffice.LibreOffice",
+      "source": "flatpak"
+    },
+    "onlyoffice": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.onlyoffice.desktopeditors.png",
+      "icon_id": "org.onlyoffice.desktopeditors",
+      "source": "flatpak"
+    },
+    "obsidian": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/md.obsidian.Obsidian.png",
+      "icon_id": "md.obsidian.Obsidian",
+      "source": "flatpak"
+    },
+    "joplin": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/net.cozic.joplin_desktop.png",
+      "icon_id": "net.cozic.joplin_desktop",
+      "source": "flatpak"
+    },
+    "calibre": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.calibre_ebook.calibre.png",
+      "icon_id": "com.calibre_ebook.calibre",
+      "source": "flatpak"
+    },
+    "zed": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/dev.zed.Zed.png",
+      "icon_id": "dev.zed.Zed",
+      "source": "flatpak"
+    },
+    "vscode": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.visualstudio.code.png",
+      "icon_id": "com.visualstudio.code",
+      "source": "flatpak"
+    },
+    "vscodium": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.vscodium.codium.png",
+      "icon_id": "com.vscodium.codium",
+      "source": "flatpak"
+    },
+    "github-desktop": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/io.github.shiftey.Desktop.png",
+      "icon_id": "io.github.shiftey.Desktop",
+      "source": "flatpak"
+    },
+    "podman-desktop": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/io.podman_desktop.PodmanDesktop.png",
+      "icon_id": "io.podman_desktop.PodmanDesktop",
+      "source": "flatpak"
+    },
+    "postman": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.getpostman.Postman.png",
+      "icon_id": "com.getpostman.Postman",
+      "source": "flatpak"
+    },
+    "bruno": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.usebruno.Bruno.png",
+      "icon_id": "com.usebruno.Bruno",
+      "source": "flatpak"
+    },
+    "insomnia": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/rest.insomnia.Insomnia.png",
+      "icon_id": "rest.insomnia.Insomnia",
+      "source": "flatpak"
+    },
+    "dbeaver": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/io.dbeaver.DBeaverCommunity.png",
+      "icon_id": "io.dbeaver.DBeaverCommunity",
+      "source": "flatpak"
+    },
+    "beekeeper": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/io.beekeeperstudio.Studio.png",
+      "icon_id": "io.beekeeperstudio.Studio",
+      "source": "flatpak"
+    },
+    "android-studio": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.google.AndroidStudio.png",
+      "icon_id": "com.google.AndroidStudio",
+      "source": "flatpak"
+    },
+    "gimp": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.gimp.GIMP.png",
+      "icon_id": "org.gimp.GIMP",
+      "source": "flatpak"
+    },
+    "inkscape": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.inkscape.Inkscape.png",
+      "icon_id": "org.inkscape.Inkscape",
+      "source": "flatpak"
+    },
+    "krita": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.kde.krita.png",
+      "icon_id": "org.kde.krita",
+      "source": "flatpak"
+    },
+    "blender": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.blender.Blender.png",
+      "icon_id": "org.blender.Blender",
+      "source": "flatpak"
+    },
+    "godot": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.godotengine.Godot.png",
+      "icon_id": "org.godotengine.Godot",
+      "source": "flatpak"
+    },
+    "rawtherapee": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.rawtherapee.RawTherapee.png",
+      "icon_id": "com.rawtherapee.RawTherapee",
+      "source": "flatpak"
+    },
+    "darktable": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.darktable.Darktable.png",
+      "icon_id": "org.darktable.Darktable",
+      "source": "flatpak"
+    },
+    "freecad": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.freecad.FreeCAD.png",
+      "icon_id": "org.freecad.FreeCAD",
+      "source": "flatpak"
+    },
+    "flatseal": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.github.tchx84.Flatseal.png",
+      "icon_id": "com.github.tchx84.Flatseal",
+      "source": "flatpak"
+    },
+    "bitwarden": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.bitwarden.desktop.png",
+      "icon_id": "com.bitwarden.desktop",
+      "source": "flatpak"
+    },
+    "keepassxc": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.keepassxc.KeePassXC.png",
+      "icon_id": "org.keepassxc.KeePassXC",
+      "source": "flatpak"
+    },
+    "extension-manager": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.mattjakeman.ExtensionManager.png",
+      "icon_id": "com.mattjakeman.ExtensionManager",
+      "source": "flatpak"
+    },
+    "resources": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/net.nokyan.Resources.png",
+      "icon_id": "net.nokyan.Resources",
+      "source": "flatpak"
+    },
+    "boxes": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.gnome.Boxes.png",
+      "icon_id": "org.gnome.Boxes",
+      "source": "flatpak"
+    },
+    "syncthing-tray": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.github.zocker_160.SyncThingy.png",
+      "icon_id": "com.github.zocker_160.SyncThingy",
+      "source": "flatpak"
+    },
+    "steam": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.valvesoftware.Steam.png",
+      "icon_id": "com.valvesoftware.Steam",
+      "source": "flatpak"
+    },
+    "heroic": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.heroicgameslauncher.hgl.png",
+      "icon_id": "com.heroicgameslauncher.hgl",
+      "source": "flatpak"
+    },
+    "lutris": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/net.lutris.Lutris.png",
+      "icon_id": "net.lutris.Lutris",
+      "source": "flatpak"
+    },
+    "protonup": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/net.davidotek.pupgui2.png",
+      "icon_id": "net.davidotek.pupgui2",
+      "source": "flatpak"
+    },
+    "prism-launcher": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.prismlauncher.PrismLauncher.png",
+      "icon_id": "org.prismlauncher.PrismLauncher",
+      "source": "flatpak"
+    },
+    "winutil-brave": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.brave.Browser.png",
+      "icon_id": "com.brave.Browser",
+      "source": "flatpak"
+    },
+    "winutil-chromium": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.chromium.Chromium.png",
+      "icon_id": "org.chromium.Chromium",
+      "source": "flatpak"
+    },
+    "winutil-firefox": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.mozilla.firefox.png",
+      "icon_id": "org.mozilla.firefox",
+      "source": "flatpak"
+    },
+    "winutil-firefoxesr": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.mozilla.firefox.png",
+      "icon_id": "org.mozilla.firefox",
+      "source": "flatpak"
+    },
+    "winutil-librewolf": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/io.gitlab.librewolf-community.png",
+      "icon_id": "io.gitlab.librewolf-community",
+      "source": "flatpak"
+    },
+    "winutil-ungoogled": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/io.github.ungoogled_software.ungoogled_chromium.png",
+      "icon_id": "io.github.ungoogled_software.ungoogled_chromium",
+      "source": "flatpak"
+    },
+    "winutil-vivaldi": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.vivaldi.Vivaldi.png",
+      "icon_id": "com.vivaldi.Vivaldi",
+      "source": "flatpak"
+    },
+    "winutil-ZenBrowser": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/app.zen_browser.zen.png",
+      "icon_id": "app.zen_browser.zen",
+      "source": "flatpak"
+    },
+    "winutil-chatterino": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.chatterino.chatterino.png",
+      "icon_id": "com.chatterino.chatterino",
+      "source": "flatpak"
+    },
+    "winutil-discord": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.discordapp.Discord.png",
+      "icon_id": "com.discordapp.Discord",
+      "source": "flatpak"
+    },
+    "winutil-matrix": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/im.riot.Riot.png",
+      "icon_id": "im.riot.Riot",
+      "source": "flatpak"
+    },
+    "winutil-protonmail": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/me.proton.Mail.png",
+      "icon_id": "me.proton.Mail",
+      "source": "flatpak"
+    },
+    "winutil-qtox": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/io.github.qtox.qTox.png",
+      "icon_id": "io.github.qtox.qTox",
+      "source": "flatpak"
+    },
+    "winutil-signal": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.signal.Signal.png",
+      "icon_id": "org.signal.Signal",
+      "source": "flatpak"
+    },
+    "winutil-slack": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.slack.Slack.png",
+      "icon_id": "com.slack.Slack",
+      "source": "flatpak"
+    },
+    "winutil-telegram": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.telegram.desktop.png",
+      "icon_id": "org.telegram.desktop",
+      "source": "flatpak"
+    },
+    "winutil-thunderbird": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.mozilla.Thunderbird.png",
+      "icon_id": "org.mozilla.Thunderbird",
+      "source": "flatpak"
+    },
+    "winutil-betterbird": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/eu.betterbird.Betterbird.png",
+      "icon_id": "eu.betterbird.Betterbird",
+      "source": "flatpak"
+    },
+    "winutil-vesktop": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/dev.vencord.Vesktop.png",
+      "icon_id": "dev.vencord.Vesktop",
+      "source": "flatpak"
+    },
+    "winutil-zoom": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/us.zoom.Zoom.png",
+      "icon_id": "us.zoom.Zoom",
+      "source": "flatpak"
+    },
+    "winutil-bruno": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.usebruno.Bruno.png",
+      "icon_id": "com.usebruno.Bruno",
+      "source": "flatpak"
+    },
+    "winutil-githubdesktop": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/io.github.shiftey.Desktop.png",
+      "icon_id": "io.github.shiftey.Desktop",
+      "source": "flatpak"
+    },
+    "winutil-postman": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.getpostman.Postman.png",
+      "icon_id": "com.getpostman.Postman",
+      "source": "flatpak"
+    },
+    "winutil-vscode": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.visualstudio.code.png",
+      "icon_id": "com.visualstudio.code",
+      "source": "flatpak"
+    },
+    "winutil-vscodium": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.vscodium.codium.png",
+      "icon_id": "com.vscodium.codium",
+      "source": "flatpak"
+    },
+    "winutil-Zed": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/dev.zed.Zed.png",
+      "icon_id": "dev.zed.Zed",
+      "source": "flatpak"
+    },
+    "winutil-joplin": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/net.cozic.joplin_desktop.png",
+      "icon_id": "net.cozic.joplin_desktop",
+      "source": "flatpak"
+    },
+    "winutil-libreoffice": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.libreoffice.LibreOffice.png",
+      "icon_id": "org.libreoffice.LibreOffice",
+      "source": "flatpak"
+    },
+    "winutil-naps2": {
+      "icon": "https://www.google.com/s2/favicons?domain=www.naps2.com&sz=128",
+      "source": "favicon"
+    },
+    "winutil-obsidian": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/md.obsidian.Obsidian.png",
+      "icon_id": "md.obsidian.Obsidian",
+      "source": "flatpak"
+    },
+    "winutil-okular": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.kde.okular.png",
+      "icon_id": "org.kde.okular",
+      "source": "flatpak"
+    },
+    "winutil-onlyoffice": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.onlyoffice.desktopeditors.png",
+      "icon_id": "org.onlyoffice.desktopeditors",
+      "source": "flatpak"
+    },
+    "winutil-pdfsam": {
+      "icon": "https://www.google.com/s2/favicons?domain=pdfsam.org&sz=128",
+      "source": "favicon"
+    },
+    "winutil-simplenote": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.simplenote.Simplenote.png",
+      "icon_id": "com.simplenote.Simplenote",
+      "source": "flatpak"
+    },
+    "winutil-xournal": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.github.xournalpp.xournalpp.png",
+      "icon_id": "com.github.xournalpp.xournalpp",
+      "source": "flatpak"
+    },
+    "winutil-zotero": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.zotero.Zotero.png",
+      "icon_id": "org.zotero.Zotero",
+      "source": "flatpak"
+    },
+    "winutil-cemu": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/info.cemu.Cemu.png",
+      "icon_id": "info.cemu.Cemu",
+      "source": "flatpak"
+    },
+    "winutil-heroiclauncher": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.heroicgameslauncher.hgl.png",
+      "icon_id": "com.heroicgameslauncher.hgl",
+      "source": "flatpak"
+    },
+    "winutil-modrinth": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.modrinth.ModrinthApp.png",
+      "icon_id": "com.modrinth.ModrinthApp",
+      "source": "flatpak"
+    },
+    "winutil-prismlauncher": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.prismlauncher.PrismLauncher.png",
+      "icon_id": "org.prismlauncher.PrismLauncher",
+      "source": "flatpak"
+    },
+    "winutil-steam": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.valvesoftware.Steam.png",
+      "icon_id": "com.valvesoftware.Steam",
+      "source": "flatpak"
+    },
+    "winutil-audacity": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.audacityteam.Audacity.png",
+      "icon_id": "org.audacityteam.Audacity",
+      "source": "flatpak"
+    },
+    "winutil-blender": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.blender.Blender.png",
+      "icon_id": "org.blender.Blender",
+      "source": "flatpak"
+    },
+    "winutil-calibre": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.calibre_ebook.calibre.png",
+      "icon_id": "com.calibre_ebook.calibre",
+      "source": "flatpak"
+    },
+    "winutil-gimp": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.gimp.GIMP.png",
+      "icon_id": "org.gimp.GIMP",
+      "source": "flatpak"
+    },
+    "winutil-handbrake": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/fr.handbrake.ghb.png",
+      "icon_id": "fr.handbrake.ghb",
+      "source": "flatpak"
+    },
+    "winutil-mpc-qt": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/io.github.mpc_qt.mpc-qt.png",
+      "icon_id": "io.github.mpc_qt.mpc-qt",
+      "source": "flatpak"
+    },
+    "winutil-mpv": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/io.mpv.Mpv.png",
+      "icon_id": "io.mpv.Mpv",
+      "source": "flatpak"
+    },
+    "winutil-nomacs": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.nomacs.ImageLounge.png",
+      "icon_id": "org.nomacs.ImageLounge",
+      "source": "flatpak"
+    },
+    "winutil-notepadplus": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.notepadqq.Notepadqq.png",
+      "icon_id": "com.notepadqq.Notepadqq",
+      "source": "flatpak"
+    },
+    "winutil-obs": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.obsproject.Studio.png",
+      "icon_id": "com.obsproject.Studio",
+      "source": "flatpak"
+    },
+    "winutil-vlc": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.videolan.VLC.png",
+      "icon_id": "org.videolan.VLC",
+      "source": "flatpak"
+    },
+    "winutil-angryipscanner": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.angryip.ipscan.png",
+      "icon_id": "org.angryip.ipscan",
+      "source": "flatpak"
+    },
+    "winutil-protonvpn": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.protonvpn.www.png",
+      "icon_id": "com.protonvpn.www",
+      "source": "flatpak"
+    },
+    "winutil-jellyfinmediaplayer": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.github.iwalton3.jellyfin-media-player.png",
+      "icon_id": "com.github.iwalton3.jellyfin-media-player",
+      "source": "flatpak"
+    },
+    "winutil-kodi": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/tv.kodi.Kodi.png",
+      "icon_id": "tv.kodi.Kodi",
+      "source": "flatpak"
+    },
+    "winutil-localsend": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.localsend.localsend_app.png",
+      "icon_id": "org.localsend.localsend_app",
+      "source": "flatpak"
+    },
+    "winutil-moonlight": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.moonlight_stream.Moonlight.png",
+      "icon_id": "com.moonlight_stream.Moonlight",
+      "source": "flatpak"
+    },
+    "winutil-nextclouddesktop": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.nextcloud.desktopclient.nextcloud.png",
+      "icon_id": "com.nextcloud.desktopclient.nextcloud",
+      "source": "flatpak"
+    },
+    "winutil-sunshine": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/dev.lizardbyte.app.Sunshine.png",
+      "icon_id": "dev.lizardbyte.app.Sunshine",
+      "source": "flatpak"
+    },
+    "winutil-bitwarden": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.bitwarden.desktop.png",
+      "icon_id": "com.bitwarden.desktop",
+      "source": "flatpak"
+    },
+    "winutil-enteauth": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/io.ente.auth.png",
+      "icon_id": "io.ente.auth",
+      "source": "flatpak"
+    },
+    "winutil-keepassxc": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.keepassxc.KeePassXC.png",
+      "icon_id": "org.keepassxc.KeePassXC",
+      "source": "flatpak"
+    },
+    "winutil-openrgb": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.openrgb.OpenRGB.png",
+      "icon_id": "org.openrgb.OpenRGB",
+      "source": "flatpak"
+    },
+    "winutil-peazip": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/io.github.peazip.PeaZip.png",
+      "icon_id": "io.github.peazip.PeaZip",
+      "source": "flatpak"
+    },
+    "winutil-protonpass": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/me.proton.Pass.png",
+      "icon_id": "me.proton.Pass",
+      "source": "flatpak"
+    },
+    "winutil-qbittorrent": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.qbittorrent.qBittorrent.png",
+      "icon_id": "org.qbittorrent.qBittorrent",
+      "source": "flatpak"
+    },
+    "winutil-deskflow": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.deskflow.deskflow.png",
+      "icon_id": "org.deskflow.deskflow",
+      "source": "flatpak"
+    },
+    "chrome": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.google.Chrome.png",
+      "source": "curated"
+    },
+    "edge": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.microsoft.Edge.png",
+      "source": "curated"
+    },
+    "opera": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.opera.Opera.png",
+      "source": "curated"
+    },
+    "floorp": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/one.ablaze.floorp.png",
+      "source": "curated"
+    },
+    "tor-browser": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.torproject.torbrowser-launcher.png",
+      "source": "curated"
+    },
+    "mullvad-browser": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/net.mullvad.MullvadBrowser.png",
+      "source": "curated"
+    },
+    "teams": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.github.IsmaelMartinez.teams_for_linux.png",
+      "source": "curated"
+    },
+    "skype": {
+      "icon": "https://www.google.com/s2/favicons?domain=www.skype.com&sz=128",
+      "source": "curated"
+    },
+    "whatsapp-desktop": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.rtosta.zapzap.png",
+      "source": "curated"
+    },
+    "webex": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/webex.svg",
+      "source": "curated"
+    },
+    "threema": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/ch.threema.threema-web-desktop.png",
+      "source": "curated"
+    },
+    "viber": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.viber.Viber.png",
+      "source": "curated"
+    },
+    "tidal": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.mastermindzh.tidal-hifi.png",
+      "source": "curated"
+    },
+    "apple-music": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/applemusic.svg",
+      "source": "curated"
+    },
+    "plexamp": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.plexamp.Plexamp.png",
+      "source": "curated"
+    },
+    "plex-desktop": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/tv.plex.PlexDesktop.png",
+      "source": "curated"
+    },
+    "davinci-resolve": {
+      "icon": "https://www.google.com/s2/favicons?domain=www.blackmagicdesign.com&sz=128",
+      "source": "curated"
+    },
+    "cinebench": {
+      "icon": "https://www.google.com/s2/favicons?domain=www.maxon.net&sz=128",
+      "source": "curated"
+    },
+    "notion-prod": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/notion.svg",
+      "source": "curated"
+    },
+    "evernote": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/evernote.svg",
+      "source": "curated"
+    },
+    "todoist": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.todoist.Todoist.png",
+      "source": "curated"
+    },
+    "logseq": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.logseq.Logseq.png",
+      "source": "curated"
+    },
+    "zotero": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.zotero.Zotero.png",
+      "source": "curated"
+    },
+    "wps-office": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.wps.Office.png",
+      "source": "curated"
+    },
+    "master-pdf": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/net.code_industry.MasterPDFEditor.png",
+      "source": "curated"
+    },
+    "cursor": {
+      "icon": "https://www.google.com/s2/favicons?domain=cursor.com&sz=128",
+      "source": "curated"
+    },
+    "jetbrains-toolbox": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/jetbrains.svg",
+      "source": "curated"
+    },
+    "sublime-text": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.sublimehq.SublimeText.png",
+      "source": "curated"
+    },
+    "warp": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/app.drey.Warp.png",
+      "source": "curated"
+    },
+    "gitkraken": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.axosoft.GitKraken.png",
+      "source": "curated"
+    },
+    "docker-desktop": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/docker.svg",
+      "source": "curated"
+    },
+    "ollama": {
+      "icon": "https://www.google.com/s2/favicons?domain=ollama.com&sz=128",
+      "source": "curated"
+    },
+    "lmstudio": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/ai.lmstudio.lm-studio.png",
+      "source": "curated"
+    },
+    "ngrok": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/ngrok.svg",
+      "source": "curated"
+    },
+    "cursor-direct": {
+      "icon": "https://www.google.com/s2/favicons?domain=cursor.com&sz=128",
+      "source": "curated"
+    },
+    "toolbox-direct": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/jetbrains.svg",
+      "source": "curated"
+    },
+    "warp-direct": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/app.drey.Warp.png",
+      "source": "curated"
+    },
+    "ollama-direct": {
+      "icon": "https://www.google.com/s2/favicons?domain=ollama.com&sz=128",
+      "source": "curated"
+    },
+    "chrome-direct": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.google.Chrome.png",
+      "source": "curated"
+    },
+    "1password": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.onepassword.OnePassword.png",
+      "source": "curated"
+    },
+    "dropbox": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.dropbox.Client.png",
+      "source": "curated"
+    },
+    "notion": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/notion.svg",
+      "source": "curated"
+    },
+    "anydesk": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.anydesk.Anydesk.png",
+      "source": "curated"
+    },
+    "teamviewer": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/teamviewer.svg",
+      "source": "curated"
+    },
+    "balena-etcher": {
+      "icon": "https://www.google.com/s2/favicons?domain=etcher.balena.io&sz=128",
+      "source": "curated"
+    },
+    "rustdesk": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.rustdesk.RustDesk.png",
+      "source": "curated"
+    },
+    "fusion360": {
+      "icon": "https://www.google.com/s2/favicons?domain=www.autodesk.com&sz=128",
+      "source": "curated"
+    },
+    "purge-shutter-encoder": {
+      "icon": "https://www.google.com/s2/favicons?domain=www.shutterencoder.com&sz=128",
+      "source": "curated"
+    },
+    "1password-util": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.onepassword.OnePassword.png",
+      "source": "curated"
+    },
+    "nordvpn": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/nordvpn.svg",
+      "source": "curated"
+    },
+    "mullvad-vpn": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/mullvad.svg",
+      "source": "curated"
+    },
+    "tailscale": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/tailscale.svg",
+      "source": "curated"
+    },
+    "virtualbox": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/virtualbox.svg",
+      "source": "curated"
+    },
+    "veracrypt": {
+      "icon": "https://www.google.com/s2/favicons?domain=www.veracrypt.fr&sz=128",
+      "source": "curated"
+    },
+    "minecraft-launcher": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.prismlauncher.PrismLauncher.png",
+      "source": "curated"
+    },
+    "battlenet": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/battledotnet.svg",
+      "source": "curated"
+    },
+    "ea-app": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/ea.svg",
+      "source": "curated"
+    },
+    "geforce-now": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/io.github.hmlendea.geforcenow-electron.png",
+      "source": "curated"
+    },
+    "itch": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/io.itch.itch.png",
+      "source": "curated"
+    },
+    "osu": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/sh.ppy.osu.png",
+      "source": "curated"
+    },
+    "roblox": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/roblox.svg",
+      "source": "curated"
+    },
+    "winutil-chrome": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.google.Chrome.png",
+      "source": "curated"
+    },
+    "winutil-edge": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.microsoft.Edge.png",
+      "source": "curated"
+    },
+    "winutil-floorp": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/one.ablaze.floorp.png",
+      "source": "curated"
+    },
+    "winutil-helium": {
+      "icon": "https://www.google.com/s2/favicons?domain=helium.computer&sz=128",
+      "source": "curated"
+    },
+    "winutil-mullvadbrowser": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/net.mullvad.MullvadBrowser.png",
+      "source": "curated"
+    },
+    "winutil-tor": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.torproject.torbrowser-launcher.png",
+      "source": "curated"
+    },
+    "winutil-waterfox": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/net.waterfox.waterfox.png",
+      "source": "curated"
+    },
+    "winutil-teams": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.github.IsmaelMartinez.teams_for_linux.png",
+      "source": "curated"
+    },
+    "winutil-teamspeak3": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.teamspeak.TeamSpeak3.png",
+      "source": "curated"
+    },
+    "winutil-teamspeak6": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.teamspeak.TeamSpeak.png",
+      "source": "curated"
+    },
+    "winutil-viber": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.viber.Viber.png",
+      "source": "curated"
+    },
+    "winutil-whatsapp": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.rtosta.zapzap.png",
+      "source": "curated"
+    },
+    "winutil-chatgpt": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/openai.svg",
+      "source": "curated"
+    },
+    "winutil-claude": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/anthropic.svg",
+      "source": "curated"
+    },
+    "winutil-claude-code": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/anthropic.svg",
+      "source": "curated"
+    },
+    "winutil-cmake": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/cmake.svg",
+      "source": "curated"
+    },
+    "winutil-codex": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/openai.svg",
+      "source": "curated"
+    },
+    "winutil-cursor": {
+      "icon": "https://www.google.com/s2/favicons?domain=cursor.com&sz=128",
+      "source": "curated"
+    },
+    "winutil-dockerdesktop": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/docker.svg",
+      "source": "curated"
+    },
+    "winutil-fnm": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/nodedotjs.svg",
+      "source": "curated"
+    },
+    "winutil-git": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/git.svg",
+      "source": "curated"
+    },
+    "winutil-githubcli": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/github.svg",
+      "source": "curated"
+    },
+    "winutil-golang": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/go.svg",
+      "source": "curated"
+    },
+    "winutil-jetbrains": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/jetbrains.svg",
+      "source": "curated"
+    },
+    "winutil-lazygit": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/git.svg",
+      "source": "curated"
+    },
+    "winutil-neovim": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/io.neovim.nvim.png",
+      "source": "curated"
+    },
+    "winutil-nodejs": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/nodedotjs.svg",
+      "source": "curated"
+    },
+    "winutil-nodejslts": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/nodedotjs.svg",
+      "source": "curated"
+    },
+    "winutil-pnpm": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/pnpm.svg",
+      "source": "curated"
+    },
+    "winutil-python3": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/python.svg",
+      "source": "curated"
+    },
+    "winutil-rustlang": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/rust.svg",
+      "source": "curated"
+    },
+    "winutil-starship": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/starship.svg",
+      "source": "curated"
+    },
+    "winutil-sublimetext": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.sublimehq.SublimeText.png",
+      "source": "curated"
+    },
+    "winutil-unity": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/unity.svg",
+      "source": "curated"
+    },
+    "winutil-vagrant": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/vagrant.svg",
+      "source": "curated"
+    },
+    "winutil-yarn": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/yarn.svg",
+      "source": "curated"
+    },
+    "winutil-uv": {
+      "icon": "https://www.google.com/s2/favicons?domain=docs.astral.sh&sz=128",
+      "source": "curated"
+    },
+    "winutil-Ruby": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/ruby.svg",
+      "source": "curated"
+    },
+    "winutil-Lua": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/lua.svg",
+      "source": "curated"
+    },
+    "winutil-geforcenow": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/io.github.hmlendea.geforcenow-electron.png",
+      "source": "curated"
+    },
+    "winutil-itch": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/io.itch.itch.png",
+      "source": "curated"
+    },
+    "winutil-roblox": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/roblox.svg",
+      "source": "curated"
+    },
+    "winutil-nuget": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/nuget.svg",
+      "source": "curated"
+    },
+    "winutil-powershell": {
+      "icon": "https://www.google.com/s2/favicons?domain=learn.microsoft.com&sz=128",
+      "source": "curated"
+    },
+    "winutil-itunes": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/apple.svg",
+      "source": "curated"
+    },
+    "winutil-cinebenchr23": {
+      "icon": "https://www.google.com/s2/favicons?domain=www.maxon.net&sz=128",
+      "source": "curated"
+    },
+    "winutil-mullvadvpn": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/mullvad.svg",
+      "source": "curated"
+    },
+    "winutil-nmap": {
+      "icon": "https://www.google.com/s2/favicons?domain=nmap.org&sz=128",
+      "source": "curated"
+    },
+    "winutil-OpenVPN": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/openvpn.svg",
+      "source": "curated"
+    },
+    "winutil-putty": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/uk.org.greenend.chiark.sgtatham.putty.png",
+      "source": "curated"
+    },
+    "winutil-ventoy": {
+      "icon": "https://www.google.com/s2/favicons?domain=www.ventoy.net&sz=128",
+      "source": "curated"
+    },
+    "winutil-wireguard": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/wireguard.svg",
+      "source": "curated"
+    },
+    "winutil-wireshark": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.wireshark.Wireshark.png",
+      "source": "curated"
+    },
+    "winutil-jellyfinserver": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.jellyfin.JellyfinServer.png",
+      "source": "curated"
+    },
+    "winutil-netbird": {
+      "icon": "https://www.google.com/s2/favicons?domain=netbird.io&sz=128",
+      "source": "curated"
+    },
+    "winutil-plex": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/tv.plex.PlexDesktop.png",
+      "source": "curated"
+    },
+    "winutil-plexdesktop": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/tv.plex.PlexDesktop.png",
+      "source": "curated"
+    },
+    "winutil-1password": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.onepassword.OnePassword.png",
+      "source": "curated"
+    },
+    "winutil-7zip": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/7zip.svg",
+      "source": "curated"
+    },
+    "winutil-anydesk": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.anydesk.Anydesk.png",
+      "source": "curated"
+    },
+    "winutil-dropbox": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.dropbox.Client.png",
+      "source": "curated"
+    },
+    "winutil-googledrive": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/googledrive.svg",
+      "source": "curated"
+    },
+    "winutil-hugo": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/hugo.svg",
+      "source": "curated"
+    },
+    "winutil-OVirtualBox": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/virtualbox.svg",
+      "source": "curated"
+    },
+    "winutil-parsec": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.parsecgaming.parsec.png",
+      "source": "curated"
+    },
+    "winutil-protonauth": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/proton.svg",
+      "source": "curated"
+    },
+    "winutil-protondrive": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/proton.svg",
+      "source": "curated"
+    },
+    "winutil-teamviewer": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/teamviewer.svg",
+      "source": "curated"
+    },
+    "winutil-tightvnc": {
+      "icon": "https://www.google.com/s2/favicons?domain=www.tightvnc.com&sz=128",
+      "source": "curated"
+    },
+    "affinity": {
+      "icon": "https://www.google.com/s2/favicons?domain=affinity.serif.com&sz=128",
+      "source": "manual"
+    },
+    "figma-linux": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/figma.svg",
+      "source": "manual"
+    },
+    "winutil-posh": {
+      "icon": "https://www.google.com/s2/favicons?domain=ohmyposh.dev&sz=128",
+      "source": "manual"
+    },
+    "winutil-onedrive": {
+      "icon": "https://www.google.com/s2/favicons?domain=onedrive.live.com&sz=128",
+      "source": "manual"
+    },
+    "winutil-wingetui": {
+      "icon": "https://www.google.com/s2/favicons?domain=github.com/marticliment/UniGetUI&sz=128",
+      "source": "manual"
+    },
+    "winutil-dorion": {
+      "icon": "https://www.google.com/s2/favicons?domain=github.com&sz=128",
+      "source": "manual"
+    },
+    "winutil-java8": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/amazon.svg",
+      "source": "manual"
+    },
+    "winutil-java21": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/amazon.svg",
+      "source": "manual"
+    },
+    "winutil-java25": {
+      "icon": "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons/amazon.svg",
+      "source": "manual"
+    },
+    "librewolf": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/io.gitlab.librewolf-community.png",
+      "icon_id": "io.gitlab.librewolf-community",
+      "source": "flatpak"
+    },
+    "chromium": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.chromium.Chromium.png",
+      "icon_id": "org.chromium.Chromium",
+      "source": "flatpak"
+    },
+    "thunderbird": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.mozilla.Thunderbird.png",
+      "icon_id": "org.mozilla.Thunderbird",
+      "source": "flatpak"
+    },
+    "fractal": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.gnome.Fractal.png",
+      "icon_id": "org.gnome.Fractal",
+      "source": "flatpak"
+    },
+    "tuba": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/dev.geopjr.Tuba.png",
+      "icon_id": "dev.geopjr.Tuba",
+      "source": "flatpak"
+    },
+    "fluffychat": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/im.fluffychat.Fluffychat.png",
+      "icon_id": "im.fluffychat.Fluffychat",
+      "source": "flatpak"
+    },
+    "delta-chat": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/chat.delta.desktop.png",
+      "icon_id": "chat.delta.desktop",
+      "source": "flatpak"
+    },
+    "briar": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.briarproject.Briar.png",
+      "icon_id": "org.briarproject.Briar",
+      "source": "flatpak"
+    },
+    "webcord": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/io.github.spacingbat3.webcord.png",
+      "icon_id": "io.github.spacingbat3.webcord",
+      "source": "flatpak"
+    },
+    "kdenlive": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.kde.kdenlive.png",
+      "icon_id": "org.kde.kdenlive",
+      "source": "flatpak"
+    },
+    "shotcut": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.shotcut.Shotcut.png",
+      "icon_id": "org.shotcut.Shotcut",
+      "source": "flatpak"
+    },
+    "pitivi": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.pitivi.Pitivi.png",
+      "icon_id": "org.pitivi.Pitivi",
+      "source": "flatpak"
+    },
+    "celluloid": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/io.github.celluloid_player.Celluloid.png",
+      "icon_id": "io.github.celluloid_player.Celluloid",
+      "source": "flatpak"
+    },
+    "amberol": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/io.bassi.Amberol.png",
+      "icon_id": "io.bassi.Amberol",
+      "source": "flatpak"
+    },
+    "strawberry": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.strawberrymusicplayer.strawberry.png",
+      "icon_id": "org.strawberrymusicplayer.strawberry",
+      "source": "flatpak"
+    },
+    "easyeffects": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.github.wwmm.easyeffects.png",
+      "icon_id": "com.github.wwmm.easyeffects",
+      "source": "flatpak"
+    },
+    "blanket": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.rafaelmardojai.Blanket.png",
+      "icon_id": "com.rafaelmardojai.Blanket",
+      "source": "flatpak"
+    },
+    "parabolic": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.nickvision.tubeconverter.png",
+      "icon_id": "org.nickvision.tubeconverter",
+      "source": "flatpak"
+    },
+    "kooha": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/io.github.seadve.Kooha.png",
+      "icon_id": "io.github.seadve.Kooha",
+      "source": "flatpak"
+    },
+    "peek": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.uploadedlobster.peek.png",
+      "icon_id": "com.uploadedlobster.peek",
+      "source": "flatpak"
+    },
+    "foliate": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.github.johnfactotum.Foliate.png",
+      "icon_id": "com.github.johnfactotum.Foliate",
+      "source": "flatpak"
+    },
+    "apostrophe": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.gnome.gitlab.somas.Apostrophe.png",
+      "icon_id": "org.gnome.gitlab.somas.Apostrophe",
+      "source": "flatpak"
+    },
+    "nextcloud": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.nextcloud.desktopclient.nextcloud.png",
+      "icon_id": "com.nextcloud.desktopclient.nextcloud",
+      "source": "flatpak"
+    },
+    "gnucash": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.gnucash.GnuCash.png",
+      "icon_id": "org.gnucash.GnuCash",
+      "source": "flatpak"
+    },
+    "pdfarranger": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.github.jeromerobert.pdfarranger.png",
+      "icon_id": "com.github.jeromerobert.pdfarranger",
+      "source": "flatpak"
+    },
+    "xournalpp": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.github.xournalpp.xournalpp.png",
+      "icon_id": "com.github.xournalpp.xournalpp",
+      "source": "flatpak"
+    },
+    "okular": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.kde.okular.png",
+      "icon_id": "org.kde.okular",
+      "source": "flatpak"
+    },
+    "dialect": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/app.drey.Dialect.png",
+      "icon_id": "app.drey.Dialect",
+      "source": "flatpak"
+    },
+    "gnome-builder": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.gnome.Builder.png",
+      "icon_id": "org.gnome.Builder",
+      "source": "flatpak"
+    },
+    "kate": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.kde.kate.png",
+      "icon_id": "org.kde.kate",
+      "source": "flatpak"
+    },
+    "meld": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.gnome.meld.png",
+      "icon_id": "org.gnome.meld",
+      "source": "flatpak"
+    },
+    "wireshark": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.wireshark.Wireshark.png",
+      "icon_id": "org.wireshark.Wireshark",
+      "source": "flatpak"
+    },
+    "filezilla": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.filezillaproject.Filezilla.png",
+      "icon_id": "org.filezillaproject.Filezilla",
+      "source": "flatpak"
+    },
+    "pods": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.github.marhkb.Pods.png",
+      "icon_id": "com.github.marhkb.Pods",
+      "source": "flatpak"
+    },
+    "ptyxis": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/app.devsuite.Ptyxis.png",
+      "icon_id": "app.devsuite.Ptyxis",
+      "source": "flatpak"
+    },
+    "blackbox": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.raggesilver.BlackBox.png",
+      "icon_id": "com.raggesilver.BlackBox",
+      "source": "flatpak"
+    },
+    "konsole": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.kde.konsole.png",
+      "icon_id": "org.kde.konsole",
+      "source": "flatpak"
+    },
+    "commit": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/re.sonny.Commit.png",
+      "icon_id": "re.sonny.Commit",
+      "source": "flatpak"
+    },
+    "pinta": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.github.PintaProject.Pinta.png",
+      "icon_id": "com.github.PintaProject.Pinta",
+      "source": "flatpak"
+    },
+    "scribus": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/net.scribus.Scribus.png",
+      "icon_id": "net.scribus.Scribus",
+      "source": "flatpak"
+    },
+    "drawio": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.jgraph.drawio.desktop.png",
+      "icon_id": "com.jgraph.drawio.desktop",
+      "source": "flatpak"
+    },
+    "openscad": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.openscad.OpenSCAD.png",
+      "icon_id": "org.openscad.OpenSCAD",
+      "source": "flatpak"
+    },
+    "qgis": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.qgis.qgis.png",
+      "icon_id": "org.qgis.qgis",
+      "source": "flatpak"
+    },
+    "digikam": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.kde.digikam.png",
+      "icon_id": "org.kde.digikam",
+      "source": "flatpak"
+    },
+    "gwenview": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.kde.gwenview.png",
+      "icon_id": "org.kde.gwenview",
+      "source": "flatpak"
+    },
+    "mission-center": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/io.missioncenter.MissionCenter.png",
+      "icon_id": "io.missioncenter.MissionCenter",
+      "source": "flatpak"
+    },
+    "pika-backup": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.gnome.World.PikaBackup.png",
+      "icon_id": "org.gnome.World.PikaBackup",
+      "source": "flatpak"
+    },
+    "deja-dup": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.gnome.DejaDup.png",
+      "icon_id": "org.gnome.DejaDup",
+      "source": "flatpak"
+    },
+    "localsend": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.localsend.localsend_app.png",
+      "icon_id": "org.localsend.localsend_app",
+      "source": "flatpak"
+    },
+    "qbittorrent": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.qbittorrent.qBittorrent.png",
+      "icon_id": "org.qbittorrent.qBittorrent",
+      "source": "flatpak"
+    },
+    "transmission": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.transmissionbt.Transmission.png",
+      "icon_id": "com.transmissionbt.Transmission",
+      "source": "flatpak"
+    },
+    "fragments": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/de.haeckerfelix.Fragments.png",
+      "icon_id": "de.haeckerfelix.Fragments",
+      "source": "flatpak"
+    },
+    "bleachbit": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.bleachbit.BleachBit.png",
+      "icon_id": "org.bleachbit.BleachBit",
+      "source": "flatpak"
+    },
+    "warehouse": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/io.github.flattool.Warehouse.png",
+      "icon_id": "io.github.flattool.Warehouse",
+      "source": "flatpak"
+    },
+    "authenticator": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.belmoussaoui.Authenticator.png",
+      "icon_id": "com.belmoussaoui.Authenticator",
+      "source": "flatpak"
+    },
+    "secrets": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.gnome.World.Secrets.png",
+      "icon_id": "org.gnome.World.Secrets",
+      "source": "flatpak"
+    },
+    "metadata-cleaner": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/fr.romainvigier.MetadataCleaner.png",
+      "icon_id": "fr.romainvigier.MetadataCleaner",
+      "source": "flatpak"
+    },
+    "simple-scan": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.gnome.SimpleScan.png",
+      "icon_id": "org.gnome.SimpleScan",
+      "source": "flatpak"
+    },
+    "nicotine": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.nicotine_plus.Nicotine.png",
+      "icon_id": "org.nicotine_plus.Nicotine",
+      "source": "flatpak"
+    },
+    "bottles": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.usebottles.bottles.png",
+      "icon_id": "com.usebottles.bottles",
+      "source": "flatpak"
+    },
+    "retroarch": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.libretro.RetroArch.png",
+      "icon_id": "org.libretro.RetroArch",
+      "source": "flatpak"
+    },
+    "dolphin-emu": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.DolphinEmu.dolphin-emu.png",
+      "icon_id": "org.DolphinEmu.dolphin-emu",
+      "source": "flatpak"
+    },
+    "pcsx2": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/net.pcsx2.PCSX2.png",
+      "icon_id": "net.pcsx2.PCSX2",
+      "source": "flatpak"
+    },
+    "duckstation": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.duckstation.DuckStation.png",
+      "icon_id": "org.duckstation.DuckStation",
+      "source": "flatpak"
+    },
+    "ppsspp": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.ppsspp.PPSSPP.png",
+      "icon_id": "org.ppsspp.PPSSPP",
+      "source": "flatpak"
+    },
+    "minetest": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/net.minetest.Minetest.png",
+      "icon_id": "net.minetest.Minetest",
+      "source": "flatpak"
+    },
+    "wesnoth": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/org.wesnoth.Wesnoth.png",
+      "icon_id": "org.wesnoth.Wesnoth",
+      "source": "flatpak"
+    },
+    "0ad": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/com.play0ad.zeroad.png",
+      "icon_id": "com.play0ad.zeroad",
+      "source": "flatpak"
+    },
+    "supertuxkart": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/net.supertuxkart.SuperTuxKart.png",
+      "icon_id": "net.supertuxkart.SuperTuxKart",
+      "source": "flatpak"
+    },
+    "antimicrox": {
+      "icon": "https://dl.flathub.org/media/icons/128x128/io.github.antimicrox.antimicrox.png",
+      "icon_id": "io.github.antimicrox.antimicrox",
+      "source": "flatpak"
+    }
+  }
+}
