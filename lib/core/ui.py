@@ -1500,7 +1500,7 @@ def build_overview_content(
             on_action,
             badge=str(installed_n) if installed_n else "Catalog",
             badge_ok=bool(installed_n),
-            blurb="Curated catalog with real logos — select apps and install Flatpak/DNF or open vendor links.",
+            blurb="Curated catalog with real logos — desktop apps, CLIs, and vendor tools. Install Flatpak/DNF or open vendor links.",
             lines=apps_lines
             or ["Search, browse by category, and filter by availability or install method."],
         )
@@ -3980,6 +3980,7 @@ def build_catalog_content(
         "media",
         "productivity",
         "developer",
+        "cli",
         "graphics",
         "gaming",
         "utilities",
@@ -3998,6 +3999,9 @@ def build_catalog_content(
         "developer": pick_icon(
             "applications-development-symbolic", "applications-engineering-symbolic"
         ),
+        "cli": pick_icon(
+            "utilities-terminal-symbolic", "application-x-terminal-symbolic"
+        ),
         "graphics": "applications-graphics-symbolic",
         "gaming": "applications-games-symbolic",
         "utilities": "applications-utilities-symbolic",
@@ -4014,6 +4018,7 @@ def build_catalog_content(
         "media": "Media",
         "productivity": "Productivity",
         "developer": "Developer",
+        "cli": "CLIs & tools",
         "graphics": "Graphics",
         "gaming": "Gaming",
         "utilities": "Utilities",
@@ -4075,7 +4080,7 @@ def build_catalog_content(
             "",
             "",
             "Browse the catalog",
-            "Pick what you need, install with one click.",
+            "Desktop apps, plus CLIs and other developer tools that aren't store apps.",
             heading="Apps",
             icon_name=page_icon("apps"),
         )
@@ -4310,6 +4315,8 @@ def build_catalog_content(
         q = filter_query["q"].strip()
         if q:
             noun = "match" if visible_n == 1 else "matches"
+        elif filter_cat["id"] == "cli":
+            noun = "tool" if visible_n == 1 else "tools"
         else:
             noun = "app" if visible_n == 1 else "apps"
         results_lbl.set_label(f"{visible_n} {noun}")

@@ -8,6 +8,7 @@ body:
       label: Request
       options:
         - Add an app
+        - Add a CLI or developer tool
         - Fix install method or detection
         - Fix icon or metadata
     validations:

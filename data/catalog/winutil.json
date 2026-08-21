@@ -396,6 +396,127 @@
           "url": "https://www.usebruno.com/"
         },
         {
+          "id": "winutil-cursor",
+          "name": "Cursor",
+          "summary": "AI-powered code editor (VS Code-based) with agentic coding features and integrated AI assistance for development workflows.",
+          "method": "cursor_rpm",
+          "package": "cursor",
+          "store": "vendor",
+          "source": "winutil",
+          "winutil_id": "cursor",
+          "url": "https://cursor.com/",
+          "detect": "cursor"
+        },
+        {
+          "id": "winutil-dockerdesktop",
+          "name": "Docker Desktop",
+          "summary": "Local environment for building, running, and testing containerized applications on Linux.",
+          "method": "browser",
+          "package": "docker-desktop",
+          "store": "vendor",
+          "source": "winutil",
+          "winutil_id": "dockerdesktop",
+          "url": "https://docs.docker.com/desktop/setup/install/linux/",
+          "detect": "docker-desktop"
+        },
+        {
+          "id": "winutil-githubdesktop",
+          "name": "GitHub Desktop",
+          "summary": "GitHub Desktop is a visual Git client that simplifies collaboration on GitHub repositories with an easy-to-use interface.",
+          "method": "flatpak",
+          "package": "io.github.shiftey.Desktop",
+          "store": "flathub",
+          "source": "winutil",
+          "winutil_id": "githubdesktop",
+          "url": "https://desktop.github.com/"
+        },
+        {
+          "id": "winutil-jetbrains",
+          "name": "Jetbrains Toolbox",
+          "summary": "Jetbrains Toolbox is a platform for easy installation and management of JetBrains developer tools.",
+          "method": "toolbox_tarball",
+          "package": "jetbrains-toolbox",
+          "store": "vendor",
+          "source": "winutil",
+          "winutil_id": "jetbrains",
+          "url": "https://www.jetbrains.com/toolbox/",
+          "detect": "jetbrains-toolbox"
+        },
+        {
+          "id": "winutil-postman",
+          "name": "Postman",
+          "summary": "Postman is an API platform and desktop client for designing, testing, documenting, and collaborating on APIs.",
+          "method": "flatpak",
+          "package": "com.getpostman.Postman",
+          "store": "flathub",
+          "source": "winutil",
+          "winutil_id": "postman",
+          "url": "https://www.postman.com/downloads/"
+        },
+        {
+          "id": "winutil-sublimetext",
+          "name": "Sublime Text",
+          "summary": "Sublime Text is a sophisticated text editor for code, markup, and prose.",
+          "method": "browser",
+          "package": "sublime-text",
+          "store": "vendor",
+          "source": "winutil",
+          "winutil_id": "sublimetext",
+          "url": "https://www.sublimetext.com/download",
+          "detect": "sublime-text"
+        },
+        {
+          "id": "winutil-unity",
+          "name": "Unity Game Engine",
+          "summary": "Unity is a powerful game development platform for creating 2D, 3D, augmented reality, and virtual reality games.",
+          "method": "browser",
+          "package": "unityhub",
+          "store": "vendor",
+          "source": "winutil",
+          "winutil_id": "unity",
+          "url": "https://unity.com/download",
+          "detect": "unityhub"
+        },
+        {
+          "id": "winutil-vscode",
+          "name": "VS Code",
+          "summary": "Visual Studio Code is a free, open-source code editor with support for multiple programming languages.",
+          "method": "flatpak",
+          "package": "com.visualstudio.code",
+          "store": "flathub",
+          "source": "winutil",
+          "winutil_id": "vscode",
+          "url": "https://code.visualstudio.com/"
+        },
+        {
+          "id": "winutil-vscodium",
+          "name": "VS Codium",
+          "summary": "VSCodium is a community-driven, freely-licensed binary distribution of Microsoft's VS Code.",
+          "method": "flatpak",
+          "package": "com.vscodium.codium",
+          "store": "flathub",
+          "source": "winutil",
+          "winutil_id": "vscodium",
+          "url": "https://vscodium.com/"
+        },
+        {
+          "id": "winutil-Zed",
+          "name": "Zed",
+          "summary": "Zed is a modern, high-performance code editor designed from the ground up for speed and collaboration.",
+          "method": "flatpak",
+          "package": "dev.zed.Zed",
+          "store": "flathub",
+          "source": "winutil",
+          "winutil_id": "Zed",
+          "url": "https://zed.dev/"
+        }
+      ]
+    },
+    {
+      "id": "cli",
+      "name": "CLIs & tools",
+      "apps": [
+        {
           "id": "winutil-claude-code",
           "name": "Claude Code",
           "summary": "Anthropic's agentic coding tool for terminal and IDE development workflows.",
@@ -432,30 +553,6 @@
           "detect": "codex"
         },
         {
-          "id": "winutil-cursor",
-          "name": "Cursor",
-          "summary": "AI-powered code editor (VS Code-based) with agentic coding features and integrated AI assistance for development workflows.",
-          "method": "cursor_rpm",
-          "package": "cursor",
-          "store": "vendor",
-          "source": "winutil",
-          "winutil_id": "cursor",
-          "url": "https://cursor.com/",
-          "detect": "cursor"
-        },
-        {
-          "id": "winutil-dockerdesktop",
-          "name": "Docker Desktop",
-          "summary": "Local environment for building, running, and testing containerized applications on Linux.",
-          "method": "browser",
-          "package": "docker-desktop",
-          "store": "vendor",
-          "source": "winutil",
-          "winutil_id": "dockerdesktop",
-          "url": "https://docs.docker.com/desktop/setup/install/linux/",
-          "detect": "docker-desktop"
-        },
-        {
           "id": "winutil-fnm",
           "name": "Fast Node Manager",
           "summary": "Fast Node Manager (fnm) is a fast, cross-platform tool for installing and switching between Node.js versions.",
@@ -490,17 +587,6 @@
           "winutil_id": "githubcli",
           "url": "https://cli.github.com/",
           "detect": "gh"
-        },
-        {
-          "id": "winutil-githubdesktop",
-          "name": "GitHub Desktop",
-          "summary": "GitHub Desktop is a visual Git client that simplifies collaboration on GitHub repositories with an easy-to-use interface.",
-          "method": "flatpak",
-          "package": "io.github.shiftey.Desktop",
-          "store": "flathub",
-          "source": "winutil",
-          "winutil_id": "githubdesktop",
-          "url": "https://desktop.github.com/"
         },
         {
           "id": "winutil-golang",
@@ -549,18 +635,6 @@
           "winutil_id": "java25",
           "url": "https://aws.amazon.com/corretto",
           "detect": "java-latest-openjdk"
-        },
-        {
-          "id": "winutil-jetbrains",
-          "name": "Jetbrains Toolbox",
-          "summary": "Jetbrains Toolbox is a platform for easy installation and management of JetBrains developer tools.",
-          "method": "toolbox_tarball",
-          "package": "jetbrains-toolbox",
-          "store": "vendor",
-          "source": "winutil",
-          "winutil_id": "jetbrains",
-          "url": "https://www.jetbrains.com/toolbox/",
-          "detect": "jetbrains-toolbox"
         },
         {
           "id": "winutil-lazygit",
@@ -635,17 +709,6 @@
           "detect": "oh-my-posh"
         },
         {
-          "id": "winutil-postman",
-          "name": "Postman",
-          "summary": "Postman is an API platform and desktop client for designing, testing, documenting, and collaborating on APIs.",
-          "method": "flatpak",
-          "package": "com.getpostman.Postman",
-          "store": "flathub",
-          "source": "winutil",
-          "winutil_id": "postman",
-          "url": "https://www.postman.com/downloads/"
-        },
-        {
           "id": "winutil-python3",
           "name": "Python3",
           "summary": "Python is a versatile programming language used for web development, data analysis, artificial intelligence, and more.",
@@ -682,30 +745,6 @@
           "detect": "starship"
         },
         {
-          "id": "winutil-sublimetext",
-          "name": "Sublime Text",
-          "summary": "Sublime Text is a sophisticated text editor for code, markup, and prose.",
-          "method": "browser",
-          "package": "sublime-text",
-          "store": "vendor",
-          "source": "winutil",
-          "winutil_id": "sublimetext",
-          "url": "https://www.sublimetext.com/download",
-          "detect": "sublime-text"
-        },
-        {
-          "id": "winutil-unity",
-          "name": "Unity Game Engine",
-          "summary": "Unity is a powerful game development platform for creating 2D, 3D, augmented reality, and virtual reality games.",
-          "method": "browser",
-          "package": "unityhub",
-          "store": "vendor",
-          "source": "winutil",
-          "winutil_id": "unity",
-          "url": "https://unity.com/download",
-          "detect": "unityhub"
-        },
-        {
           "id": "winutil-vagrant",
           "name": "Vagrant",
           "summary": "Vagrant builds and manages reproducible virtual machine development environments from declarative configuration.",
@@ -716,28 +755,6 @@
           "winutil_id": "vagrant",
           "url": "https://developer.hashicorp.com/vagrant",
           "detect": "vagrant"
-        },
-        {
-          "id": "winutil-vscode",
-          "name": "VS Code",
-          "summary": "Visual Studio Code is a free, open-source code editor with support for multiple programming languages.",
-          "method": "flatpak",
-          "package": "com.visualstudio.code",
-          "store": "flathub",
-          "source": "winutil",
-          "winutil_id": "vscode",
-          "url": "https://code.visualstudio.com/"
-        },
-        {
-          "id": "winutil-vscodium",
-          "name": "VS Codium",
-          "summary": "VSCodium is a community-driven, freely-licensed binary distribution of Microsoft's VS Code.",
-          "method": "flatpak",
-          "package": "com.vscodium.codium",
-          "store": "flathub",
-          "source": "winutil",
-          "winutil_id": "vscodium",
-          "url": "https://vscodium.com/"
         },
         {
           "id": "winutil-yarn",
@@ -764,17 +781,6 @@
           "detect": "uv"
         },
         {
-          "id": "winutil-Zed",
-          "name": "Zed",
-          "summary": "Zed is a modern, high-performance code editor designed from the ground up for speed and collaboration.",
-          "method": "flatpak",
-          "package": "dev.zed.Zed",
-          "store": "flathub",
-          "source": "winutil",
-          "winutil_id": "Zed",
-          "url": "https://zed.dev/"
-        },
-        {
           "id": "winutil-Ruby",
           "name": "Ruby",
           "summary": "A Ruby language execution environment with a MSYS2 installation.",
@@ -789,7 +795,7 @@
         {
           "id": "winutil-Lua",
           "name": "Lua",
-          "summary": "The Lua scripting language — Fedora's lua package.",
+          "summary": "The Lua scripting language \u2014 Fedora's lua package.",
           "method": "dnf",
           "package": "lua",
           "store": "fedora",

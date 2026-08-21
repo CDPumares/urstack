@@ -93,7 +93,7 @@ Each listing can include:
 - **Screenshots** shown inside UrStack — you can step through them without leaving the app or opening a browser.
 - **The install method that actually works on Fedora:** Flatpak (Flathub), DNF, Snap, or a vendor URL / AppImage when that is the realistic Linux path.
 
-Categories include browsers, communication, media, productivity, developer tools, graphics, utilities, gaming, and vendor / direct downloads. Linux-mapped profiles inspired by [Chris Titus Tech’s winutil](https://github.com/ChrisTitusTech/winutil) sit beside the native catalog. Windows-only titles from that list are not imported.
+Categories include browsers, communication, media, productivity, developer (IDEs and GUI tools), **CLIs & tools** (git, gh, language toolchains, terminal utilities), graphics, utilities, gaming, and vendor / direct downloads. Linux-mapped profiles inspired by [Chris Titus Tech’s winutil](https://github.com/ChrisTitusTech/winutil) sit beside the native catalog. Windows-only titles from that list are not imported.
 
 That is the difference after a fresh OS: you rebuild the toolbox by browsing apps you recognize, with pictures and descriptions, instead of remembering package names.
 

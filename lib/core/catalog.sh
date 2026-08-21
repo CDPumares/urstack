@@ -516,6 +516,7 @@ CANONICAL_CATS = {
     "media": "Media",
     "productivity": "Productivity",
     "developer": "Developer",
+    "cli": "CLIs & tools",
     "direct": "Outside app stores",
     "graphics": "Graphics and design",
     "utilities": "Utilities",

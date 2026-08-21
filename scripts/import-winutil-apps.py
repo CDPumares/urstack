@@ -31,6 +31,34 @@ CAT_MAP = {
     "Utilities": ("utilities", "Utilities"),
 }
 
+# Command-line / toolchain keys — not GUI apps. Shown under CLIs & tools.
+CLI_KEYS = {
+    "cmake",
+    "claude-code",
+    "codex",
+    "fnm",
+    "git",
+    "githubcli",
+    "golang",
+    "java8",
+    "java21",
+    "java25",
+    "lazygit",
+    "neovim",
+    "nodejs",
+    "nodejslts",
+    "pnpm",
+    "posh",
+    "python3",
+    "rustlang",
+    "starship",
+    "vagrant",
+    "yarn",
+    "uv",
+    "Ruby",
+    "Lua",
+}
+
 # winutil key → (method, package[, url_override])
 # Prefer Flatpak / DNF / known vendor installers on Fedora.
 LINUX_MAP: dict[str, tuple] = {
@@ -273,6 +301,8 @@ def main() -> None:
             continue
         wcat = entry.get("category", "Utilities")
         cid, cname = CAT_MAP.get(wcat, ("utilities", "Utilities"))
+        if key in CLI_KEYS:
+            cid, cname = "cli", "CLIs & tools"
         # Merge into the same category ids/names as curated apps.json
         if cid not in buckets:
             buckets[cid] = {"id": cid, "name": cname, "apps": []}
@@ -287,6 +317,7 @@ def main() -> None:
         "browsers",
         "communication",
         "developer",
+        "cli",
         "productivity",
         "gaming",
         "microsoft",

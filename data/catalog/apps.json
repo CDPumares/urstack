@@ -734,16 +734,6 @@
           "package": "com.google.AndroidStudio"
         },
         {
-          "id": "ollama",
-          "name": "Ollama",
-          "summary": "Run local LLMs \u2014 vendor install script",
-          "method": "script",
-          "package": "ollama",
-          "detect": "ollama",
-          "url": "https://ollama.com/install.sh",
-          "store": "vendor"
-        },
-        {
           "id": "lmstudio",
           "name": "LM Studio",
           "summary": "Local LLM desktop app \u2014 download AppImage",
@@ -751,16 +741,6 @@
           "package": "lm-studio",
           "detect": "lm-studio",
           "url": "https://lmstudio.ai/download",
-          "store": "vendor"
-        },
-        {
-          "id": "ngrok",
-          "name": "ngrok",
-          "summary": "Secure tunnels to localhost \u2014 vendor download",
-          "method": "browser",
-          "package": "ngrok",
-          "detect": "ngrok",
-          "url": "https://ngrok.com/download",
           "store": "vendor"
         },
         {
@@ -832,6 +812,228 @@
           "summary": "Commit message editor",
           "method": "flatpak",
           "package": "re.sonny.Commit"
+        }
+      ]
+    },
+    {
+      "id": "cli",
+      "name": "CLIs & tools",
+      "apps": [
+        {
+          "id": "ollama",
+          "name": "Ollama",
+          "summary": "Run local LLMs \u2014 vendor install script",
+          "method": "script",
+          "package": "ollama",
+          "detect": "ollama",
+          "url": "https://ollama.com/install.sh",
+          "store": "vendor"
+        },
+        {
+          "id": "ngrok",
+          "name": "ngrok",
+          "summary": "Secure tunnels to localhost \u2014 vendor download",
+          "method": "browser",
+          "package": "ngrok",
+          "detect": "ngrok",
+          "url": "https://ngrok.com/download",
+          "store": "vendor"
+        },
+        {
+          "id": "git",
+          "name": "Git",
+          "summary": "Distributed version control",
+          "method": "dnf",
+          "package": "git"
+        },
+        {
+          "id": "gh",
+          "name": "GitHub CLI",
+          "summary": "Work with GitHub from the terminal (gh)",
+          "method": "dnf",
+          "package": "gh"
+        },
+        {
+          "id": "lazygit",
+          "name": "lazygit",
+          "summary": "Terminal UI for Git",
+          "method": "browser",
+          "package": "lazygit",
+          "detect": "lazygit",
+          "url": "https://github.com/jesseduffield/lazygit#installation",
+          "store": "vendor"
+        },
+        {
+          "id": "neovim",
+          "name": "Neovim",
+          "summary": "Hyperextensible Vim-based text editor (TUI)",
+          "method": "dnf",
+          "package": "neovim"
+        },
+        {
+          "id": "helix",
+          "name": "Helix",
+          "summary": "Modal text editor in the terminal",
+          "method": "dnf",
+          "package": "helix"
+        },
+        {
+          "id": "python3",
+          "name": "Python 3",
+          "summary": "Python interpreter and standard library",
+          "method": "dnf",
+          "package": "python3"
+        },
+        {
+          "id": "golang",
+          "name": "Go",
+          "summary": "Go compiler and toolchain",
+          "method": "dnf",
+          "package": "golang"
+        },
+        {
+          "id": "rust",
+          "name": "Rust (rustup)",
+          "summary": "Rust toolchain via rustup",
+          "method": "script",
+          "package": "rustup",
+          "detect": "rustup",
+          "url": "https://sh.rustup.rs",
+          "store": "vendor"
+        },
+        {
+          "id": "nodejs",
+          "name": "Node.js",
+          "summary": "JavaScript runtime (Fedora nodejs)",
+          "method": "dnf",
+          "package": "nodejs"
+        },
+        {
+          "id": "ruby",
+          "name": "Ruby",
+          "summary": "Ruby interpreter",
+          "method": "dnf",
+          "package": "ruby"
+        },
+        {
+          "id": "lua",
+          "name": "Lua",
+          "summary": "Lightweight scripting language",
+          "method": "dnf",
+          "package": "lua"
+        },
+        {
+          "id": "java",
+          "name": "OpenJDK",
+          "summary": "Latest OpenJDK from Fedora",
+          "method": "dnf",
+          "package": "java-latest-openjdk"
+        },
+        {
+          "id": "cmake",
+          "name": "CMake",
+          "summary": "Cross-platform build system",
+          "method": "dnf",
+          "package": "cmake"
+        },
+        {
+          "id": "uv",
+          "name": "uv",
+          "summary": "Fast Python package manager from Astral",
+          "method": "script",
+          "package": "uv",
+          "detect": "uv",
+          "url": "https://astral.sh/uv/install.sh",
+          "store": "vendor"
+        },
+        {
+          "id": "pnpm",
+          "name": "pnpm",
+          "summary": "Fast, disk-efficient Node package manager",
+          "method": "script",
+          "package": "pnpm",
+          "detect": "pnpm",
+          "url": "https://get.pnpm.io/install.sh",
+          "store": "vendor"
+        },
+        {
+          "id": "yarn",
+          "name": "Yarn",
+          "summary": "Node package manager",
+          "method": "dnf",
+          "package": "yarnpkg",
+          "detect": "yarn"
+        },
+        {
+          "id": "podman",
+          "name": "Podman",
+          "summary": "Daemonless containers (docker-compatible CLI)",
+          "method": "dnf",
+          "package": "podman"
+        },
+        {
+          "id": "jq",
+          "name": "jq",
+          "summary": "Command-line JSON processor",
+          "method": "dnf",
+          "package": "jq"
+        },
+        {
+          "id": "ripgrep",
+          "name": "ripgrep",
+          "summary": "Fast recursive search (rg)",
+          "method": "dnf",
+          "package": "ripgrep",
+          "detect": "rg"
+        },
+        {
+          "id": "fd",
+          "name": "fd",
+          "summary": "Simple, fast find alternative",
+          "method": "dnf",
+          "package": "fd-find",
+          "detect": "fd"
+        },
+        {
+          "id": "tmux",
+          "name": "tmux",
+          "summary": "Terminal multiplexer",
+          "method": "dnf",
+          "package": "tmux"
+        },
+        {
+          "id": "btop",
+          "name": "btop",
+          "summary": "Resource monitor for the terminal",
+          "method": "dnf",
+          "package": "btop"
+        },
+        {
+          "id": "ffmpeg",
+          "name": "FFmpeg",
+          "summary": "Record, convert, and stream audio and video",
+          "method": "dnf",
+          "package": "ffmpeg"
+        },
+        {
+          "id": "starship",
+          "name": "Starship",
+          "summary": "Cross-shell prompt",
+          "method": "browser",
+          "package": "starship",
+          "detect": "starship",
+          "url": "https://starship.rs/guide/",
+          "store": "vendor"
+        },
+        {
+          "id": "claude-code",
+          "name": "Claude Code",
+          "summary": "Anthropic coding agent CLI",
+          "method": "browser",
+          "package": "claude",
+          "detect": "claude",
+          "url": "https://code.claude.com/",
+          "store": "vendor"
         }
       ]
     },
