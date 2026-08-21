@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Unit tests for Fedora Workstation Updater parsers."""
+"""Unit tests for UrStack parsers."""
 
 from __future__ import annotations
 

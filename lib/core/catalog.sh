@@ -2,11 +2,11 @@
 # shellcheck shell=bash
 
 catalog_file() {
-  echo "${STACKUP_ROOT:-$FEDORA_UPDATES_ROOT}/data/catalog/apps.json"
+  echo "${URSTACK_ROOT:-${STACKUP_ROOT:-$FEDORA_UPDATES_ROOT}}/data/catalog/apps.json"
 }
 
 catalog_dir() {
-  echo "${STACKUP_ROOT:-$FEDORA_UPDATES_ROOT}/data/catalog"
+  echo "${URSTACK_ROOT:-${STACKUP_ROOT:-$FEDORA_UPDATES_ROOT}}/data/catalog"
 }
 
 catalog_appimage_dir() {

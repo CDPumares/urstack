@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Fedora workstation backup / restore library.
-# Sourced by check-fedora-updates.sh — do not execute directly.
+# Sourced by bin/urstack — do not execute directly.
 #
 # Exports: fedora_setup_backup_ui, fedora_setup_restore_ui,
 #          fedora_setup_backup_to, fedora_setup_restore_from
@@ -12,7 +12,7 @@ _FEDORA_SETUP_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # plugins/ → app root is ../..
 _FEDORA_SETUP_ROOT="$(cd "$_FEDORA_SETUP_LIB_DIR/../.." && pwd)"
 _FEDORA_SETUP_BIN_DIR="$_FEDORA_SETUP_ROOT/bin"
-_FEDORA_SETUP_SCRIPT="${_FEDORA_SETUP_BIN_DIR}/fedora-updates"
+_FEDORA_SETUP_SCRIPT="${_FEDORA_SETUP_BIN_DIR}/urstack"
 _FEDORA_UI="${FEDORA_UPDATES_LIB:-$_FEDORA_SETUP_ROOT/lib/core}/ui.py"
 
 _RSYNC_PROJECT_EXCLUDES=(
@@ -49,7 +49,7 @@ _backup_cfg() {
     cfg_get "$key" "$default"
     return
   fi
-  local f="${FEDORA_UPDATES_USER_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/stackup/config.conf}"
+  local f="${FEDORA_UPDATES_USER_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/urstack/config.conf}"
   local val=""
   if [[ -f "$f" ]]; then
     val=$(grep -E "^[[:space:]]*${key}=" "$f" 2>/dev/null | tail -1 | cut -d= -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//') || true
@@ -160,7 +160,7 @@ declare -a _HOME_RSYNC_OPTS=()
 _ensure_pre_restore_dir() {
   [[ ${#_HOME_RSYNC_OPTS[@]} -gt 0 ]] && return 0
   local d
-  d="${XDG_STATE_HOME:-$HOME/.local/state}/stackup/pre-restore-$(date +%Y%m%d-%H%M%S)"
+  d="${XDG_STATE_HOME:-$HOME/.local/state}/urstack/pre-restore-$(date +%Y%m%d-%H%M%S)"
   if mkdir -p "$d" 2>/dev/null; then
     _PRE_RESTORE_DIR="$d"
     _HOME_RSYNC_OPTS=(--backup --backup-dir="$d")
@@ -1041,7 +1041,7 @@ _backup_collect_extra_paths() {
       printf '%s\n' "$line"
     done <<< "$URSTACK_BACKUP_EXTRA_PATHS"
   fi
-  cfgf="${XDG_CONFIG_HOME:-$HOME/.config}/stackup/backup-extra-paths.conf"
+  cfgf="${XDG_CONFIG_HOME:-$HOME/.config}/urstack/backup-extra-paths.conf"
   if [[ -f "$cfgf" ]]; then
     while IFS= read -r line || [[ -n "$line" ]]; do
       line="${line#"${line%%[![:space:]]*}"}"
@@ -1160,7 +1160,7 @@ _backup_appimages_and_vendor() {
     if declare -F catalog_status_file &>/dev/null; then
       local st
       st=$(mktemp)
-      STACKUP_ROOT="$_FEDORA_SETUP_ROOT" FEDORA_UPDATES_ROOT="$_FEDORA_SETUP_ROOT" catalog_status_file "$st" 2>/dev/null || true
+      URSTACK_ROOT="$_FEDORA_SETUP_ROOT" STACKUP_ROOT="$_FEDORA_SETUP_ROOT" FEDORA_UPDATES_ROOT="$_FEDORA_SETUP_ROOT" catalog_status_file "$st" 2>/dev/null || true
       awk -F'|' '$6=="browser" && $8=="1" {print "catalog|"$2"|"$9}' "$st" 2>/dev/null >> "$vendor" || true
       rm -f "$st"
     fi
@@ -1204,10 +1204,10 @@ EOF
 
   # Copy vendor note into home for the user
   if [[ -f "$dest/manifests/vendor-launchers.txt" ]]; then
-    mkdir -p "$HOME/.local/share/stackup"
+    mkdir -p "$HOME/.local/share/urstack"
     cp -a "$dest/manifests/vendor-launchers.txt" \
-      "$HOME/.local/share/stackup/vendor-launchers-from-backup.txt" 2>/dev/null || true
-    _restore_ok "Vendor launcher list copied to ~/.local/share/stackup/"
+      "$HOME/.local/share/urstack/vendor-launchers-from-backup.txt" 2>/dev/null || true
+    _restore_ok "Vendor launcher list copied to ~/.local/share/urstack/"
   fi
 }
 
@@ -2004,13 +2004,13 @@ fedora_setup_backup_to() {
   mark_tree_complete "$dest"
 
   # Remember last successful backup for Overview / restore hints
-  mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/stackup" 2>/dev/null || true
+  mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/urstack" 2>/dev/null || true
   {
     echo "dest=$dest"
     echo "parent=$(dirname -- "$dest")"
     echo "name=$(basename -- "$dest")"
     echo "created=$(date -Iseconds)"
-  } > "${XDG_CONFIG_HOME:-$HOME/.config}/stackup/last-backup.conf" 2>/dev/null || true
+  } > "${XDG_CONFIG_HOME:-$HOME/.config}/urstack/last-backup.conf" 2>/dev/null || true
 
   if [[ "${URSTACK_EMBEDDED_PROGRESS:-0}" == "1" ]]; then
     echo "# Backup complete"
@@ -2722,7 +2722,7 @@ fedora_setup_restore_from() {
       # -s not -f: `crontab` replaces rather than merges, so an empty manifest
       # would wipe whatever this machine already has.
       if [[ -s "$dest/manifests/user-crontab.txt" ]]; then
-        crontab -l > "${XDG_STATE_HOME:-$HOME/.local/state}/stackup/crontab-before-restore.txt" 2>/dev/null || true
+        crontab -l > "${XDG_STATE_HOME:-$HOME/.local/state}/urstack/crontab-before-restore.txt" 2>/dev/null || true
         crontab "$dest/manifests/user-crontab.txt" 2>&1 && _restore_ok "crontab" || _restore_fail "crontab"
       fi
       systemctl --user daemon-reload 2>&1 || true

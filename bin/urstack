@@ -2,21 +2,21 @@
 # UrStack — desktop app entrypoint
 #
 # Usage:
-#   fedora-updates                    GUI check + apply
-#   fedora-updates --check            Print results; exit 1 if updates available
-#   fedora-updates --yes              Non-interactive apply (skips firmware)
-#   fedora-updates --yes --include-firmware
-#   fedora-updates --log              View history
-#   fedora-updates --backup [dir]     Backup module (if enabled in config)
-#   fedora-updates --restore [dir]
-#   fedora-updates --install-timer    Daily user systemd timer
-#   fedora-updates --config           Print config path / enabled sources
-#   fedora-updates --detect           Scan workstation; print what would be enabled
-#   fedora-updates --detect --write-config
-#                                     Scan and write ~/.config/.../config.conf
-#   fedora-updates --detect --write-config --include-backup
+#   urstack                           GUI check + apply
+#   urstack --check                   Print results; exit 1 if updates available
+#   urstack --yes                     Non-interactive apply (skips firmware)
+#   urstack --yes --include-firmware
+#   urstack --log                     View history
+#   urstack --backup [dir]            Backup module (if enabled in config)
+#   urstack --restore [dir]
+#   urstack --install-timer           Daily user systemd timer
+#   urstack --config                  Print config path / enabled sources
+#   urstack --detect                  Scan workstation; print what would be enabled
+#   urstack --detect --write-config
+#   urstack --detect --write-config --include-backup
 #
-# Config: ~/.config/stackup/config.conf
+# Config: ~/.config/urstack/config.conf
+# Compatibility commands: stackup, fedora-updates
 
 set -uo pipefail
 
@@ -46,18 +46,21 @@ if [[ -z "${_FEDORA_UPDATES_RELAUNCHED:-}" ]]; then
 fi
 
 FEDORA_UPDATES_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+URSTACK_ROOT="$FEDORA_UPDATES_ROOT"
 STACKUP_ROOT="$FEDORA_UPDATES_ROOT"
 FEDORA_UPDATES_LIB="$FEDORA_UPDATES_ROOT/lib/core"
 FEDORA_UPDATES_PLUGINS="$FEDORA_UPDATES_ROOT/lib/plugins"
-export STACKUP_ROOT FEDORA_UPDATES_ROOT FEDORA_UPDATES_LIB FEDORA_UPDATES_PLUGINS
+export URSTACK_ROOT STACKUP_ROOT FEDORA_UPDATES_ROOT FEDORA_UPDATES_LIB FEDORA_UPDATES_PLUGINS
 
 # Associate GUI windows with our .desktop + icon (taskbar / alt-tab)
 if [[ -z "${GIO_LAUNCHED_DESKTOP_FILE:-}" ]]; then
   for _desk in \
-    "${XDG_DATA_HOME:-$HOME/.local/share}/applications/com.local.stackup.desktop" \
-    "${XDG_DATA_HOME:-$HOME/.local/share}/applications/stackup.desktop" \
-    "/usr/local/share/applications/com.local.stackup.desktop" \
-    "/usr/local/share/applications/stackup.desktop"
+    "${XDG_DATA_HOME:-$HOME/.local/share}/applications/com.local.urstack.desktop" \
+    "${XDG_DATA_HOME:-$HOME/.local/share}/applications/urstack.desktop" \
+    "/usr/local/share/applications/com.local.urstack.desktop" \
+    "/usr/local/share/applications/urstack.desktop" \
+    "${XDG_DATA_HOME:-$HOME/.local/share}/applications/com.local.urstack.desktop" \
+    "${XDG_DATA_HOME:-$HOME/.local/share}/applications/stackup.desktop"
   do
     if [[ -f "$_desk" ]]; then
       export GIO_LAUNCHED_DESKTOP_FILE="$_desk"
@@ -349,10 +352,10 @@ if [[ $DO_DETECT -eq 1 ]]; then
   if [[ $WRITE_CONFIG -eq 1 ]]; then
     write_detected_config "$FEDORA_UPDATES_USER_CONFIG" "$INCLUDE_BACKUP_DETECT"
     echo
-    echo "Reload with: fedora-updates --config"
+    echo "Reload with: urstack --config"
   else
     echo
-    echo "Write this config with: fedora-updates --detect --write-config"
+    echo "Write this config with: urstack --detect --write-config"
   fi
   exit 0
 fi
@@ -377,11 +380,13 @@ fi
 install_systemd_timer() {
   local unit_dir="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user"
   mkdir -p "$unit_dir"
-  local exec_path="$FEDORA_UPDATES_ROOT/bin/stackup"
-  if command -v stackup &>/dev/null; then
+  local exec_path="$FEDORA_UPDATES_ROOT/bin/urstack"
+  if command -v urstack &>/dev/null; then
+    exec_path="$(command -v urstack)"
+  elif command -v stackup &>/dev/null; then
     exec_path="$(command -v stackup)"
   fi
-  cat > "$unit_dir/stackup-check.service" <<EOF
+  cat > "$unit_dir/urstack-check.service" <<EOF
 [Unit]
 Description=UrStack — check for workstation updates
 After=network-online.target
@@ -392,7 +397,7 @@ Type=oneshot
 ExecStart=$exec_path --check
 SuccessExitStatus=0 1
 EOF
-  cat > "$unit_dir/stackup-check.timer" <<'EOF'
+  cat > "$unit_dir/urstack-check.timer" <<'EOF'
 [Unit]
 Description=Daily UrStack update check
 
@@ -404,12 +409,13 @@ RandomizedDelaySec=30m
 [Install]
 WantedBy=timers.target
 EOF
-  # Disable legacy timer name if present
+  # Disable legacy timer names if present
+  systemctl --user disable --now stackup-check.timer 2>/dev/null || true
   systemctl --user disable --now fedora-updates-check.timer 2>/dev/null || true
   systemctl --user daemon-reload
-  systemctl --user enable --now stackup-check.timer
-  echo "Installed and started stackup-check.timer (daily)."
-  systemctl --user list-timers stackup-check.timer --no-pager 2>/dev/null || true
+  systemctl --user enable --now urstack-check.timer
+  echo "Installed and started urstack-check.timer (daily)."
+  systemctl --user list-timers urstack-check.timer --no-pager 2>/dev/null || true
 }
 
 if [[ $INSTALL_TIMER -eq 1 ]]; then

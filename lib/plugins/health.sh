@@ -304,7 +304,7 @@ _health_scan_storage() {
 
 # Persisted one-shot / recently-applied markers so suggestions clear after apply
 _health_applied_file() {
-  echo "${XDG_STATE_HOME:-$HOME/.local/state}/stackup/health-applied.conf"
+  echo "${XDG_STATE_HOME:-$HOME/.local/state}/urstack/health-applied.conf"
 }
 
 _health_mark_applied() {
@@ -794,7 +794,7 @@ fedora_health_scan() {
 # Restore points (safety net before Health apply)
 # ---------------------------------------------------------------------------
 _health_rp_root() {
-  local d="${XDG_STATE_HOME:-$HOME/.local/state}/stackup/health-restore-points"
+  local d="${XDG_STATE_HOME:-$HOME/.local/state}/urstack/health-restore-points"
   mkdir -p "$d"
   echo "$d"
 }

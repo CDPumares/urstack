@@ -241,10 +241,10 @@ class TestEphemeralLaunchers(unittest.TestCase):
         self.assertNotIn("waydroid.com", out)
 
     def test_keeps_waydroid_pin_when_requested(self) -> None:
-        src = "launchers=applications:Waydroid.desktop,applications:stackup.desktop\n"
+        src = "launchers=applications:Waydroid.desktop,applications:urstack.desktop\n"
         out = kde.filter_ephemeral_launchers(src, drop_waydroid_pin=False)
         self.assertIn("Waydroid.desktop", out)
-        self.assertIn("stackup.desktop", out)
+        self.assertIn("urstack.desktop", out)
 
     def test_prune_deletes_pwa_and_waydroid_desktops(self) -> None:
         with tempfile.TemporaryDirectory() as d:

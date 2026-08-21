@@ -108,7 +108,7 @@ class TestIncompleteRestorePoint(unittest.TestCase):
     def setUp(self) -> None:
         self._dir = tempfile.TemporaryDirectory()
         self.state = Path(self._dir.name)
-        self.root = self.state / "stackup" / "health-restore-points"
+        self.root = self.state / "urstack" / "health-restore-points"
         self.good = self.root / "20200101-000000"
         self.bad = self.root / "29990101-000000"
         for d in (self.good, self.bad):

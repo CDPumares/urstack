@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CATALOG = ROOT / "data" / "catalog"
 OUT = CATALOG / "icon-map.json"
 CTX = ssl.create_default_context()
-UA = {"user-agent": "UrStack/1.0 (+https://github.com/local/stackup)", "content-type": "application/json"}
+UA = {"user-agent": "UrStack/1.0 (+https://github.com/CDPumares/urstack)", "content-type": "application/json"}
 SI = "https://cdn.jsdelivr.net/npm/simple-icons@v13/icons"
 FH = "https://dl.flathub.org/media/icons/128x128"
 FV = "https://www.google.com/s2/favicons?domain={domain}&sz=128"

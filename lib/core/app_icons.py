@@ -19,7 +19,7 @@ from collections.abc import Callable
 
 _CTX = ssl.create_default_context()
 _UA = "UrStack/1.0 (app-icons)"
-_CACHE = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "stackup" / "app-icons"
+_CACHE = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "urstack" / "app-icons"
 _MAP: dict[str, str] | None = None
 _LOCK = threading.Lock()
 _INFLIGHT: set[str] = set()
@@ -41,7 +41,7 @@ def bundled_icons_dir(catalog_dir: Path | None = None) -> Path:
     """Directory of vendored catalog logos (app_id.png)."""
     if catalog_dir is not None:
         return catalog_dir / "icons"
-    env_root = os.environ.get("STACKUP_ROOT") or os.environ.get("FEDORA_UPDATES_ROOT")
+    env_root = os.environ.get("URSTACK_ROOT") or os.environ.get("STACKUP_ROOT") or os.environ.get("FEDORA_UPDATES_ROOT")
     if env_root:
         bundled = Path(env_root) / "data" / "catalog" / "icons"
         if bundled.is_dir():
@@ -72,7 +72,7 @@ def load_icon_map(catalog_dir: Path | None = None) -> dict[str, str]:
         candidates.append(catalog_dir / "icon-map.json")
     root = Path(__file__).resolve().parents[2]
     candidates.append(root / "data" / "catalog" / "icon-map.json")
-    env_root = os.environ.get("STACKUP_ROOT") or os.environ.get("FEDORA_UPDATES_ROOT")
+    env_root = os.environ.get("URSTACK_ROOT") or os.environ.get("STACKUP_ROOT") or os.environ.get("FEDORA_UPDATES_ROOT")
     if env_root:
         candidates.append(Path(env_root) / "data" / "catalog" / "icon-map.json")
 

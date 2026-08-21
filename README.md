@@ -111,7 +111,7 @@ That helps when Fedora has been running for months (or you just restored a bluep
 | Power | `power-profiles-daemon` profiles; warn if TLP and ppd both want control |
 | Advanced | `fstrim`, DNF parallel downloads, sysctl drop-in (`/etc/sysctl.d/99-urstack.conf`) |
 
-You choose what to apply. Aggressive tweaks take a **restore point** first (DNF state, unit enablement, UrStack sysctl drop-ins) under `~/.local/state/stackup/health-restore-points/`. You can list, create, and roll those back from the Health page or the CLI — so Health is a guided cleanup, not a one-way script.
+You choose what to apply. Aggressive tweaks take a **restore point** first (DNF state, unit enablement, UrStack sysctl drop-ins) under `~/.local/state/urstack/health-restore-points/`. You can list, create, and roll those back from the Health page or the CLI — so Health is a guided cleanup, not a one-way script.
 
 ### Backup and rebuild
 
@@ -147,7 +147,7 @@ cd urstack
 ./install.sh --user
 ```
 
-That copies the app under `~/.local/share/stackup`, puts `urstack` / `stackup` on `~/.local/bin`, installs desktop entries and icons, and writes `~/.config/stackup/config.conf` if it does not already exist.
+That copies the app under `~/.local/share/urstack`, puts `urstack` / `stackup` on `~/.local/bin`, installs desktop entries and icons, and writes `~/.config/urstack/config.conf` if it does not already exist.
 
 On first install with the default **auto** profile, the installer scans the workstation and enables only the sources it finds (DNF, Flatpak, Snap, fwupd, plus any toolchains present). Existing config is never overwritten.
 
@@ -186,7 +186,7 @@ After a user install, ensure `~/.local/bin` is on your `PATH`.
 ./install.sh --system --uninstall
 ```
 
-Config stays at `~/.config/stackup/config.conf`. Logs stay under `~/.local/state/stackup`.
+Config stays at `~/.config/urstack/config.conf`. Logs stay under `~/.local/state/urstack`.
 
 ---
 
@@ -240,7 +240,7 @@ urstack --health-restore [id|latest]
 urstack --install-timer
 ```
 
-Installs a user unit `stackup-check.timer` (`OnCalendar=daily`, randomized delay). It only **checks** and notifies; it does not apply updates.
+Installs a user unit `urstack-check.timer` (`OnCalendar=daily`, randomized delay). It only **checks** and notifies; it does not apply updates. Legacy `stackup-check.timer` / `fedora-updates-check.timer` units are disabled.
 
 ---
 
@@ -249,7 +249,7 @@ Installs a user unit `stackup-check.timer` (`OnCalendar=daily`, randomized delay
 User config (created on first run / install):
 
 ```text
-~/.config/stackup/config.conf
+~/.config/urstack/config.conf
 ```
 
 Keys are `1` / `0`. Shipped templates live in `config/default.conf` and `config/developer.conf`. Settings in the GUI write the same file (with a timestamped `.bak-*` copy).
@@ -295,25 +295,26 @@ Re-scan and rewrite config (backs up the previous file):
 urstack --detect --write-config
 ```
 
-Legacy `~/.config/fedora-workstation-updater/` is copied to `~/.config/stackup/` once if the new directory does not exist.
+Legacy `~/.config/stackup/` and `~/.config/fedora-workstation-updater/` are copied to `~/.config/urstack/` once if the new directory does not exist.
 
 ### Runtime paths
 
 | What | Where |
 | --- | --- |
-| User config | `~/.config/stackup/config.conf` |
-| Logs | `~/.local/state/stackup/` (`stackup.log` and per-run folders) |
-| Health restore points | `~/.local/state/stackup/health-restore-points/` |
-| User install | `~/.local/share/stackup/` |
-| System install | `/usr/local/share/stackup/` |
-| Lock | `$XDG_RUNTIME_DIR/stackup-$UID.lock` |
+| User config | `~/.config/urstack/config.conf` |
+| Logs | `~/.local/state/urstack/` (`urstack.log` and per-run folders) |
+| Health restore points | `~/.local/state/urstack/health-restore-points/` |
+| User install | `~/.local/share/urstack/` |
+| System install | `/usr/local/share/urstack/` |
+| Lock | `$XDG_RUNTIME_DIR/urstack-$UID.lock` |
 
 ---
 
 ## Project layout
 
 ```text
-bin/stackup              Entry point (GUI + CLI)
+bin/urstack              Entry point (GUI + CLI)
+bin/stackup              Compatibility wrapper
 bin/fedora-updates       Compatibility wrapper
 install.sh               User / system installer
 config/                  default.conf, developer.conf
@@ -364,7 +365,7 @@ python3 scripts/vendor-app-icons.py
 python3 scripts/vendor-app-metadata.py
 ```
 
-`vendor-app-metadata.py` pulls Flathub AppStream (description, developer, license, links, screenshot URLs) into `data/catalog/metadata.json`. Screenshot images are cached on first view under `~/.cache/stackup/app-meta/`.
+`vendor-app-metadata.py` pulls Flathub AppStream (description, developer, license, links, screenshot URLs) into `data/catalog/metadata.json`. Screenshot images are cached on first view under `~/.cache/urstack/app-meta/`.
 
 ---
 

@@ -10,9 +10,9 @@ cd urstack
 ./install.sh --user
 ```
 
-You can also run from the clone without installing: `./bin/stackup` (GUI) or `./bin/stackup --check` (CLI).
+You can also run from the clone without installing: `./bin/urstack` (GUI) or `./bin/urstack --check` (CLI).
 
-User config lives at `~/.config/stackup/config.conf` and is never overwritten by the installer if it already exists.
+User config lives at `~/.config/urstack/config.conf` and is never overwritten by the installer if it already exists.
 
 ## Checks to run
 
@@ -20,11 +20,11 @@ CI on `main` and pull requests runs the same gates.
 
 ```bash
 # Shell syntax
-bash -n bin/stackup install.sh
+bash -n bin/urstack install.sh
 find . -name '*.sh' -not -path './.git/*' -print0 | xargs -0 -n1 bash -n
 
 # shellcheck: errors and warnings must be clean
-shellcheck -S warning -x lib/core/*.sh lib/plugins/*.sh bin/stackup install.sh
+shellcheck -S warning -x lib/core/*.sh lib/plugins/*.sh bin/urstack install.sh
 
 # Python: blocking correctness subset
 ruff check --isolated --select F,E9,B .

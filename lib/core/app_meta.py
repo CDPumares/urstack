@@ -23,7 +23,7 @@ from collections.abc import Callable
 
 _CTX = ssl.create_default_context()
 _UA = "UrStack/1.0 (app-meta)"
-_CACHE = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "stackup" / "app-meta"
+_CACHE = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "urstack" / "app-meta"
 _APP_ROOT = Path(__file__).resolve().parents[2]
 _META: dict[str, dict] | None = None
 _ICON_IDS: dict[str, str] | None = None
@@ -54,7 +54,7 @@ def _catalog_dirs(catalog_dir: Path | None = None) -> list[Path]:
     if catalog_dir is not None:
         out.append(catalog_dir)
     out.append(_APP_ROOT / "data" / "catalog")
-    env_root = os.environ.get("STACKUP_ROOT") or os.environ.get("FEDORA_UPDATES_ROOT")
+    env_root = os.environ.get("URSTACK_ROOT") or os.environ.get("STACKUP_ROOT") or os.environ.get("FEDORA_UPDATES_ROOT")
     if env_root:
         out.append(Path(env_root) / "data" / "catalog")
     seen: set[str] = set()

@@ -43,10 +43,12 @@ DEFAULT_W, DEFAULT_H = 1440, 920
 CONTENT_MAX = 2400
 # Outer left/right inset for every shell page (clamp + Apps).
 PAGE_SIDE_PAD = 24
-# Must match installed desktop file basename (com.local.stackup.desktop)
-STACKUP_APP_ID = "com.local.stackup"
+# Must match installed desktop file basename (com.local.urstack.desktop)
+URSTACK_APP_ID = "com.local.urstack"
 APP_ROOT = Path(__file__).resolve().parents[2]
-APP_ICON = APP_ROOT / "data" / "icons" / "stackup.png"
+APP_ICON = APP_ROOT / "data" / "icons" / "urstack.png"
+if not APP_ICON.is_file():
+    APP_ICON = APP_ROOT / "data" / "icons" / "stackup.png"
 if not APP_ICON.is_file():
     APP_ICON = APP_ROOT / "data" / "icons" / "fedora-updates.png"
 
@@ -212,7 +214,7 @@ def default_config_path() -> Path:
     env = (os.environ.get("FEDORA_UPDATES_USER_CONFIG") or "").strip()
     if env:
         return Path(env).expanduser()
-    return Path.home() / ".config" / "stackup" / "config.conf"
+    return Path.home() / ".config" / "urstack" / "config.conf"
 
 
 def normalize_appearance(value: str | None) -> str:
@@ -343,14 +345,14 @@ def make_window(
         win.set_resizable(False)
     else:
         win.set_size_request(min(960, w), min(640, h))
-    win.add_css_class("fedora-updates")
+    win.add_css_class("urstack")
     try:
         dark = bool(Adw.StyleManager.get_default().get_dark())
         win.add_css_class("fu-dark" if dark else "fu-light")
     except Exception:  # noqa: BLE001
         pass
     try:
-        win.set_icon_name("stackup")
+        win.set_icon_name("urstack")
     except Exception:  # noqa: BLE001
         pass
     return win
@@ -1115,7 +1117,7 @@ def _overview_last_run(runs_dir: str) -> tuple[str, list[str]]:
 
 
 def _last_backup_conf_path() -> Path:
-    return Path.home() / ".config" / "stackup" / "last-backup.conf"
+    return Path.home() / ".config" / "urstack" / "last-backup.conf"
 
 
 def _save_last_backup(dest: str) -> None:
@@ -1896,15 +1898,15 @@ def build_shell_sidebar(
 
 def configure_app_identity() -> None:
     """Make the process look like UrStack, not python3, to desktops/taskbars."""
-    GLib.set_prgname("stackup")
+    GLib.set_prgname("urstack")
     GLib.set_application_name("UrStack")
     try:
-        # Must match StartupWMClass=stackup in the .desktop files
-        Gdk.set_program_class("stackup")
+        # Must match StartupWMClass=urstack in the .desktop files
+        Gdk.set_program_class("urstack")
     except Exception:  # noqa: BLE001
         pass
     try:
-        Gtk.Window.set_default_icon_name("stackup")
+        Gtk.Window.set_default_icon_name("urstack")
     except Exception:  # noqa: BLE001
         pass
 
@@ -1969,7 +1971,7 @@ def mode_hub(args: argparse.Namespace) -> int:
         win.maximize()
         win.present()
 
-    return run_app("com.local.fedoraupdates.hub", build)
+    return run_app("com.local.urstack.hub", build)
 
 
 def build_checklist_content(
@@ -2149,7 +2151,7 @@ def mode_checklist(args: argparse.Namespace) -> int:
         win.connect("close-request", on_close)
         win.present()
 
-    return run_app("com.local.fedoraupdates.checklist", build)
+    return run_app("com.local.urstack.checklist", build)
 
 
 def mode_radio(args: argparse.Namespace) -> int:
@@ -2228,7 +2230,7 @@ def mode_radio(args: argparse.Namespace) -> int:
         win.connect("close-request", on_close)
         win.present()
 
-    return run_app("com.local.fedoraupdates.radio", build)
+    return run_app("com.local.urstack.radio", build)
 
 
 def mode_text(args: argparse.Namespace) -> int:
@@ -2274,7 +2276,7 @@ def mode_text(args: argparse.Namespace) -> int:
         win.connect("close-request", on_close)
         win.present()
 
-    return run_app("com.local.fedoraupdates.text", build)
+    return run_app("com.local.urstack.text", build)
 
 
 def mode_message(args: argparse.Namespace) -> int:
@@ -2341,7 +2343,7 @@ def mode_message(args: argparse.Namespace) -> int:
         win.connect("close-request", on_close)
         win.present()
 
-    return run_app("com.local.fedoraupdates.message", build)
+    return run_app("com.local.urstack.message", build)
 
 
 def mode_ask(args: argparse.Namespace) -> int:
@@ -2388,7 +2390,7 @@ def mode_ask(args: argparse.Namespace) -> int:
         win.connect("close-request", on_close)
         win.present()
 
-    return run_app("com.local.fedoraupdates.ask", build)
+    return run_app("com.local.urstack.ask", build)
 
 
 def mode_folder(args: argparse.Namespace) -> int:
@@ -2415,7 +2417,7 @@ def mode_folder(args: argparse.Namespace) -> int:
         win.present()
         dialog.select_folder(win, None, on_done)
 
-    return run_app("com.local.fedoraupdates.folder", build)
+    return run_app("com.local.urstack.folder", build)
 
 
 def mode_progress(args: argparse.Namespace) -> int:
@@ -2625,11 +2627,11 @@ def mode_progress(args: argparse.Namespace) -> int:
         win.connect("close-request", on_close)
         win.present()
 
-    return run_app("com.local.fedoraupdates.progress", build, unique=False)
+    return run_app("com.local.urstack.progress", build, unique=False)
 
 
 def mode_runs(args: argparse.Namespace) -> int:
-    """Browse ~/.local/state/fedora-updates/runs/ and open a run summary/log."""
+    """Browse ~/.local/state/urstack/runs/ and open a run summary/log."""
 
     def build(app: Adw.Application, state: dict) -> None:
         win = make_window(app, args.title, 860, 680)
@@ -2737,7 +2739,7 @@ def mode_runs(args: argparse.Namespace) -> int:
         win.connect("close-request", on_close)
         win.present()
 
-    return run_app("com.local.fedoraupdates.runs", build)
+    return run_app("com.local.urstack.runs", build)
 
 
 SETTING_KEYS: list[tuple[str, str, str, str]] = [
@@ -2770,7 +2772,7 @@ SETTING_KEYS: list[tuple[str, str, str, str]] = [
         "apply_fw",
         "Core updates",
         "Apply firmware updates",
-        "Install fwupd payloads when you Apply (and in stackup --yes). Off by default because a flash may need a reboot. You can still tick Firmware on the Apply screen for a one-off.",
+        "Install fwupd payloads when you Apply (and in urstack --yes). Off by default because a flash may need a reboot. You can still tick Firmware on the Apply screen for a one-off.",
     ),
     (
         "enable_kernel_prune",
@@ -2920,7 +2922,7 @@ def write_config_map(path: Path, values: dict[str, str]) -> None:
     lines = [
         "# UrStack — saved from Settings",
         f"# {datetime.now().isoformat(timespec='seconds')}",
-        "# Re-scan: stackup --detect --write-config",
+        "# Re-scan: urstack --detect --write-config",
         "",
         "# ── Core / plugins ──────────────────────────────────────────────────────────",
     ]
@@ -2940,9 +2942,9 @@ def write_config_map(path: Path, values: dict[str, str]) -> None:
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def _stackup_command() -> list[str]:
+def _urstack_command() -> list[str]:
     root = Path(__file__).resolve().parents[2]
-    local = root / "bin" / "stackup"
+    local = root / "bin" / "urstack"
     if local.is_file() and os.access(local, os.X_OK):
         return [str(local)]
     for name in ("urstack", "stackup", "fedora-updates"):
@@ -3000,13 +3002,14 @@ def run_health_scan_subprocess(status_path: str) -> bool:
     root = str(Path(__file__).resolve().parents[2])
     try:
         subprocess.run(
-            _stackup_command() + ["--health-scan", "--health-status", status_path],
+            _urstack_command() + ["--health-scan", "--health-status", status_path],
             check=False,
             capture_output=True,
             text=True,
             timeout=HEALTH_SCAN_TIMEOUT,
             env={
                 **os.environ,
+                "URSTACK_ROOT": root,
                 "STACKUP_ROOT": root,
                 "FEDORA_UPDATES_ROOT": root,
                 "URSTACK_EMBEDDED_PROGRESS": "1",
@@ -3028,10 +3031,11 @@ def run_workstation_rescan(config_file: str | Path) -> tuple[bool, list[str], st
     cfg_path = Path(config_file).expanduser()
     prev = read_config_map(cfg_path) if cfg_path.is_file() else {}
     root = Path(__file__).resolve().parents[2]
-    cmd = _stackup_command() + ["--detect", "--write-config"]
+    cmd = _urstack_command() + ["--detect", "--write-config"]
     env = os.environ.copy()
     env["FEDORA_UPDATES_USER_CONFIG"] = str(cfg_path)
     env["FEDORA_UPDATES_ROOT"] = str(root)
+    env["URSTACK_ROOT"] = str(root)
     env["STACKUP_ROOT"] = str(root)
     try:
         proc = subprocess.run(
@@ -3094,7 +3098,7 @@ def mode_settings(args: argparse.Namespace) -> int:
         win.connect("close-request", on_close)
         win.present()
 
-    return run_app("com.local.fedoraupdates.settings", build)
+    return run_app("com.local.urstack.settings", build)
 
 
 
@@ -3125,7 +3129,7 @@ def mode_catalog(args: argparse.Namespace) -> int:
         win.connect("close-request", on_close)
         win.present()
 
-    return run_app("com.local.stackup.catalog", build)
+    return run_app("com.local.urstack.catalog", build)
 
 
 def _load_catalog_rows(path: Path) -> list[dict[str, str]]:
@@ -4596,7 +4600,7 @@ def build_catalog_content(
     def do_install_selected(*_a: object) -> None:
         if not selected:
             return
-        fd, path = tempfile.mkstemp(prefix="stackup-install-", suffix=".txt", text=True)
+        fd, path = tempfile.mkstemp(prefix="urstack-install-", suffix=".txt", text=True)
         os.close(fd)
         batch = Path(path)
         lines = []
@@ -4861,7 +4865,7 @@ def _health_problem_rows(
 
 def _health_latest_restore_point() -> tuple[str, str]:
     """Return (id, created) for the newest restore point, or ('', '')."""
-    root = Path.home() / ".local/state/stackup/health-restore-points"
+    root = Path.home() / ".local/state/urstack/health-restore-points"
     if not root.is_dir():
         return "", ""
     ids = sorted((p.name for p in root.iterdir() if p.is_dir()), reverse=True)
@@ -5812,11 +5816,11 @@ RESTORE_INCLUDE_OPTIONS: list[tuple[str, str, str, bool]] = [
 
 
 def _backup_opts_path(mode: str) -> Path:
-    return Path.home() / ".config" / "stackup" / f"last-{mode}-opts.conf"
+    return Path.home() / ".config" / "urstack" / f"last-{mode}-opts.conf"
 
 
 def _extra_paths_file() -> Path:
-    return Path.home() / ".config" / "stackup" / "backup-extra-paths.conf"
+    return Path.home() / ".config" / "urstack" / "backup-extra-paths.conf"
 
 
 def _load_extra_paths() -> list[str]:
@@ -5857,7 +5861,7 @@ def _load_include_defaults(
     if not path.is_file():
         # Prefer config full_dotconfig for backup when no saved prefs
         if mode == "backup":
-            cfg = read_config_map(Path.home() / ".config" / "stackup" / "config.conf")
+            cfg = read_config_map(Path.home() / ".config" / "urstack" / "config.conf")
             if "backup_full_dotconfig" in cfg:
                 defaults["full_dotconfig"] = cfg.get("backup_full_dotconfig", "1") == "1"
         return defaults
@@ -7003,7 +7007,7 @@ def mode_shell(args: argparse.Namespace) -> int:
             sections_file = (getattr(args, "sections_file", "") or "").strip()
             if not check_dir or not Path(check_dir).is_dir():
                 return False, False, session["raw"], "Update session expired — reopen UrStack"
-            cmd = _stackup_command() + [
+            cmd = _urstack_command() + [
                 "--refresh-check",
                 "--check-dir",
                 check_dir,
@@ -7015,6 +7019,7 @@ def mode_shell(args: argparse.Namespace) -> int:
             env = os.environ.copy()
             root = Path(__file__).resolve().parents[2]
             env["FEDORA_UPDATES_ROOT"] = str(root)
+            env["URSTACK_ROOT"] = str(root)
             env["STACKUP_ROOT"] = str(root)
             env["URSTACK_EMBEDDED_PROGRESS"] = "1"
             try:
@@ -7106,7 +7111,7 @@ def mode_shell(args: argparse.Namespace) -> int:
             auto_complete: bool = False,
             cancellable: bool = False,
         ) -> None:
-            """Keep the main window open and show progress for a long-running stackup job.
+            """Keep the main window open and show progress for a long-running urstack job.
 
             cancellable is only safe for jobs that copy files. A job that drives
             a package transaction or writes into /etc must not be interruptible
@@ -7274,6 +7279,7 @@ def mode_shell(args: argparse.Namespace) -> int:
                 code = 1
                 env = os.environ.copy()
                 env["FEDORA_UPDATES_ROOT"] = str(root)
+                env["URSTACK_ROOT"] = str(root)
                 env["STACKUP_ROOT"] = str(root)
                 env["URSTACK_EMBEDDED_PROGRESS"] = "1"
                 if env_extra:
@@ -7345,7 +7351,7 @@ def mode_shell(args: argparse.Namespace) -> int:
                     env_extra["URSTACK_BACKUP_EXTRA_PATHS"] = "\n".join(extras)
                 run_embedded_job(
                     title="Backup",
-                    argv=_stackup_command() + ["--backup", path],
+                    argv=_urstack_command() + ["--backup", path],
                     env_extra=env_extra,
                     pulsate=False,
                     success_toast="Backup complete",
@@ -7357,7 +7363,7 @@ def mode_shell(args: argparse.Namespace) -> int:
             else:
                 run_embedded_job(
                     title="Restore",
-                    argv=_stackup_command() + ["--restore", path],
+                    argv=_urstack_command() + ["--restore", path],
                     env_extra=env_extra,
                     pulsate=True,
                     success_toast="Restore complete",
@@ -7379,7 +7385,7 @@ def mode_shell(args: argparse.Namespace) -> int:
             sections = "|".join(selected)
             run_embedded_job(
                 title="Applying updates",
-                argv=_stackup_command()
+                argv=_urstack_command()
                 + ["--apply-sections", sections, "--check-dir", check_dir],
                 pulsate=False,
                 success_toast="Updates finished",
@@ -7400,7 +7406,7 @@ def mode_shell(args: argparse.Namespace) -> int:
                 if check_dir and Path(check_dir).is_dir():
                     run_embedded_job(
                         title="Applying updates",
-                        argv=_stackup_command()
+                        argv=_urstack_command()
                         + ["--apply-sections", "all", "--check-dir", check_dir],
                         pulsate=False,
                         success_toast="Updates finished",
@@ -7447,7 +7453,7 @@ def mode_shell(args: argparse.Namespace) -> int:
             title = "Installing apps" if action.startswith("install-batch|") else "Installing"
             run_embedded_job(
                 title=title,
-                argv=_stackup_command() + ["--catalog-choice", action],
+                argv=_urstack_command() + ["--catalog-choice", action],
                 env_extra=env_extra,
                 pulsate=False,
                 success_toast="Install finished",
@@ -7494,7 +7500,7 @@ def mode_shell(args: argparse.Namespace) -> int:
 
                 run_embedded_job(
                     title="Applying health fixes",
-                    argv=_stackup_command()
+                    argv=_urstack_command()
                     + ["--health-apply", csv, "--health-status", hs],
                     env_extra=env_extra,
                     pulsate=False,
@@ -7517,7 +7523,7 @@ def mode_shell(args: argparse.Namespace) -> int:
 
                 run_embedded_job(
                     title="Creating restore point",
-                    argv=_stackup_command() + ["--health-restore-point"],
+                    argv=_urstack_command() + ["--health-restore-point"],
                     pulsate=True,
                     success_toast="Restore point created",
                     fail_toast="Could not create restore point",
@@ -7537,7 +7543,7 @@ def mode_shell(args: argparse.Namespace) -> int:
 
                         run_embedded_job(
                             title="Restoring from health point",
-                            argv=_stackup_command()
+                            argv=_urstack_command()
                             + ["--health-restore", "latest"],
                             pulsate=False,
                             success_toast="Restore point applied",
@@ -7913,7 +7919,7 @@ def mode_shell(args: argparse.Namespace) -> int:
         win.maximize()
         win.present()
 
-    return run_app(STACKUP_APP_ID, build)
+    return run_app(URSTACK_APP_ID, build)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -7980,14 +7986,14 @@ def build_parser() -> argparse.ArgumentParser:
     runs.add_argument("--title", default="Update run logs")
     runs.add_argument(
         "--runs-dir",
-        default=str(Path.home() / ".local/state/stackup/runs"),
+        default=str(Path.home() / ".local/state/urstack/runs"),
     )
 
     settings = sub.add_parser("settings")
     settings.add_argument("--title", default="UrStack settings")
     settings.add_argument(
         "--config-file",
-        default=str(Path.home() / ".config/stackup/config.conf"),
+        default=str(Path.home() / ".config/urstack/config.conf"),
     )
 
     catalog = sub.add_parser("catalog")
@@ -8001,11 +8007,11 @@ def build_parser() -> argparse.ArgumentParser:
     shell.add_argument("--enable-backup", type=int, default=0)
     shell.add_argument("--title", default="UrStack")
     shell.add_argument("--status-file", required=True)
-    shell.add_argument("--config-file", default=str(Path.home() / ".config/stackup/config.conf"))
-    shell.add_argument("--log-file", default=str(Path.home() / ".local/state/stackup/stackup.log"))
+    shell.add_argument("--config-file", default=str(Path.home() / ".config/urstack/config.conf"))
+    shell.add_argument("--log-file", default=str(Path.home() / ".local/state/urstack/urstack.log"))
     shell.add_argument(
         "--runs-dir",
-        default=str(Path.home() / ".local/state/stackup/runs"),
+        default=str(Path.home() / ".local/state/urstack/runs"),
     )
     shell.add_argument("--category", default="")
     shell.add_argument(

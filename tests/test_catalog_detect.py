@@ -70,6 +70,7 @@ class DetectHarness:
         env = {
             **os.environ,
             "HOME": str(self.home),
+            "URSTACK_ROOT": str(self.tmp),
             "STACKUP_ROOT": str(self.tmp),
             "PATH": f"{self.bin}:{os.environ.get('PATH', '')}",
             "XDG_DATA_DIRS": "",

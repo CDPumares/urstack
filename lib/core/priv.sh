@@ -48,7 +48,7 @@
 #   TIMEOUT_AKMODS, KEEP_KERNELS, HEALTH_JOURNAL_VACUUM,
 #   FEDORA_UPDATES_AKMODS_CANCEL (path — if created, abort akmods)
 #   URSTACK_RESTORE_CANCEL (path — if created, skip remaining restore jobs and unwind)
-#   URSTACK_RESTORE_UNDO (caller-owned journal dir under ~/.local/state/stackup/)
+#   URSTACK_RESTORE_UNDO (caller-owned journal dir under ~/.local/state/urstack/)
 
 set -uo pipefail
 
@@ -193,7 +193,7 @@ _valid_undo_dir() {
   local p="${URSTACK_RESTORE_UNDO:-}"
   [[ -n "$p" && "$p" == /* && "$p" != *".."* ]] || return 1
   [[ -d "$p" && ! -L "$p" ]] || return 1
-  [[ "$p" == "$CALLER_HOME/.local/state/stackup/"* ]] || return 1
+  [[ "$p" == "$CALLER_HOME/.local/state/urstack/"* || "$p" == "$CALLER_HOME/.local/state/stackup/"* ]] || return 1
   _valid_caller_owned_path "$p"
 }
 
@@ -992,10 +992,11 @@ EOF
     health_restore_files)
       rp_dir="${1:-}"
       files="$rp_dir/files"
-      rp_root="$CALLER_HOME/.local/state/stackup/health-restore-points"
+      rp_root="$CALLER_HOME/.local/state/urstack/health-restore-points"
+      rp_root_legacy="$CALLER_HOME/.local/state/stackup/health-restore-points"
       if [[ -z "$rp_dir" || ! -d "$files" ]]; then
         log "health_restore_files: missing $rp_dir/files"; exit_code=1
-      elif [[ "$rp_dir" != "$rp_root"/* || "$rp_dir" == *".."* ]]; then
+      elif [[ "$rp_dir" == *".."* ]] || { [[ "$rp_dir" != "$rp_root"/* && "$rp_dir" != "$rp_root_legacy"/* ]]; }; then
         log "health_restore_files: refusing path outside $rp_root"; exit_code=1
       elif ! _valid_caller_path "$rp_dir"; then
         log "health_restore_files: refusing untrusted path $rp_dir"; exit_code=1

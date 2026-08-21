@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for a report. Logs live under `~/.local/state/stackup/` (do not paste secrets, SSH keys, or backup blueprints).
+        Thanks for a report. Logs live under `~/.local/state/urstack/` (do not paste secrets, SSH keys, or backup blueprints).
   - type: textarea
     id: what-happened
     attributes:
@@ -50,5 +50,5 @@ body:
     id: logs
     attributes:
       label: Relevant log excerpt
-      description: From `~/.local/state/stackup/stackup.log` or a per-run folder. Redact hostnames and account names if you want.
+      description: From `~/.local/state/urstack/urstack.log` or a per-run folder. Redact hostnames and account names if you want.
       render: text

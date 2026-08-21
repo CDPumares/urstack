@@ -1,4 +1,4 @@
-# Apply / UI helpers for Fedora Workstation Updater (sourced).
+# Apply / UI helpers for UrStack (sourced).
 # shellcheck shell=bash
 
 emit_progress() {
@@ -146,7 +146,7 @@ run_priv_jobs() {
       echo "${PIPESTATUS[0]}" > "$check_dir/priv_exit"
       echo "100"
       echo "# Privileged batch complete"
-    ) | pipe_to_progress "Fedora Workstation Updater (privileged)" 1 "$cancel_flag"
+    ) | pipe_to_progress "UrStack (privileged)" 1 "$cancel_flag"
     ec=$(cat "$check_dir/priv_exit" 2>/dev/null || echo 1)
   else
     pkexec_priv "$jobs_file" 2>&1 | section_log priv | emit_lines
@@ -345,7 +345,7 @@ run_all_updates() {
       done
       echo "100"
       echo "# All updates complete!"
-    ) | pipe_to_progress "Fedora Workstation Updater" 0
+    ) | pipe_to_progress "UrStack" 0
   else
     for entry in "${queue[@]}"; do
       key="${entry%%:*}"
@@ -427,9 +427,9 @@ run_all_updates() {
   else
     local _ui="$FEDORA_UPDATES_LIB/ui.py"
     if [[ -n "${DISPLAY:-}" && -x "$_ui" ]] && command -v python3 &>/dev/null; then
-      python3 "$_ui" message --type info --title "Fedora Workstation Updater" --text "$summary" 2>/dev/null || true
+      python3 "$_ui" message --type info --title "UrStack" --text "$summary" 2>/dev/null || true
     else
-      zenity --info --title="Fedora Workstation Updater" --text="$summary" --width=480 2>/dev/null || echo -e "$summary"
+      zenity --info --title="UrStack" --text="$summary" --width=480 2>/dev/null || echo -e "$summary"
     fi
   fi
 
@@ -463,7 +463,7 @@ show_select_dialog() {
       --items-file "$items_f" \
       --ok-label "Apply" 2>/dev/null) || selected=""
   else
-    selected=$(zenity --list --checklist --title="Fedora Workstation Updater" \
+    selected=$(zenity --list --checklist --title="UrStack" \
       --text="Select which updates to apply:" \
       --column="" --column="Section" --separator="|" \
       "${checklist_args[@]}" 2>/dev/null) || true
@@ -476,16 +476,16 @@ show_log_viewer() {
   local _ui="$FEDORA_UPDATES_LIB/ui.py"
   if [[ -f "$LOG_FILE" ]]; then
     if [[ -n "${DISPLAY:-}" && -x "$_ui" ]] && command -v python3 &>/dev/null; then
-      python3 "$_ui" text --title "Fedora Workstation Updater — History" --file "$LOG_FILE" --ok-label "Back" 2>/dev/null || true
+      python3 "$_ui" text --title "UrStack — History" --file "$LOG_FILE" --ok-label "Back" 2>/dev/null || true
     else
-      zenity --text-info --title="Fedora Workstation Updater — History" \
+      zenity --text-info --title="UrStack — History" \
         --filename="$LOG_FILE" --width=800 --height=620 --ok-label="Back" 2>/dev/null || true
     fi
   else
     if [[ -n "${DISPLAY:-}" && -x "$_ui" ]]; then
-      python3 "$_ui" message --type info --title "Fedora Workstation Updater" --text "No update history found yet." 2>/dev/null || true
+      python3 "$_ui" message --type info --title "UrStack" --text "No update history found yet." 2>/dev/null || true
     else
-      zenity --info --title="Fedora Workstation Updater" --text="No update history found yet." 2>/dev/null || true
+      zenity --info --title="UrStack" --text="No update history found yet." 2>/dev/null || true
     fi
   fi
 }
@@ -494,7 +494,7 @@ show_runs_browser() {
   local _ui="$FEDORA_UPDATES_LIB/ui.py"
   local runs_dir="$LOG_DIR/runs"
   if [[ -n "${DISPLAY:-}" && -x "$_ui" ]] && command -v python3 &>/dev/null; then
-    python3 "$_ui" runs --title "Fedora Workstation Updater — Run logs" --runs-dir "$runs_dir" 2>/dev/null || true
+    python3 "$_ui" runs --title "UrStack — Run logs" --runs-dir "$runs_dir" 2>/dev/null || true
   else
     if [[ -d "$runs_dir" ]]; then
       ls -1t "$runs_dir" | head -n 20
@@ -647,12 +647,12 @@ show_settings() {
   while true; do
     if [[ -n "${DISPLAY:-}" && -f "$_ui" ]] && command -v python3 &>/dev/null; then
       choice=$(python3 "$_ui" settings \
-        --title "${APP_NAME:-Fedora Workstation Updater} — Settings" \
+        --title "${APP_NAME:-UrStack} — Settings" \
         --config-file "$FEDORA_UPDATES_USER_CONFIG" 2>/dev/null) || true
       choice=$(printf '%s' "$choice" | tr -d '\r' | awk 'NF{print; exit}')
     else
       echo "Edit config: $FEDORA_UPDATES_USER_CONFIG"
-      echo "Or run: fedora-updates --detect --write-config"
+      echo "Or run: urstack --detect --write-config"
       return 0
     fi
     case "$choice" in
@@ -681,7 +681,7 @@ show_action_menu() {
   local status_f start_page="" sections_f
   status_f=$(mktemp)
   sections_f=$(mktemp)
-  local runs_dir="${XDG_STATE_HOME:-$HOME/.local/state}/stackup/runs"
+  local runs_dir="${XDG_STATE_HOME:-$HOME/.local/state}/urstack/runs"
 
   while true; do
     choice=""

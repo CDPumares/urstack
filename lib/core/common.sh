@@ -5,34 +5,49 @@
 # Paths / timeouts
 # ---------------------------------------------------------------------------
 # common.sh lives at <root>/lib/core/common.sh
-: "${STACKUP_ROOT:=${FEDORA_UPDATES_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}}"
-: "${FEDORA_UPDATES_ROOT:=$STACKUP_ROOT}"
-: "${FEDORA_UPDATES_LIB:=$STACKUP_ROOT/lib/core}"
-: "${FEDORA_UPDATES_PLUGINS:=$STACKUP_ROOT/lib/plugins}"
+: "${URSTACK_ROOT:=${STACKUP_ROOT:-${FEDORA_UPDATES_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}}}}"
+: "${STACKUP_ROOT:=$URSTACK_ROOT}"
+: "${FEDORA_UPDATES_ROOT:=$URSTACK_ROOT}"
+: "${FEDORA_UPDATES_LIB:=$URSTACK_ROOT/lib/core}"
+: "${FEDORA_UPDATES_PLUGINS:=$URSTACK_ROOT/lib/plugins}"
 
-# Prefer ~/.config/stackup; migrate from old fedora-workstation-updater path once
-_legacy_cfg="${XDG_CONFIG_HOME:-$HOME/.config}/fedora-workstation-updater"
-_new_cfg="${XDG_CONFIG_HOME:-$HOME/.config}/stackup"
-if [[ ! -d "$_new_cfg" && -d "$_legacy_cfg" ]]; then
-  mkdir -p "$_new_cfg"
-  cp -a "$_legacy_cfg/." "$_new_cfg/" 2>/dev/null || true
+# Prefer ~/.config/urstack; migrate fedora-workstation-updater then stackup once
+_cfg_home="${XDG_CONFIG_HOME:-$HOME/.config}"
+_new_cfg="$_cfg_home/urstack"
+if [[ ! -d "$_new_cfg" ]]; then
+  for _legacy_cfg in "$_cfg_home/stackup" "$_cfg_home/fedora-workstation-updater"; do
+    if [[ -d "$_legacy_cfg" ]]; then
+      mkdir -p "$_new_cfg" 2>/dev/null || true
+      if [[ -d "$_new_cfg" ]]; then
+        cp -a "$_legacy_cfg/." "$_new_cfg/" 2>/dev/null || true
+      fi
+      break
+    fi
+  done
 fi
 : "${FEDORA_UPDATES_CONFIG_DIR:=$_new_cfg}"
 : "${FEDORA_UPDATES_USER_CONFIG:=$FEDORA_UPDATES_CONFIG_DIR/config.conf}"
 
-_legacy_log="${XDG_STATE_HOME:-$HOME/.local/state}/fedora-workstation-updater"
-_new_log="${XDG_STATE_HOME:-$HOME/.local/state}/stackup"
-if [[ ! -d "$_new_log" && -d "$_legacy_log" ]]; then
-  mkdir -p "$_new_log"
-  cp -a "$_legacy_log/." "$_new_log/" 2>/dev/null || true
+_state_home="${XDG_STATE_HOME:-$HOME/.local/state}"
+_new_log="$_state_home/urstack"
+if [[ ! -d "$_new_log" ]]; then
+  for _legacy_log in "$_state_home/stackup" "$_state_home/fedora-workstation-updater"; do
+    if [[ -d "$_legacy_log" ]]; then
+      mkdir -p "$_new_log" 2>/dev/null || true
+      if [[ -d "$_new_log" ]]; then
+        cp -a "$_legacy_log/." "$_new_log/" 2>/dev/null || true
+      fi
+      break
+    fi
+  done
 fi
 : "${LOG_DIR:=$_new_log}"
-: "${LOG_FILE:=$LOG_DIR/stackup.log}"
+: "${LOG_FILE:=$LOG_DIR/urstack.log}"
 : "${RUN_LOG_DIR:=}"
-: "${LOCK_FILE:=${XDG_RUNTIME_DIR:-/tmp}/stackup-$UID.lock}"
+: "${LOCK_FILE:=${XDG_RUNTIME_DIR:-/tmp}/urstack-$UID.lock}"
 
 APP_NAME="UrStack"
-APP_ID="stackup"
+APP_ID="urstack"
 APP_TAGLINE="Update your whole Fedora stack — and install popular apps"
 
 TIMEOUT_DNF="${TIMEOUT_DNF:-120}"
@@ -217,7 +232,9 @@ prepend_user_toolchain_path() {
 }
 
 priv_helper_path() {
-  if [[ -x /usr/local/libexec/stackup-priv ]]; then
+  if [[ -x /usr/local/libexec/urstack-priv ]]; then
+    printf '%s' /usr/local/libexec/urstack-priv
+  elif [[ -x /usr/local/libexec/stackup-priv ]]; then
     printf '%s' /usr/local/libexec/stackup-priv
   else
     printf '%s' "${FEDORA_UPDATES_LIB}/priv.sh"
@@ -225,7 +242,7 @@ priv_helper_path() {
 }
 
 # Prepend #env KEY=VAL lines so priv.sh can read them without `pkexec env`
-# (which would make PolicyKit match `env` instead of stackup-priv).
+# (which would make PolicyKit match `env` instead of urstack-priv).
 priv_jobs_inject_env() {
   local jobs_file="$1"
   local tmp
@@ -307,12 +324,13 @@ tree_is_incomplete() { [[ -f "$1/$URSTACK_INCOMPLETE_NAME" ]]; }
 notify() {
   local summary="$1" body="${2:-}" urgency="${3:-normal}"
   command -v notify-send &>/dev/null || return 0
-  local icon="${FEDORA_UPDATES_ROOT}/data/icons/stackup.png"
+  local icon="${FEDORA_UPDATES_ROOT}/data/icons/urstack.png"
+  [[ -f "$icon" ]] || icon="${FEDORA_UPDATES_ROOT}/data/icons/urstack.png"
   [[ -f "$icon" ]] || icon="${FEDORA_UPDATES_ROOT}/data/icons/fedora-updates.png"
-  [[ -f "$icon" ]] || icon="stackup"
+  [[ -f "$icon" ]] || icon="urstack"
   [[ -f "$icon" ]] || icon="system-software-update"
-  local script="${FEDORA_UPDATES_ROOT}/bin/stackup"
-  [[ -x "$script" ]] || script="$(command -v stackup 2>/dev/null || command -v fedora-updates 2>/dev/null || true)"
+  local script="${FEDORA_UPDATES_ROOT}/bin/urstack"
+  [[ -x "$script" ]] || script="$(command -v urstack 2>/dev/null || command -v stackup 2>/dev/null || command -v fedora-updates 2>/dev/null || true)"
 
   # Actionable notification: Open launches the updater.
   # Must fully detach (--wait would otherwise keep the updater/timer hung).

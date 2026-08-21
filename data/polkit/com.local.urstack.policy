@@ -4,9 +4,9 @@
  "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
 <policyconfig>
   <vendor>UrStack</vendor>
-  <vendor_url>https://github.com/</vendor_url>
+  <vendor_url>https://github.com/CDPumares/urstack</vendor_url>
 
-  <action id="com.local.stackup.priv">
+  <action id="com.local.urstack.priv">
     <description>Run privileged UrStack system updates</description>
     <message>Authentication is required for UrStack to apply system package, snap, firmware, and kernel-module updates.</message>
     <defaults>
@@ -14,7 +14,7 @@
       <allow_inactive>auth_admin</allow_inactive>
       <allow_active>auth_admin</allow_active>
     </defaults>
-    <annotate key="org.freedesktop.policykit.exec.path">/usr/local/libexec/stackup-priv</annotate>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/local/libexec/urstack-priv</annotate>
     <annotate key="org.freedesktop.policykit.exec.allow_gui">true</annotate>
   </action>
 </policyconfig>

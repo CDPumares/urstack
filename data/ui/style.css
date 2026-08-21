@@ -1,4 +1,4 @@
-window.fedora-updates {
+window.urstack {
   font-size: 14px;
 }
 
@@ -14,8 +14,8 @@ window.fedora-updates {
 }
 
 /* Hide decorative CSD app icon in the titlebar; keep min/max/close buttons. */
-window.fedora-updates headerbar > image:first-child,
-window.fedora-updates headerbar windowcontrols.start > image {
+window.urstack headerbar > image:first-child,
+window.urstack headerbar windowcontrols.start > image {
   opacity: 0;
   min-width: 0;
   min-height: 0;
@@ -643,26 +643,26 @@ button.fu-shot-btn {
 }
 
 /* Light: stronger chrome so cards and the sidebar don't wash out. */
-window.fedora-updates.fu-light .fu-shell-sidebar {
+window.urstack.fu-light .fu-shell-sidebar {
   background-color: alpha(@card_bg_color, 0.96);
   border-right: 1px solid alpha(@borders, 0.95);
 }
 
-window.fedora-updates.fu-light .fu-overview-card,
-window.fedora-updates.fu-light .fu-page-card,
-window.fedora-updates.fu-light .fu-health-card,
-window.fedora-updates.fu-light .fu-app-mini {
+window.urstack.fu-light .fu-overview-card,
+window.urstack.fu-light .fu-page-card,
+window.urstack.fu-light .fu-health-card,
+window.urstack.fu-light .fu-app-mini {
   background-color: @card_bg_color;
   border: 1px solid alpha(@borders, 0.9);
 }
 
-window.fedora-updates.fu-light .fu-app-mini:hover {
+window.urstack.fu-light .fu-app-mini:hover {
   background-color: alpha(@accent_bg_color, 0.10);
   border-color: alpha(@accent_bg_color, 0.38);
 }
 
-window.fedora-updates.fu-light .fu-page-hero,
-window.fedora-updates.fu-light .fu-health-hero {
+window.urstack.fu-light .fu-page-hero,
+window.urstack.fu-light .fu-health-hero {
   background-image: linear-gradient(
     135deg,
     alpha(@accent_bg_color, 0.18),
@@ -672,8 +672,8 @@ window.fedora-updates.fu-light .fu-health-hero {
   border: 1px solid alpha(@accent_bg_color, 0.32);
 }
 
-window.fedora-updates.fu-light .fu-page-hero-warn,
-window.fedora-updates.fu-light .fu-health-hero-warn {
+window.urstack.fu-light .fu-page-hero-warn,
+window.urstack.fu-light .fu-health-hero-warn {
   background-image: linear-gradient(
     135deg,
     alpha(@warning_color, 0.20),
@@ -683,32 +683,32 @@ window.fedora-updates.fu-light .fu-health-hero-warn {
   border: 1px solid alpha(@warning_color, 0.38);
 }
 
-window.fedora-updates.fu-light .fu-page-callout,
-window.fedora-updates.fu-light .fu-health-rp {
+window.urstack.fu-light .fu-page-callout,
+window.urstack.fu-light .fu-health-rp {
   background-color: alpha(@card_bg_color, 0.98);
   border: 1px dashed alpha(@borders, 0.9);
 }
 
-window.fedora-updates.fu-light button.fu-cat-pill {
+window.urstack.fu-light button.fu-cat-pill {
   background-color: @card_bg_color;
   border: 1px solid alpha(@borders, 0.85);
 }
 
-window.fedora-updates.fu-light .fu-badge-ok {
+window.urstack.fu-light .fu-badge-ok {
   background-color: alpha(@success_color, 0.16);
 }
 
-window.fedora-updates.fu-light .fu-badge-warn {
+window.urstack.fu-light .fu-badge-warn {
   background-color: alpha(@warning_color, 0.18);
 }
 
 /* Dark: keep the existing glow, a bit more depth on the sidebar. */
-window.fedora-updates.fu-dark .fu-shell-sidebar {
+window.urstack.fu-dark .fu-shell-sidebar {
   background-color: alpha(@card_bg_color, 0.40);
 }
 
-window.fedora-updates.fu-dark .fu-page-hero,
-window.fedora-updates.fu-dark .fu-health-hero {
+window.urstack.fu-dark .fu-page-hero,
+window.urstack.fu-dark .fu-health-hero {
   background-image: linear-gradient(
     135deg,
     alpha(@accent_bg_color, 0.28),
