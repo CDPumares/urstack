@@ -16,6 +16,7 @@
   <a href="#the-desktop-app">Desktop App</a> ·
   <a href="#cli-usage">CLI</a> ·
   <a href="#configuration">Configuration</a> ·
+  <a href="#roadmap">Roadmap</a> ·
   <a href="#project-layout">Layout</a> ·
   <a href="#contributing">Contributing</a>
 </p>
@@ -128,7 +129,7 @@ Restore reinstalls from those manifests and overlays settings. Enable the module
 
 ## Requirements
 
-- **OS:** Fedora Workstation, or another Fedora spin with a GTK4 / libadwaita session (GNOME, KDE Plasma with libadwaita, and similar).
+- **OS:** Fedora Workstation, or another Fedora spin with a GTK4 / libadwaita session (GNOME, KDE Plasma with libadwaita, and similar). Support for other Linux distributions is a goal — see [Roadmap](#roadmap).
 - **Runtime:** Python 3, GTK 4, libadwaita. Zenity is an optional fallback for some dialogs if the GTK UI cannot start.
 - **Privileges:** user install needs no root. System install and privileged updates use `sudo` / PolicyKit.
 
@@ -332,9 +333,17 @@ Flatpak packaging is a poor fit: DNF and fwupd need host privileges. An RPM (for
 
 ---
 
+## Roadmap
+
+UrStack is Fedora-first today. I want to add **other Linux operating systems** so this is not a Fedora-only tool — Ubuntu, Debian, Arch, openSUSE, and the rest should be able to use the same app for updates, the catalog, health, and backup.
+
+The GTK desktop, Flatpak/Snap/firmware, and much of the catalog already travel well. What still needs work is distro-native packages (DNF vs apt vs pacman vs zypper), PolicyKit helpers, health checks, and restore. Help on those ports is welcome.
+
+---
+
 ## Contributing
 
-Bug reports, catalog additions, and patches are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, tests, and the PolicyKit rules.
+Bug reports, catalog additions, distro ports, and patches are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup, tests, and the PolicyKit rules.
 
 - [Open an issue](https://github.com/CDPumares/urstack/issues/new/choose)
 - Keep privileged operations in `lib/core/priv.sh`
