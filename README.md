@@ -84,6 +84,7 @@ I also wanted a **unified updater**. Fedora does not have one: DNF, Flatpak, Sna
 | Not knowing what to clean or tune after months of use | Health scan with a score, optional actions, and undo via restore points |
 | Disk clones for “move me to a fresh OS” | Backup / restore as a blueprint, not an image |
 | Blind system tweaks with no undo | Health actions with restore points |
+| Rebuilding a theme from screenshots and a pile of tars | Look page packs the live wallpaper, icons, and widgets; installs a theme archive |
 | Pasting `sudo` into a terminal for every privileged step | PolicyKit prompts for DNF, firmware, and similar jobs |
 
 ### What it offers
@@ -93,6 +94,7 @@ I also wanted a **unified updater**. Fedora does not have one: DNF, Flatpak, Sna
 - **Apps with real listings** — a category catalog where each app has a description, screenshots, and the install path that actually works on Fedora (not a raw Flathub dump).
 - **Health page** — a scan of cleanup, codecs, memory, and power; you pick the fixes, UrStack takes a restore point before aggressive ones.
 - **Native desktop app** — GTK4 / libadwaita, plus a CLI for scripts and a daily check timer.
+- **Look packs** — save the live wallpaper, custom icons, widgets, and theme, or install a theme archive (tar/zip) for this user.
 
 The sections below are the detail. If you only need a reinstall kit and one updater, start at [Quick Start](#quick-start), then enable Backup in Settings.
 
@@ -153,6 +155,21 @@ A restore point rolls back:
 - The DNF transaction, when the point was taken for a package-changing action (old kernels, RPM Fusion, codecs)
 
 It does **not** reinstall packages or Flatpaks removed by other means, and it cannot bring back emptied caches or trash. The RPM and Flatpak lists in the restore point are kept as a record to compare against, not as an automatic rewind.
+
+### Look packs
+
+The Look page is a **theme kit**, not the full Backup blueprint. It reads the desktop that is running (Plasma, GNOME, Cinnamon, XFCE, COSMIC, MATE, LXQt, or Budgie) and packs:
+
+- The wallpaper files actually in use (not just a path)
+- Custom icon and cursor themes (Fedora-shipped names like Breeze or Adwaita are recorded, not copied)
+- GTK / Plasma look-and-feel, colour schemes, and user-installed widgets
+- Desktop settings that select those pieces (`kdeglobals`, appletsrc, GTK, dconf / xfconf)
+
+**Save look pack** writes a `.tar.xz` you can keep or move to another Fedora machine. **Open** a theme archive to preview it, then **Install archive** copies it into your home directory (`~/.local/share/icons`, `~/.local/share/themes`, Plasma look-and-feel / plasmoids, wallpapers). Third-party icon, GTK, and Plasma tars/zips are accepted when UrStack can tell what they are. Archives never run scripts, cannot write outside the extract dir, and do not install into `/usr`.
+
+Icons, colours, and wallpaper apply immediately when the desktop has a helper (`gsettings`, `plasma-apply-*`). Panels and widgets usually need a log out.
+
+Backup still has a broader “desktop settings” toggle for a full rebuild. Use Look when you want only the appearance.
 
 ### Backup and rebuild
 
@@ -243,11 +260,12 @@ The main window is a sidebar shell:
 | **Updates** | Parallel check, per-source cards, apply selected or all. |
 | **Apps** | Category catalog, My apps overlay, filters, single or batch install. |
 | **Health** | Scan, pick actions, apply; restore points. |
+| **Look** | Pack the live wallpaper, icons, widgets, and theme; install a theme tar/zip. |
 | **Backup** / **Restore** | Blueprint export and rebuild. |
 | **Settings** | Toggle sources, kernel keep-count, re-scan workstation. |
 | **History** / **Runs** | Combined log and per-run folders. |
 
-Checks run in the background after launch. You can open Apps, Backup, Settings, and History while a scan is still finishing.
+Checks run in the background after launch. You can open Apps, Look, Backup, Settings, and History while a scan is still finishing.
 
 <p align="center">
   <img src="assets/screenshots/backup.png" alt="Backup page with secrets off by default" width="880">
@@ -282,11 +300,15 @@ urstack --health-apply <id,id,…>
 urstack --health-restore-point
 urstack --health-restore-list
 urstack --health-restore [id|latest]
+urstack --look-status
+urstack --look-export [file]
+urstack --look-install <file>
+urstack --page look
 ```
 
 `--check` is suitable for scripts and the daily timer: exit `0` if the stack is current, `1` if updates exist, `3` if another instance holds the lock. `--check --tray` is what login autostart uses in background mode.
 
-The GUI also shows that grey tray icon (`urstack-tray`) while the window is open. Left-click raises UrStack; right-click offers Check, Updates, Apps, Health, Backup, Restore, Settings, and Quit. On Plasma, Cinnamon, XFCE and COSMIC this is a StatusNotifierItem; on GNOME (no tray) a small window sits on the dash instead. The indicator stays until you pick Quit from its menu, so you can close the window and reopen from the tray.
+The GUI also shows that grey tray icon (`urstack-tray`) while the window is open. Left-click raises UrStack; right-click offers Check, Updates, Apps, Health, Look, Backup, Restore, Settings, and Quit. On Plasma, Cinnamon, XFCE and COSMIC this is a StatusNotifierItem; on GNOME (no tray) a small window sits on the dash instead. The indicator stays until you pick Quit from its menu, so you can close the window and reopen from the tray.
 
 ### Daily check timer
 
@@ -383,7 +405,7 @@ config/                  default.conf, developer.conf
 data/catalog/            apps.json, winutil.json, icon-map.json, metadata.json, icons/
 data/icons/              Application icons (hicolor)
 data/polkit/             PolicyKit policy (system install)
-lib/core/                checks, apply, catalog, detect, priv, GTK UI
+lib/core/                checks, apply, catalog, detect, priv, look packs, GTK UI
 lib/plugins/             health.sh, backup.sh
 scripts/                 Catalog / icon-map helpers
 tests/                   Parser unit tests

@@ -7,6 +7,10 @@ and version numbers follow [Semantic Versioning](https://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Look page: pack the live wallpaper, custom icons, cursors, widgets, and theme for Plasma, GNOME, and other Fedora desktops; open a theme tar/zip to install it for this user. Overview is a 3×3 card grid so Look sits with the other sections.
+
 ## [0.3.0] — 2026-08-27
 
 Tray, startup options, a calmer desktop shell, and a round of correctness and safety fixes.

@@ -469,7 +469,7 @@ class TestStyleSheet(unittest.TestCase):
         self.assertEqual(updates.get_margin_end(), pad)
         first_hero(updates)
 
-    def test_overview_section_grid_is_two_rows_of_four(self) -> None:
+    def test_overview_section_grid_is_three_rows_of_three(self) -> None:
         page = self.ui.build_overview_content(
             raw="",
             has_updates=False,
@@ -494,10 +494,10 @@ class TestStyleSheet(unittest.TestCase):
         while child is not None:
             n += 1
             child = child.get_next_sibling()
-        self.assertEqual(n, 8)
-        self.assertIsNotNone(grid.get_child_at(3, 1))
-        self.assertIsNone(grid.get_child_at(0, 2))
-        self.assertIsNone(grid.get_child_at(4, 0))
+        self.assertEqual(n, 9)
+        self.assertIsNotNone(grid.get_child_at(2, 2))
+        self.assertIsNone(grid.get_child_at(0, 3))
+        self.assertIsNone(grid.get_child_at(3, 0))
         footer = page.get_last_child()
         self.assertIsNotNone(footer)
         self.assertTrue(footer.has_css_class("fu-actions"))
@@ -538,8 +538,8 @@ class TestStyleSheet(unittest.TestCase):
             on_action=lambda *_: None,
         )
         self.assertFalse(any(w.has_css_class("fu-page-callout") for w in walk(scanning)))
-        self.assertEqual(line_counts(scanning), [3] * 8)
-        self.assertEqual(line_counts(done), [3] * 8)
+        self.assertEqual(line_counts(scanning), [3] * 9)
+        self.assertEqual(line_counts(done), [3] * 9)
 
     def test_load_css_survives_a_missing_stylesheet(self) -> None:
         """An unstyled window is still usable; a crash at startup is not."""

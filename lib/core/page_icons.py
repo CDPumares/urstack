@@ -19,6 +19,11 @@ PAGE_ICON_CANDIDATES: dict[str, tuple[str, ...]] = {
         "applications-other-symbolic",
     ),
     "health": ("computer-symbolic", "applications-system-symbolic"),
+    "look": (
+        "preferences-desktop-theme-symbolic",
+        "preferences-desktop-wallpaper-symbolic",
+        "applications-graphics-symbolic",
+    ),
     "backup": ("document-save-symbolic",),
     "restore": ("document-revert-symbolic", "edit-undo-symbolic"),
     "settings": ("configure-symbolic", "preferences-system-symbolic"),

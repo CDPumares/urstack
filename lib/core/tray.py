@@ -161,13 +161,14 @@ MENU_ITEMS: tuple[tuple[int, str, str], ...] = (
     (6, "updates", "Updates"),
     (7, "apps", "Apps"),
     (8, "health", "Health"),
+    (14, "look", "Look"),
     (9, "backup", "Backup"),
     (10, "restore", "Restore"),
     (11, "settings", "Settings"),
     (12, "", ""),
     (13, "quit", "Quit UrStack"),
 )
-PAGE_ACTIONS = frozenset({"updates", "apps", "health", "backup", "restore", "settings"})
+PAGE_ACTIONS = frozenset({"updates", "apps", "health", "look", "backup", "restore", "settings"})
 
 
 def default_fifo_path() -> str:
@@ -709,6 +710,7 @@ class SilentIndicator:
                 ("updates", "Updates"),
                 ("apps", "Apps"),
                 ("health", "Health"),
+                ("look", "Look"),
                 ("backup", "Backup"),
                 ("restore", "Restore"),
                 ("settings", "Settings"),

@@ -36,12 +36,13 @@ import gi
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
 from gi.repository import Adw, Gdk, GdkPixbuf, Gio, GLib, GObject, Gtk, Pango  # noqa: E402
-from datetime import UTC
+from datetime import UTC, datetime
 
 _CORE_DIR = str(Path(__file__).resolve().parent)
 if _CORE_DIR not in sys.path:
     sys.path.insert(0, _CORE_DIR)
 from page_icons import PAGE_ICON_CANDIDATES, svg_reads_as_symbolic  # noqa: E402
+import look as look_engine  # noqa: E402
 import user_catalog  # noqa: E402
 
 DEFAULT_W, DEFAULT_H = 1440, 920
@@ -998,7 +999,7 @@ def _overview_stat_card(
     lines: list[str] | None = None,
     spinning: bool = False,
 ) -> Gtk.Widget:
-    """Overview info card for the 4×2 section grid."""
+    """Overview info card for the 3×3 section grid."""
     card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
     card.add_css_class("fu-overview-card")
     if badge_warn:
@@ -1678,6 +1679,37 @@ def build_overview_content(
         )
     )
 
+    try:
+        look_snap = look_engine.inspect_look()
+        look_sub = look_snap.summary()
+        look_lines = [
+            f"{it.title}: {it.value}"
+            for it in look_snap.items
+            if it.value and it.value != "—"
+        ][:3]
+        look_badge = look_engine.desktop_label(look_snap.desktop)
+    except Exception:  # noqa: BLE001
+        look_sub = "Wallpaper, icons, widgets, and the rest of this desktop"
+        look_lines = [
+            "Save the look that is on screen, including custom icons and wallpaper.",
+            "Open a theme archive (.tar / .zip) to install it for this user.",
+        ]
+        look_badge = "Look"
+    section_cards.append(
+        _overview_stat_card(
+            "Look",
+            look_sub,
+            page_icon("look"),
+            "look",
+            on_action,
+            badge=look_badge,
+            badge_ok=True,
+            blurb="Pack the current wallpaper, icons, widgets, and theme — or install a theme archive.",
+            lines=look_lines
+            or ["Export this desktop's look, or open a theme tar/zip to install it."],
+        )
+    )
+
     backup_sub, backup_lines = _overview_backup_snapshot()
     section_cards.append(
         _overview_stat_card(
@@ -1759,7 +1791,7 @@ def build_overview_content(
         scrolled.set_propagate_natural_height(False)
     except Exception:  # noqa: BLE001
         pass
-    scrolled.set_child(page_card_grid(section_cards, columns=4, fill=True))
+    scrolled.set_child(page_card_grid(section_cards, columns=3, fill=True))
     outer.append(scrolled)
 
     actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
@@ -2016,6 +2048,7 @@ def build_shell_sidebar(
         ("home", "Updates", page_icon("home")),
         ("apps", "Apps", page_icon("apps")),
         ("health", "Health", page_icon("health")),
+        ("look", "Look", page_icon("look")),
         ("backup", "Backup", page_icon("backup")),
         ("restore", "Restore", page_icon("restore")),
         ("settings", "Settings", page_icon("settings")),
@@ -3387,6 +3420,303 @@ def write_config_map(path: Path, values: dict[str, str]) -> None:
         )
     except OSError:
         pass
+
+
+def _look_py_command() -> list[str]:
+    return [sys.executable or "python3", str(Path(__file__).resolve().parent / "look.py")]
+
+
+def _look_file_filters() -> tuple[Gio.ListStore, Gtk.FileFilter]:
+    store = Gio.ListStore.new(Gtk.FileFilter)
+    filt = Gtk.FileFilter()
+    filt.set_name("Theme archives")
+    for pat in (
+        "*.tar",
+        "*.tar.xz",
+        "*.tar.gz",
+        "*.tar.bz2",
+        "*.tgz",
+        "*.txz",
+        "*.zip",
+    ):
+        filt.add_pattern(pat)
+    store.append(filt)
+    allf = Gtk.FileFilter()
+    allf.set_name("All files")
+    allf.add_pattern("*")
+    store.append(allf)
+    return store, filt
+
+
+def build_look_content(
+    *,
+    parent_win: Gtk.Window,
+    on_export: Callable[[str, str], None],
+    on_install: Callable[[str], None],
+) -> Gtk.Widget:
+    """Current desktop look: pack it, or install a theme archive."""
+    outer = page_frame()
+    try:
+        snap_d = look_engine.inspect_look().as_dict()
+    except Exception:  # noqa: BLE001
+        snap_d = {
+            "desktop": "unknown",
+            "desktop_label": "This desktop",
+            "summary": "Could not read the current look",
+            "preview": "",
+            "items": [],
+        }
+
+    chrome = page_chrome_box()
+    chrome.append(
+        page_hero(
+            (str(snap_d.get("desktop") or "desktop")).capitalize(),
+            "desktop",
+            snap_d.get("summary") or "Current look",
+            "Pack what is on screen — wallpaper, custom icons, widgets, and theme files — or open a theme archive to install it.",
+            warn=False,
+            ok=True,
+            heading="Look",
+            heading_sub="The theme this workstation is using, including custom icons and wallpaper.",
+            icon_name=page_icon("look"),
+        )
+    )
+    outer.append(chrome)
+
+    scrolled, _clamp, col = page_scroll_body(spacing=14, side_pad=0)
+
+    preview = str(snap_d.get("preview") or "")
+    if preview and Path(preview).is_file():
+        pic_wrap = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        pic_wrap.add_css_class("fu-page-card")
+        cap = Gtk.Label(label="Current wallpaper", xalign=0.0)
+        cap.add_css_class("fu-page-card-title")
+        pic_wrap.append(cap)
+        try:
+            picture = Gtk.Picture.new_for_filename(preview)
+            picture.set_size_request(-1, 180)
+            try:
+                picture.set_content_fit(Gtk.ContentFit.COVER)
+            except Exception:  # noqa: BLE001
+                pass
+            picture.set_hexpand(True)
+            pic_wrap.append(picture)
+        except Exception:  # noqa: BLE001
+            pic_wrap.append(
+                Gtk.Label(label=Path(preview).name, xalign=0.0, wrap=True)
+            )
+        col.append(pic_wrap)
+
+    col.append(
+        page_callout(
+            "What this is",
+            "Backup still saves the whole workstation. This page is only the look: "
+            "the live wallpaper, icon and cursor themes, widgets, colors, and GTK/Plasma theme. "
+            "Install stays in your home directory — it will not write to /usr.",
+        )
+    )
+
+    col.append(page_section_label("On this desktop"))
+    group = Adw.PreferencesGroup()
+    wrap = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+    wrap.add_css_class("fu-page-body")
+    for item in snap_d.get("items") or []:
+        row = Adw.ActionRow(
+            title=str(item.get("title") or item.get("id") or ""),
+            subtitle=str(item.get("value") or "—"),
+        )
+        try:
+            row.set_subtitle_lines(2)
+        except AttributeError:
+            pass
+        note = str(item.get("note") or "")
+        badge = Gtk.Label(label="Packed" if item.get("bundled") else "Name only")
+        badge.add_css_class("fu-badge")
+        if item.get("bundled"):
+            badge.add_css_class("fu-badge-ok")
+        badge.set_valign(Gtk.Align.CENTER)
+        row.add_suffix(badge)
+        if note:
+            row.set_subtitle(f"{item.get('value') or '—'} · {note}")
+        group.add(row)
+    wrap.append(group)
+    col.append(wrap)
+
+    col.append(page_section_label("Include in the pack"))
+    include_group = Adw.PreferencesGroup(
+        description="Turn off anything you do not want in the archive. Names of Fedora-shipped themes are always recorded."
+    )
+    include_wrap = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+    include_wrap.add_css_class("fu-page-body")
+    include_labels = {
+        "wallpaper": ("Wallpaper", "The image files currently on the desktop and lock screen."),
+        "icons": ("Icons", "The active icon theme, if it is custom or user-installed."),
+        "cursors": ("Cursors", "The active cursor theme, if it is custom."),
+        "gtk": ("Application / Plasma theme", "GTK theme and Plasma look-and-feel when they are custom."),
+        "colors": ("Color scheme", "Plasma colour scheme file when it lives in your home."),
+        "widgets": ("Widgets & panels", "Custom plasmoids plus the layout configs for this desktop."),
+        "fonts": ("User fonts", "Font files under ~/.local/share/fonts that this look names."),
+        "layout": ("Desktop settings", "kdeglobals, kwin, appletsrc, GTK settings, dconf / xfconf."),
+    }
+    switches: dict[str, Gtk.Switch] = {}
+    present = {str(it.get("id")) for it in (snap_d.get("items") or [])}
+    for key in look_engine.INCLUDE_KEYS:
+        title, sub = include_labels.get(key, (key, ""))
+        row = Adw.ActionRow(title=title, subtitle=sub)
+        try:
+            row.set_subtitle_lines(2)
+        except AttributeError:
+            pass
+        sw = Gtk.Switch()
+        sw.set_valign(Gtk.Align.CENTER)
+        sw.set_active(key in present or key == "layout")
+        row.add_suffix(sw)
+        row.set_activatable_widget(sw)
+        include_group.add(row)
+        switches[key] = sw
+    include_wrap.append(include_group)
+    col.append(include_wrap)
+
+    col.append(page_section_label("Theme archive"))
+    archive_state = {"path": ""}
+    arch_group = Adw.PreferencesGroup()
+    arch_wrap = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+    arch_wrap.add_css_class("fu-page-body")
+    arch_row = Adw.ActionRow(
+        title="No archive selected",
+        subtitle="Open a .tar.xz, .tar.gz, or .zip — UrStack look packs, icon themes, GTK themes, Plasma widgets, or wallpaper.",
+    )
+    try:
+        arch_row.set_subtitle_lines(3)
+    except AttributeError:
+        pass
+    open_btn = mk_btn("Open…", "fu-row-suffix", "document-open-symbolic")
+    open_btn.set_valign(Gtk.Align.CENTER)
+    arch_row.add_suffix(open_btn)
+    arch_group.add(arch_row)
+    arch_wrap.append(arch_group)
+    col.append(arch_wrap)
+
+    install_btn_ref: dict[str, Gtk.Button | None] = {"btn": None}
+
+    def set_archive(path: str, info: dict | None) -> None:
+        archive_state["path"] = path
+        if not path:
+            arch_row.set_title("No archive selected")
+            arch_row.set_subtitle(
+                "Open a .tar.xz, .tar.gz, or .zip — UrStack look packs, icon themes, GTK themes, Plasma widgets, or wallpaper."
+            )
+            btn = install_btn_ref["btn"]
+            if btn is not None:
+                btn.set_sensitive(False)
+            return
+        kind = (info or {}).get("kind") or "archive"
+        name = (info or {}).get("name") or Path(path).name
+        summary = (info or {}).get("summary") or kind
+        items = ", ".join((info or {}).get("items") or []) or kind
+        arch_row.set_title(str(name))
+        arch_row.set_subtitle(f"{summary} · {items} · {Path(path).name}")
+        btn = install_btn_ref["btn"]
+        if btn is not None:
+            btn.set_sensitive(True)
+
+    def pick_archive(*_a: object) -> None:
+        dialog = Gtk.FileDialog(title="Open a theme archive")
+        store, filt = _look_file_filters()
+        try:
+            dialog.set_filters(store)
+            dialog.set_default_filter(filt)
+        except Exception:  # noqa: BLE001
+            pass
+
+        def on_done(_dlg: Gtk.FileDialog, result: Gio.AsyncResult) -> None:
+            try:
+                gfile = dialog.open_finish(result)
+            except Exception:  # noqa: BLE001
+                return
+            if gfile is None:
+                return
+            path = gfile.get_path() or ""
+            if not path:
+                return
+            try:
+                info = look_engine.inspect_archive(Path(path)).as_dict()
+            except look_engine.LookError as exc:
+                set_archive("", None)
+                arch_row.set_title("Could not read archive")
+                arch_row.set_subtitle(str(exc))
+                return
+            if info.get("unsafe"):
+                set_archive("", None)
+                arch_row.set_title("Archive refused")
+                arch_row.set_subtitle(str(info["unsafe"]))
+                return
+            set_archive(path, info)
+
+        dialog.open(parent_win, None, on_done)
+
+    open_btn.connect("clicked", pick_archive)
+
+    outer.append(scrolled)
+
+    actions = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+    actions.add_css_class("fu-actions")
+    save_btn = mk_btn(
+        "Save look pack",
+        "suggested-action pill fu-primary",
+        "document-save-symbolic",
+    )
+    save_btn.set_hexpand(True)
+    install_btn = mk_btn(
+        "Install archive",
+        "pill fu-secondary",
+        pick_icon("folder-download-symbolic", "document-save-symbolic", "emblem-ok-symbolic"),
+    )
+    install_btn.set_hexpand(True)
+    install_btn.set_sensitive(False)
+    install_btn_ref["btn"] = install_btn
+
+    def include_csv() -> str:
+        return ",".join(k for k, sw in switches.items() if sw.get_active())
+
+    def pick_save(*_a: object) -> None:
+        dialog = Gtk.FileDialog(title="Save look pack")
+        stamp = datetime.now().strftime("%Y-%m-%d")
+        desk = str(snap_d.get("desktop") or "desktop")
+        dialog.set_initial_name(f"urstack-look-{desk}-{stamp}.tar.xz")
+        store, filt = _look_file_filters()
+        try:
+            dialog.set_filters(store)
+            dialog.set_default_filter(filt)
+        except Exception:  # noqa: BLE001
+            pass
+
+        def on_done(_dlg: Gtk.FileDialog, result: Gio.AsyncResult) -> None:
+            try:
+                gfile = dialog.save_finish(result)
+            except Exception:  # noqa: BLE001
+                return
+            if gfile is None:
+                return
+            path = gfile.get_path() or ""
+            if not path:
+                return
+            on_export(path, include_csv())
+
+        dialog.save(parent_win, None, on_done)
+
+    def do_install(*_a: object) -> None:
+        path = archive_state["path"]
+        if not path:
+            return
+        on_install(path)
+
+    save_btn.connect("clicked", pick_save)
+    install_btn.connect("clicked", do_install)
+    actions.append(save_btn)
+    actions.append(install_btn)
+    outer.append(pin_page_footer(actions))
+    return outer
 
 
 def _urstack_command() -> list[str]:
@@ -6594,7 +6924,8 @@ BACKUP_INCLUDE_OPTIONS: list[tuple[str, str, str, bool]] = [
     (
         "settings",
         "Desktop & app settings",
-        "Themes, Plasma/GNOME prefs, Cursor settings, desktop files, overlays.",
+        "Themes, Plasma/GNOME prefs, Cursor settings, desktop files, overlays. "
+        "For a portable wallpaper + icons + widgets pack, use the Look page.",
         True,
     ),
     (
@@ -7962,6 +8293,7 @@ def mode_shell(args: argparse.Namespace) -> int:
             "apply": "home",
             "apps": "apps",
             "health": "health",
+            "look": "look",
             "backup": "backup",
             "restore": "restore",
             "settings": "settings",
@@ -8350,6 +8682,30 @@ def mode_shell(args: argparse.Namespace) -> int:
 
             threading.Thread(target=work, daemon=True).start()
 
+        def start_look_export(path: str, include: str) -> None:
+            argv = _look_py_command() + ["export", "--out", path]
+            if include:
+                argv += ["--include", include]
+            run_embedded_job(
+                title="Saving look pack",
+                argv=argv,
+                pulsate=False,
+                success_toast="Look pack saved",
+                fail_toast="Could not save the look pack",
+                cancellable=True,
+                done_goes_home=False,
+            )
+
+        def start_look_install(path: str) -> None:
+            run_embedded_job(
+                title="Installing theme",
+                argv=_look_py_command() + ["install", path],
+                pulsate=False,
+                success_toast="Theme installed",
+                fail_toast="Could not install this archive",
+                done_goes_home=False,
+            )
+
         def start_backup_or_restore(action: str) -> None:
             """Parse backup|path|opts / restore|path|opts and run in-window."""
             if action.startswith("backup|"):
@@ -8678,6 +9034,15 @@ def mode_shell(args: argparse.Namespace) -> int:
                 run_health_scan(embedded=False, after=False)
             return False
 
+        def push_look(*_a: object) -> bool:
+            content = build_look_content(
+                parent_win=win,
+                on_export=start_look_export,
+                on_install=start_look_install,
+            )
+            push_page("Look", content, "Theme pack and install", tag="look")
+            return False
+
         def push_backup(*_a: object) -> bool:
             content = build_backup_restore_content(
                 "backup",
@@ -8926,6 +9291,7 @@ def mode_shell(args: argparse.Namespace) -> int:
         nav_handlers["apply"] = push_apply
         nav_handlers["apps"] = push_apps
         nav_handlers["health"] = push_health
+        nav_handlers["look"] = push_look
         nav_handlers["backup"] = push_backup
         nav_handlers["restore"] = push_restore
         nav_handlers["settings"] = push_settings
@@ -8941,6 +9307,8 @@ def mode_shell(args: argparse.Namespace) -> int:
             GLib.idle_add(push_apps)
         elif start == "health":
             GLib.idle_add(push_health)
+        elif start == "look":
+            GLib.idle_add(push_look)
         elif start == "settings":
             GLib.idle_add(push_settings)
         elif start == "backup":
@@ -9106,7 +9474,7 @@ def build_parser() -> argparse.ArgumentParser:
     shell.add_argument(
         "--start-page",
         default="",
-        help="Optional: overview|updates|apps|health|settings|backup|restore",
+        help="Optional: overview|updates|apps|health|look|settings|backup|restore",
     )
     shell.add_argument(
         "--sections-file",

@@ -46,6 +46,12 @@ class TestSvgReadsAsSymbolic(unittest.TestCase):
             "configure-symbolic",
         )
 
+    def test_look_candidates_include_theme_symbolic(self) -> None:
+        self.assertEqual(
+            self.icons.PAGE_ICON_CANDIDATES["look"][0],
+            "preferences-desktop-theme-symbolic",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -203,7 +203,7 @@ class TestOnlyFileCopyingJobsAreCancellable(unittest.TestCase):
     front of a user mid-upgrade.
     """
 
-    ALLOWED: ClassVar[set[str]] = {"Backup", "Creating restore point"}
+    ALLOWED: ClassVar[set[str]] = {"Backup", "Creating restore point", "Saving look pack"}
 
     def test_no_transactional_job_offers_cancel(self) -> None:
         tree = ast.parse(UI.read_text(encoding="utf-8"))
