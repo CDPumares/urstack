@@ -2753,6 +2753,18 @@ def mode_runs(args: argparse.Namespace) -> int:
 SETTING_KEYS: list[tuple[str, str, str, str]] = [
     # key, group, title, subtitle
     (
+        "autostart",
+        "Startup",
+        "Launch at login",
+        "Open UrStack when you log in to the desktop.",
+    ),
+    (
+        "scan_on_startup",
+        "Startup",
+        "Scan when UrStack opens",
+        "Check for software and health updates as soon as the app starts. Turn this off to open the window first and scan with Refresh.",
+    ),
+    (
         "enable_dnf",
         "Core updates",
         "DNF packages",
@@ -2882,6 +2894,8 @@ SETTING_KEYS: list[tuple[str, str, str, str]] = [
 
 # Match lib/core/common.sh cfg_get defaults so Settings doesn't show (and save) the wrong state.
 SETTING_DEFAULTS: dict[str, str] = {
+    "autostart": "0",
+    "scan_on_startup": "1",
     "enable_dnf": "1",
     "enable_flatpak": "1",
     "enable_snap": "1",
@@ -2910,6 +2924,52 @@ def read_config_map(path: Path) -> dict[str, str]:
     return values
 
 
+def xdg_autostart_path() -> Path:
+    base = os.environ.get("XDG_CONFIG_HOME") or str(Path.home() / ".config")
+    return Path(base) / "autostart" / "urstack.desktop"
+
+
+def urstack_launch_command() -> str:
+    from shutil import which
+
+    found = which("urstack")
+    if found:
+        return found
+    bundled = APP_ROOT / "bin" / "urstack"
+    if bundled.is_file():
+        return str(bundled)
+    return "urstack"
+
+
+def autostart_desktop_text(exec_cmd: str | None = None) -> str:
+    cmd = exec_cmd or urstack_launch_command()
+    return (
+        "[Desktop Entry]\n"
+        "Type=Application\n"
+        "Name=UrStack\n"
+        "Comment=Open UrStack at login\n"
+        f"Exec={cmd}\n"
+        "Icon=urstack\n"
+        "Terminal=false\n"
+        "Categories=System;Settings;PackageManager;\n"
+        "StartupNotify=false\n"
+        "X-GNOME-Autostart-enabled=true\n"
+        "X-GNOME-Autostart-Delay=10\n"
+    )
+
+
+def sync_xdg_autostart(enabled: bool, *, path: Path | None = None) -> Path:
+    """Install or remove ~/.config/autostart/urstack.desktop."""
+    dest = path or xdg_autostart_path()
+    if enabled:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(autostart_desktop_text(), encoding="utf-8")
+        dest.chmod(0o644)
+    else:
+        dest.unlink(missing_ok=True)
+    return dest
+
+
 def write_config_map(path: Path, values: dict[str, str]) -> None:
     from datetime import datetime
 
@@ -2932,10 +2992,16 @@ def write_config_map(path: Path, values: dict[str, str]) -> None:
         f"# {datetime.now().isoformat(timespec='seconds')}",
         "# Re-scan: urstack --detect --write-config",
         "",
-        "# ── Core / plugins ──────────────────────────────────────────────────────────",
+        "# ── Startup ───────────────────────────────────────────────────────────────────",
     ]
-    for key, _group, _title, _sub in SETTING_KEYS:
-        lines.append(f"{key}={merged.get(key, setting_default(key))}")
+    for key, group, _title, _sub in SETTING_KEYS:
+        if group == "Startup":
+            lines.append(f"{key}={merged.get(key, setting_default(key))}")
+    lines.append("")
+    lines.append("# ── Core / plugins ──────────────────────────────────────────────────────────")
+    for key, group, _title, _sub in SETTING_KEYS:
+        if group != "Startup":
+            lines.append(f"{key}={merged.get(key, setting_default(key))}")
     lines.append("")
     lines.append("# ── Behaviour ────────────────────────────────────────────────────────────────")
     lines.append(f"keep_kernels={merged.get('keep_kernels', '3')}")
@@ -2948,6 +3014,10 @@ def write_config_map(path: Path, values: dict[str, str]) -> None:
             lines.append(f"{key}={merged[key]}")
     lines.append("")
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    try:
+        sync_xdg_autostart(merged.get("autostart", setting_default("autostart")) == "1")
+    except OSError:
+        pass
 
 
 def _urstack_command() -> list[str]:
@@ -3065,7 +3135,13 @@ def run_workstation_rescan(config_file: str | Path) -> tuple[bool, list[str], st
     values = read_config_map(cfg_path)
     changed = False
     for key, val in prev.items():
-        if key in {"enable_backup", "appearance"} or key.startswith("backup_"):
+        if key in {
+            "enable_backup",
+            "appearance",
+            "autostart",
+            "scan_on_startup",
+            "apply_fw",
+        } or key.startswith("backup_"):
             if values.get(key) != val:
                 values[key] = val
                 changed = True
@@ -6366,7 +6442,11 @@ def build_settings_content(
     outer.set_vexpand(True)
 
     scrolled, clamp, page = page_scroll_body(spacing=14)
-    enabled_n = sum(1 for k, _g, _t, _s in SETTING_KEYS if values.get(k, "0") == "1")
+    enabled_n = sum(
+        1
+        for k, group, _t, _s in SETTING_KEYS
+        if group != "Startup" and values.get(k, "0") == "1"
+    )
     page.append(
         page_hero(
             str(enabled_n),
@@ -6374,7 +6454,7 @@ def build_settings_content(
             "Sources & behaviour",
             "Only enabled sources are checked on Updates. Scan can rebuild this list from what’s installed.",
             heading="Settings",
-            heading_sub="Theme, update sources, and workstation scan.",
+            heading_sub="Theme, startup, update sources, and workstation scan.",
             icon_name=page_icon("settings"),
         )
     )
@@ -6458,7 +6538,12 @@ def build_settings_content(
     for key, group_name, title, subtitle in SETTING_KEYS:
         if group_name not in groups:
             desc = ""
-            if group_name == "Advisories":
+            if group_name == "Startup":
+                desc = (
+                    "Open UrStack with your session, and whether to check for "
+                    "updates as soon as the window appears."
+                )
+            elif group_name == "Advisories":
                 desc = "Reminders only — UrStack will not install updates for these."
             elif group_name == "Core updates":
                 desc = "Main Fedora software channels most people want enabled."

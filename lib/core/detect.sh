@@ -215,6 +215,23 @@ print_detection_report() {
   printf '  backup=%s (not auto-enabled; pass --include-backup to turn on)\n' "$DETECT_enable_backup"
 }
 
+# Read a 0/1 key from an existing config, falling back to $3.
+_detect_prev01() {
+  local file="$1" key="$2" default="$3" val=""
+  [[ -n "$file" && "$file" != "-" && -f "$file" ]] || { printf '%s' "$default"; return 0; }
+  val=$(awk -F= -v k="$key" '
+    $1 == k {
+      val=$2
+      sub(/#.*/, "", val)
+      gsub(/[[:space:]]/, "", val)
+      print val
+      exit
+    }' "$file")
+  [[ "$val" == "1" ]] && { printf '1'; return 0; }
+  [[ "$val" == "0" ]] && { printf '0'; return 0; }
+  printf '%s' "$default"
+}
+
 # Write config to path (stdout if path is -)
 write_detected_config() {
   local out="${1:-}"
@@ -225,19 +242,14 @@ write_detected_config() {
   fi
 
   local prev_appearance="system"
-  local prev_apply_fw="0"
+  local prev_apply_fw prev_autostart prev_scan_on_startup
+  prev_apply_fw=$(_detect_prev01 "$out" apply_fw 0)
+  prev_autostart=$(_detect_prev01 "$out" autostart 0)
+  prev_scan_on_startup=$(_detect_prev01 "$out" scan_on_startup 1)
   if [[ -n "$out" && "$out" != "-" && -f "$out" ]]; then
     prev_appearance="$(awk -F= '/^appearance=/{gsub(/[[:space:]]/, "", $2); print $2; exit}' "$out")"
     [[ "$prev_appearance" == "light" || "$prev_appearance" == "dark" || "$prev_appearance" == "system" ]] \
       || prev_appearance=system
-    prev_apply_fw="$(awk -F= '/^apply_fw=/{
-      val=$2
-      sub(/#.*/, "", val)
-      gsub(/[[:space:]]/, "", val)
-      print val
-      exit
-    }' "$out")"
-    [[ "$prev_apply_fw" == "1" ]] || prev_apply_fw=0
   fi
 
   local content
@@ -283,6 +295,8 @@ backup_full_dotconfig=1
 keep_kernels=${DETECT_keep_kernels}
 quiet_gnome_software=${DETECT_quiet_gnome_software}
 appearance=${prev_appearance}
+autostart=${prev_autostart}
+scan_on_startup=${prev_scan_on_startup}
 EOF
 )
 

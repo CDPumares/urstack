@@ -122,6 +122,7 @@ uninstall() {
   run_priv rm -f "$BIN_DIR/urstack" "$BIN_DIR/stackup" "$BIN_DIR/fedora-updates"
   run_priv rm -f "$APP_DIR/urstack.desktop" "$APP_DIR/com.local.urstack.desktop" \
     "$APP_DIR/stackup.desktop" "$APP_DIR/com.local.stackup.desktop" "$APP_DIR/fedora-updates.desktop"
+  rm -f "${XDG_CONFIG_HOME:-$HOME/.config}/autostart/urstack.desktop" 2>/dev/null || true
   run_priv rm -f "$ICON_DIR/urstack.png" "$ICON_DIR/stackup.png" "$ICON_DIR/fedora-updates.png"
   if [[ -n "$LIBEXEC_DIR" ]]; then
     run_priv rm -f "$LIBEXEC_DIR/urstack-priv" "$LIBEXEC_DIR/stackup-priv" "$LIBEXEC_DIR/fedora-updates-priv"

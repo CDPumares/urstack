@@ -268,6 +268,8 @@ Keys are `1` / `0`. Shipped templates live in `config/default.conf` and `config/
 | `exclude_discover` | 1 | DNF `--exclude` for Plasma Discover packages |
 | `quiet_gnome_software` | 1 | Pause GNOME Software’s background service during a GUI run |
 | `keep_kernels` | 3 | Kernels to keep when pruning |
+| `autostart` | 0 | Launch UrStack at login (`~/.config/autostart/urstack.desktop`) |
+| `scan_on_startup` | 1 | Run update and health scans when the app window opens |
 
 ### Plugins
 

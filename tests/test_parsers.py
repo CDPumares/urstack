@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import ast
 import importlib.util
+import os
 import subprocess
 import sys
 import tempfile
@@ -320,6 +321,84 @@ class TestStyleSheet(unittest.TestCase):
             self.ui.load_css()
         finally:
             self.ui.STYLE_SHEET = original
+
+
+class TestDetectPrev01(unittest.TestCase):
+    """Workstation scan must keep login/startup toggles from the previous config."""
+
+    def _prev(self, file: str, key: str, default: str) -> str:
+        script = f"""
+source "{CORE}/detect.sh"
+_detect_prev01 "{file}" "{key}" "{default}"
+"""
+        p = subprocess.run(["bash", "-c", script], capture_output=True, text=True, timeout=15)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        return p.stdout.strip()
+
+    def test_reads_existing_keys(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            cfg = Path(d) / "config.conf"
+            cfg.write_text("autostart=1\nscan_on_startup=0\napply_fw=1\n", encoding="utf-8")
+            self.assertEqual(self._prev(str(cfg), "autostart", "0"), "1")
+            self.assertEqual(self._prev(str(cfg), "scan_on_startup", "1"), "0")
+            self.assertEqual(self._prev(str(cfg), "apply_fw", "0"), "1")
+
+    def test_missing_file_and_key_use_defaults(self) -> None:
+        self.assertEqual(self._prev("/no/such/config.conf", "autostart", "0"), "0")
+        with tempfile.TemporaryDirectory() as d:
+            cfg = Path(d) / "config.conf"
+            cfg.write_text("appearance=dark\n", encoding="utf-8")
+            self.assertEqual(self._prev(str(cfg), "autostart", "0"), "0")
+            self.assertEqual(self._prev(str(cfg), "scan_on_startup", "1"), "1")
+
+
+class TestStartupSettings(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        try:
+            cls.ui = load_ui_module()
+        except Exception as exc:
+            raise unittest.SkipTest(f"GTK/libadwaita unavailable: {exc}") from exc
+
+    def test_setting_keys_include_startup(self) -> None:
+        keys = {k for k, _g, _t, _s in self.ui.SETTING_KEYS}
+        self.assertIn("autostart", keys)
+        self.assertIn("scan_on_startup", keys)
+        self.assertEqual(self.ui.setting_default("autostart"), "0")
+        self.assertEqual(self.ui.setting_default("scan_on_startup"), "1")
+
+    def test_sync_xdg_autostart_writes_and_removes(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            dest = Path(d) / "autostart" / "urstack.desktop"
+            self.ui.sync_xdg_autostart(True, path=dest)
+            text = dest.read_text(encoding="utf-8")
+            self.assertIn("[Desktop Entry]", text)
+            self.assertIn("X-GNOME-Autostart-enabled=true", text)
+            self.assertIn("Exec=", text)
+            self.ui.sync_xdg_autostart(False, path=dest)
+            self.assertFalse(dest.exists())
+
+    def test_write_config_map_syncs_autostart(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            cfg = Path(d) / "config.conf"
+            auto_dir = Path(d) / "xdg" / "autostart"
+            auto = auto_dir / "urstack.desktop"
+            env_home = str(Path(d) / "xdg")
+            old = os.environ.get("XDG_CONFIG_HOME")
+            os.environ["XDG_CONFIG_HOME"] = env_home
+            try:
+                self.ui.write_config_map(cfg, {"autostart": "1", "scan_on_startup": "0"})
+                saved = self.ui.read_config_map(cfg)
+                self.assertEqual(saved["autostart"], "1")
+                self.assertEqual(saved["scan_on_startup"], "0")
+                self.assertTrue(auto.is_file(), "enabling autostart must create the desktop file")
+                self.ui.write_config_map(cfg, {"autostart": "0"})
+                self.assertFalse(auto.exists())
+            finally:
+                if old is None:
+                    os.environ.pop("XDG_CONFIG_HOME", None)
+                else:
+                    os.environ["XDG_CONFIG_HOME"] = old
 
 
 if __name__ == "__main__":

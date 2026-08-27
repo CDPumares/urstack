@@ -480,7 +480,9 @@ _FEDORA_UI="$FEDORA_UPDATES_LIB/ui.py"
 if [[ $CHECK_ONLY -eq 0 && $AUTO_YES -eq 0 && -n "${DISPLAY:-}" && -f "$_FEDORA_UI" ]] \
    && command -v python3 &>/dev/null; then
   : > "$tmp"
-  URSTACK_PENDING_CHECK=1 show_action_menu 0 "$tmp"
+  _scan_on_open="$(cfg_get scan_on_startup 1)"
+  [[ "$_scan_on_open" == "1" ]] || _scan_on_open=0
+  URSTACK_PENDING_CHECK="$_scan_on_open" show_action_menu 0 "$tmp"
   exit 0
 fi
 
