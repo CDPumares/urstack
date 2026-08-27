@@ -243,9 +243,13 @@ write_detected_config() {
 
   local prev_appearance="system"
   local prev_apply_fw prev_autostart prev_scan_on_startup
+  local prev_autostart_background prev_daily_check prev_notifications
   prev_apply_fw=$(_detect_prev01 "$out" apply_fw 0)
   prev_autostart=$(_detect_prev01 "$out" autostart 0)
+  prev_autostart_background=$(_detect_prev01 "$out" autostart_background 0)
   prev_scan_on_startup=$(_detect_prev01 "$out" scan_on_startup 1)
+  prev_daily_check=$(_detect_prev01 "$out" daily_check 0)
+  prev_notifications=$(_detect_prev01 "$out" notifications 1)
   if [[ -n "$out" && "$out" != "-" && -f "$out" ]]; then
     prev_appearance="$(awk -F= '/^appearance=/{gsub(/[[:space:]]/, "", $2); print $2; exit}' "$out")"
     [[ "$prev_appearance" == "light" || "$prev_appearance" == "dark" || "$prev_appearance" == "system" ]] \
@@ -296,7 +300,10 @@ keep_kernels=${DETECT_keep_kernels}
 quiet_gnome_software=${DETECT_quiet_gnome_software}
 appearance=${prev_appearance}
 autostart=${prev_autostart}
+autostart_background=${prev_autostart_background}
 scan_on_startup=${prev_scan_on_startup}
+daily_check=${prev_daily_check}
+notifications=${prev_notifications}
 EOF
 )
 

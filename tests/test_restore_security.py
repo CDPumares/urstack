@@ -362,6 +362,15 @@ class TestCatalogInstallSafety(unittest.TestCase):
         for bad in ("--nogpgcheck", "-y", "; id", "/tmp/e.rpm", "a b", ""):
             self.assertFalse(self._fn(f'_catalog_valid_pkg_name "{bad}"'), bad)
 
+    def test_uninstall_refuses_vendor_scripts(self) -> None:
+        self.assertFalse(
+            self._fn('catalog_uninstall_app script https://evil.example/x.sh evil')
+        )
+
+    def test_uninstall_refuses_flag_package_names(self) -> None:
+        self.assertFalse(self._fn('catalog_uninstall_app dnf --nogpgcheck x'))
+        self.assertFalse(self._fn('catalog_uninstall_app flatpak -y x'))
+
     def test_no_root_shell_is_ever_constructed(self) -> None:
         """A `pkexec bash -c` with an interpolated path is a root injection."""
         for path in (
@@ -434,6 +443,9 @@ class TestCatalogInstallSafety(unittest.TestCase):
         self.assertNotIn("pkexec snap", catalog)
         self.assertIn("_catalog_priv dnf_install_pkg", catalog)
         self.assertIn("_catalog_priv snap_install", catalog)
+        self.assertIn("_catalog_priv dnf_remove_pkg", catalog)
+        self.assertIn("_catalog_priv snap_remove", catalog)
+        self.assertIn("catalog_uninstall_app", catalog)
 
 
 @unittest.skipIf(shutil.which("bash") is None, "bash required")
@@ -487,6 +499,24 @@ class TestPrivBatchRestoreVerbs(unittest.TestCase):
         out = self.run_job("dnf_install_pkg --nogpgcheck")
         self.assertIn("refusing name", out)
         self.assertIn("#result dnf_install_pkg fail", out)
+        self.assertNotIn("Unknown job", out)
+
+    def test_dnf_remove_pkg_refuses_flags(self) -> None:
+        out = self.run_job("dnf_remove_pkg --nogpgcheck")
+        self.assertIn("refusing name", out)
+        self.assertIn("#result dnf_remove_pkg fail", out)
+        self.assertNotIn("Unknown job", out)
+
+    def test_snap_remove_refuses_flags(self) -> None:
+        out = self.run_job("snap_remove --devmode")
+        self.assertIn("refusing name", out)
+        self.assertIn("#result snap_remove fail", out)
+        self.assertNotIn("Unknown job", out)
+
+    def test_flatpak_uninstall_refuses_flags(self) -> None:
+        out = self.run_job("flatpak_uninstall --system")
+        self.assertIn("refusing id", out)
+        self.assertIn("#result flatpak_uninstall fail", out)
         self.assertNotIn("Unknown job", out)
 
     def test_dnf_install_list_refuses_root_owned_source(self) -> None:

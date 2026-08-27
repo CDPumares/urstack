@@ -42,6 +42,7 @@ _CORE_DIR = str(Path(__file__).resolve().parent)
 if _CORE_DIR not in sys.path:
     sys.path.insert(0, _CORE_DIR)
 from page_icons import PAGE_ICON_CANDIDATES, svg_reads_as_symbolic  # noqa: E402
+import user_catalog  # noqa: E402
 
 DEFAULT_W, DEFAULT_H = 1440, 920
 # Shell pages fill the content pane; clamp only kicks in on very wide displays.
@@ -2759,10 +2760,28 @@ SETTING_KEYS: list[tuple[str, str, str, str]] = [
         "Open UrStack when you log in to the desktop.",
     ),
     (
+        "autostart_background",
+        "Startup",
+        "Check in the background at login",
+        "When Launch at login is on, run a silent check instead of opening the window. You’ll get a notification if updates are waiting.",
+    ),
+    (
         "scan_on_startup",
         "Startup",
         "Scan when UrStack opens",
         "Check for software and health updates as soon as the app starts. Turn this off to open the window first and scan with Refresh.",
+    ),
+    (
+        "daily_check",
+        "Startup",
+        "Daily silent check",
+        "Once a day, check for updates in the background and notify if anything is waiting. Does not apply updates.",
+    ),
+    (
+        "notifications",
+        "Startup",
+        "Desktop notifications",
+        "Show a notification when updates are found, and when an apply finishes.",
     ),
     (
         "enable_dnf",
@@ -2895,7 +2914,10 @@ SETTING_KEYS: list[tuple[str, str, str, str]] = [
 # Match lib/core/common.sh cfg_get defaults so Settings doesn't show (and save) the wrong state.
 SETTING_DEFAULTS: dict[str, str] = {
     "autostart": "0",
+    "autostart_background": "0",
     "scan_on_startup": "1",
+    "daily_check": "0",
+    "notifications": "1",
     "enable_dnf": "1",
     "enable_flatpak": "1",
     "enable_snap": "1",
@@ -2941,13 +2963,22 @@ def urstack_launch_command() -> str:
     return "urstack"
 
 
-def autostart_desktop_text(exec_cmd: str | None = None) -> str:
+def autostart_desktop_text(
+    exec_cmd: str | None = None, *, background: bool = False
+) -> str:
     cmd = exec_cmd or urstack_launch_command()
+    if background:
+        cmd = f"{cmd} --check"
+    comment = (
+        "Check for Fedora stack updates at login"
+        if background
+        else "Open UrStack at login"
+    )
     return (
         "[Desktop Entry]\n"
         "Type=Application\n"
         "Name=UrStack\n"
-        "Comment=Open UrStack at login\n"
+        f"Comment={comment}\n"
         f"Exec={cmd}\n"
         "Icon=urstack\n"
         "Terminal=false\n"
@@ -2958,15 +2989,92 @@ def autostart_desktop_text(exec_cmd: str | None = None) -> str:
     )
 
 
-def sync_xdg_autostart(enabled: bool, *, path: Path | None = None) -> Path:
+def sync_xdg_autostart(
+    enabled: bool, *, background: bool = False, path: Path | None = None
+) -> Path:
     """Install or remove ~/.config/autostart/urstack.desktop."""
     dest = path or xdg_autostart_path()
     if enabled:
         dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.write_text(autostart_desktop_text(), encoding="utf-8")
+        dest.write_text(autostart_desktop_text(background=background), encoding="utf-8")
         dest.chmod(0o644)
     else:
         dest.unlink(missing_ok=True)
+    return dest
+
+
+def systemd_user_dir() -> Path:
+    base = os.environ.get("XDG_CONFIG_HOME") or str(Path.home() / ".config")
+    return Path(base) / "systemd" / "user"
+
+
+def daily_check_unit_texts(exec_cmd: str | None = None) -> tuple[str, str]:
+    cmd = exec_cmd or urstack_launch_command()
+    service = (
+        "[Unit]\n"
+        "Description=UrStack — check for workstation updates\n"
+        "After=network-online.target\n"
+        "Wants=network-online.target\n"
+        "\n"
+        "[Service]\n"
+        "Type=oneshot\n"
+        f"ExecStart={cmd} --check\n"
+        "SuccessExitStatus=0 1\n"
+    )
+    timer = (
+        "[Unit]\n"
+        "Description=Daily UrStack update check\n"
+        "\n"
+        "[Timer]\n"
+        "OnCalendar=daily\n"
+        "Persistent=true\n"
+        "RandomizedDelaySec=30m\n"
+        "\n"
+        "[Install]\n"
+        "WantedBy=timers.target\n"
+    )
+    return service, timer
+
+
+def _apply_user_systemctl() -> bool:
+    return os.environ.get("URSTACK_APPLY_SYSTEMD", "1") != "0"
+
+
+def _user_systemctl(*args: str) -> None:
+    if not _apply_user_systemctl():
+        return
+    try:
+        subprocess.run(
+            ["systemctl", "--user", *args],
+            capture_output=True,
+            timeout=30,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+
+
+def sync_daily_check_timer(
+    enabled: bool, *, unit_dir: Path | None = None
+) -> Path:
+    """Install or remove the user systemd daily check timer."""
+    dest = unit_dir or systemd_user_dir()
+    service = dest / "urstack-check.service"
+    timer = dest / "urstack-check.timer"
+    if enabled:
+        dest.mkdir(parents=True, exist_ok=True)
+        svc_text, tmr_text = daily_check_unit_texts()
+        service.write_text(svc_text, encoding="utf-8")
+        timer.write_text(tmr_text, encoding="utf-8")
+        _user_systemctl("disable", "--now", "stackup-check.timer")
+        _user_systemctl("disable", "--now", "fedora-updates-check.timer")
+        _user_systemctl("daemon-reload")
+        _user_systemctl("enable", "--now", "urstack-check.timer")
+    else:
+        _user_systemctl("disable", "--now", "urstack-check.timer")
+        service.unlink(missing_ok=True)
+        timer.unlink(missing_ok=True)
+        _user_systemctl("daemon-reload")
     return dest
 
 
@@ -3015,7 +3123,19 @@ def write_config_map(path: Path, values: dict[str, str]) -> None:
     lines.append("")
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     try:
-        sync_xdg_autostart(merged.get("autostart", setting_default("autostart")) == "1")
+        sync_xdg_autostart(
+            merged.get("autostart", setting_default("autostart")) == "1",
+            background=merged.get(
+                "autostart_background", setting_default("autostart_background")
+            )
+            == "1",
+        )
+    except OSError:
+        pass
+    try:
+        sync_daily_check_timer(
+            merged.get("daily_check", setting_default("daily_check")) == "1"
+        )
     except OSError:
         pass
 
@@ -3139,7 +3259,10 @@ def run_workstation_rescan(config_file: str | Path) -> tuple[bool, list[str], st
             "enable_backup",
             "appearance",
             "autostart",
+            "autostart_background",
             "scan_on_startup",
+            "daily_check",
+            "notifications",
             "apply_fw",
         } or key.startswith("backup_"):
             if values.get(key) != val:
@@ -3238,6 +3361,11 @@ def _load_catalog_rows(path: Path) -> list[dict[str, str]]:
                 "badge": parts[9] if len(parts) > 9 else parts[5],
                 "icon": parts[10] if len(parts) > 10 else "",
                 "repo_hint": parts[11] if len(parts) > 11 else "",
+                "user": (
+                    parts[12]
+                    if len(parts) > 12
+                    else ("1" if parts[0].startswith("user-") else "0")
+                ),
             }
         )
     return rows
@@ -3363,6 +3491,33 @@ def _catalog_install_choice(row: dict[str, str]) -> str:
             "install",
             row.get("method", ""),
             row.get("package", ""),
+            row.get("name", ""),
+            row.get("url", ""),
+        ]
+    )
+
+
+_UNINSTALLABLE_METHODS = frozenset(
+    {"flatpak", "dnf", "snap", "cursor_rpm", "appimage", "rpm_url"}
+)
+
+
+def _catalog_can_uninstall(row: dict[str, str]) -> bool:
+    if row.get("installed") != "1":
+        return False
+    return (row.get("method") or "").strip() in _UNINSTALLABLE_METHODS
+
+
+def _catalog_uninstall_choice(row: dict[str, str]) -> str:
+    method = (row.get("method") or "").strip()
+    package = (row.get("package") or "").strip()
+    if method == "cursor_rpm":
+        package = package or "cursor"
+    return "|".join(
+        [
+            "uninstall",
+            method,
+            package,
             row.get("name", ""),
             row.get("url", ""),
         ]
@@ -3722,6 +3877,7 @@ def build_app_detail_content(
     *,
     on_install: Callable[[], None] | None = None,
     on_open_url: Callable[[str], None] | None = None,
+    on_uninstall: Callable[[], None] | None = None,
     parent_win: Gtk.Window | None = None,
 ) -> Gtk.Widget:
     """Full-page / dialog body for one catalog app."""
@@ -3958,6 +4114,16 @@ def build_app_detail_content(
         visit.set_hexpand(True)
         visit.connect("clicked", lambda *_: on_open_url(homepage))
         actions.append(visit)
+    if on_uninstall is not None:
+        uninstall_btn = mk_btn(
+            "Uninstall",
+            "pill destructive-action",
+            pick_icon("user-trash-symbolic", "edit-delete-symbolic"),
+        )
+        uninstall_btn.set_hexpand(True)
+        uninstall_btn.set_tooltip_text("Remove this package from the computer")
+        uninstall_btn.connect("clicked", lambda *_: on_uninstall())
+        actions.append(uninstall_btn)
     if actions.get_first_child() is not None:
         main.append(actions)
     return main
@@ -3989,10 +4155,37 @@ def _show_app_details(
     def do_open_url(uri: str = "") -> None:
         _open_uri(uri or _app_detail_link(app_row, _app_meta_for_row(app_row)), parent)
 
+    def confirm_uninstall() -> None:
+        try:
+            dialog = Adw.AlertDialog(
+                heading=f"Uninstall {name}?",
+                body="This removes the package from this computer.",
+            )
+            dialog.add_response("cancel", "Cancel")
+            dialog.add_response("uninstall", "Uninstall")
+            dialog.set_response_appearance(
+                "uninstall", Adw.ResponseAppearance.DESTRUCTIVE
+            )
+            dialog.set_default_response("cancel")
+            dialog.set_close_response("cancel")
+
+            def on_resp(_d: Adw.AlertDialog, response: str) -> None:
+                if response == "uninstall":
+                    close_detail()
+                    on_install(_catalog_uninstall_choice(app_row))
+
+            dialog.connect("response", on_resp)
+            dialog.present(parent)
+            return
+        except Exception:  # noqa: BLE001
+            close_detail()
+            on_install(_catalog_uninstall_choice(app_row))
+
     content = build_app_detail_content(
         app_row,
         on_install=None if app_row.get("installed") == "1" else do_install,
         on_open_url=do_open_url,
+        on_uninstall=confirm_uninstall if _catalog_can_uninstall(app_row) else None,
         parent_win=parent,
     )
 
@@ -4048,6 +4241,152 @@ def _show_app_details(
         pass
 
 
+def _show_add_user_app_dialog(
+    parent: Gtk.Window | None,
+    existing_packages: set[str],
+    on_added: Callable[[dict[str, str]], None],
+) -> None:
+    """Add a Flathub / DNF / Snap listing to the personal overlay."""
+    methods = (
+        ("flatpak", "Flathub ID", "org.mozilla.firefox"),
+        ("dnf", "DNF package", "vlc"),
+        ("snap", "Snap name", "vlc"),
+    )
+    selected = {"i": 0}
+
+    def current_method() -> tuple[str, str, str]:
+        return methods[selected["i"]]
+
+    hint = Gtk.Label(
+        label="Flathub app ID, DNF package name, or Snap name. Extra remotes and vendor scripts are not allowed.",
+        xalign=0.0,
+        wrap=True,
+    )
+    hint.add_css_class("dim-label")
+    hint.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+
+    error = Gtk.Label(label="", xalign=0.0, wrap=True)
+    error.add_css_class("error")
+    error.set_visible(False)
+
+    form = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+    form.set_margin_start(16)
+    form.set_margin_end(16)
+    form.set_margin_top(8)
+    form.set_margin_bottom(12)
+    form.append(hint)
+
+    try:
+        labels = Gtk.StringList.new([m[1] for m in methods])
+        combo = Adw.ComboRow(title="Source", model=labels)
+        pkg = Adw.EntryRow(title="Package or app ID")
+        name = Adw.EntryRow(title="Display name (optional)")
+        group = Adw.PreferencesGroup()
+        group.add(combo)
+        group.add(pkg)
+        group.add(name)
+        form.append(group)
+
+        def on_method(*_a: object) -> None:
+            idx = int(combo.get_selected())
+            if 0 <= idx < len(methods):
+                selected["i"] = idx
+                try:
+                    pkg.set_title(methods[idx][1])
+                except Exception:  # noqa: BLE001
+                    pass
+
+        combo.connect("notify::selected", on_method)
+        get_pkg = pkg.get_text
+        get_name = name.get_text
+    except Exception:  # noqa: BLE001
+        combo_box = Gtk.DropDown.new_from_strings([m[1] for m in methods])
+        pkg_entry = Gtk.Entry()
+        pkg_entry.set_placeholder_text("org.mozilla.firefox")
+        name_entry = Gtk.Entry()
+        name_entry.set_placeholder_text("Optional name")
+        form.append(combo_box)
+        form.append(pkg_entry)
+        form.append(name_entry)
+
+        def on_drop(*_a: object) -> None:
+            idx = int(combo_box.get_selected())
+            if 0 <= idx < len(methods):
+                selected["i"] = idx
+                pkg_entry.set_placeholder_text(methods[idx][2])
+
+        combo_box.connect("notify::selected", on_drop)
+        get_pkg = pkg_entry.get_text
+        get_name = name_entry.get_text
+
+    form.append(error)
+
+    def submit() -> bool:
+        method = current_method()[0]
+        try:
+            app = user_catalog.add_app(
+                method,
+                get_pkg().strip(),
+                get_name().strip(),
+                existing_packages=existing_packages,
+            )
+        except ValueError as exc:
+            error.set_label(str(exc))
+            error.set_visible(True)
+            return False
+        on_added(user_catalog.as_catalog_row(app))
+        return True
+
+    try:
+        dialog = Adw.Dialog()
+        try:
+            dialog.set_title("Add app")
+            dialog.set_content_width(460)
+        except Exception:  # noqa: BLE001
+            pass
+        toolbar = Adw.ToolbarView()
+        header = Adw.HeaderBar()
+        cancel = Gtk.Button(label="Cancel")
+        add_btn = Gtk.Button(label="Add")
+        add_btn.add_css_class("suggested-action")
+        header.pack_start(cancel)
+        header.pack_end(add_btn)
+        toolbar.add_top_bar(header)
+        toolbar.set_content(form)
+        dialog.set_child(toolbar)
+        cancel.connect("clicked", lambda *_: dialog.close())
+
+        def on_add(*_a: object) -> None:
+            if submit():
+                dialog.close()
+
+        add_btn.connect("clicked", on_add)
+        dialog.present(parent)
+        return
+    except Exception:  # noqa: BLE001
+        pass
+
+    try:
+        dialog = Adw.AlertDialog(
+            heading="Add app",
+            body="Flathub ID, DNF package, or Snap name only.",
+        )
+        dialog.add_response("cancel", "Cancel")
+        dialog.add_response("add", "Add")
+        dialog.set_default_response("add")
+        dialog.set_close_response("cancel")
+        dialog.set_extra_child(form)
+
+        def on_resp(_d: Adw.AlertDialog, response: str) -> None:
+            if response == "add":
+                submit()
+
+        dialog.connect("response", on_resp)
+        dialog.present(parent)
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def build_catalog_content(
     status_file: str,
     *,
@@ -4059,6 +4398,8 @@ def build_catalog_content(
     import tempfile
 
     CAT_ORDER = [
+        "mine",
+        "added",
         "browsers",
         "communication",
         "media",
@@ -4075,6 +4416,8 @@ def build_catalog_content(
     ]
     CAT_ICONS = {
         "": pick_icon("applications-all-symbolic", "view-app-grid-symbolic"),
+        "mine": pick_icon("starred-symbolic", "user-bookmarks-symbolic"),
+        "added": pick_icon("list-add-symbolic", "folder-new-symbolic"),
         # Prefer icons that exist on both GNOME and KDE/Breeze themes
         "browsers": pick_icon("applications-internet-symbolic", "web-browser-symbolic"),
         "communication": pick_icon("system-users-symbolic", "user-available-symbolic"),
@@ -4097,6 +4440,8 @@ def build_catalog_content(
         "direct": "folder-download-symbolic",
     }
     CAT_LABELS = {
+        "mine": "My apps",
+        "added": "Added by you",
         "browsers": "Browsers",
         "communication": "Communication",
         "media": "Media",
@@ -4130,13 +4475,35 @@ def build_catalog_content(
 
     cat_counts: dict[str, int] = {}
     cat_names: dict[str, str] = {}
-    for r in rows:
-        cid = r["category_id"]
-        cat_counts[cid] = cat_counts.get(cid, 0) + 1
-        cat_names.setdefault(cid, r["category"])
+    ordered_ids: list[str] = []
 
-    ordered_ids = [c for c in CAT_ORDER if c in cat_counts]
-    ordered_ids.extend(sorted(c for c in cat_counts if c not in CAT_ORDER))
+    def refresh_cat_state() -> None:
+        cat_counts.clear()
+        cat_names.clear()
+        cat_names["mine"] = CAT_LABELS["mine"]
+        cat_names["added"] = CAT_LABELS["added"]
+        installed_n = 0
+        for r in rows:
+            if r.get("installed") == "1":
+                installed_n += 1
+            cid = r["category_id"]
+            if cid == "mine":
+                cid = "added"
+            if not cid:
+                continue
+            cat_counts[cid] = cat_counts.get(cid, 0) + 1
+            if cid == "added":
+                cat_names[cid] = CAT_LABELS["added"]
+            else:
+                cat_names.setdefault(cid, r["category"])
+        cat_counts["mine"] = installed_n
+        ordered_ids.clear()
+        for cid in CAT_ORDER:
+            if cid == "mine" or cid in cat_counts:
+                ordered_ids.append(cid)
+        ordered_ids.extend(sorted(c for c in cat_counts if c not in CAT_ORDER))
+
+    refresh_cat_state()
 
     def cat_chip_label(cid: str) -> str:
         if not cid:
@@ -4251,10 +4618,23 @@ def build_catalog_content(
         cat_btns[cid] = btn
         cat_rail.append(btn)
 
-    add_cat_pill("", len(rows))
-    for cid in ordered_ids:
-        add_cat_pill(cid, cat_counts[cid])
-    cat_guard["busy"] = False
+    def rebuild_cat_rail() -> None:
+        refresh_cat_state()
+        cat_guard["busy"] = True
+        try:
+            child = cat_rail.get_first_child()
+            while child is not None:
+                nxt = child.get_next_sibling()
+                cat_rail.remove(child)
+                child = nxt
+            cat_btns.clear()
+            add_cat_pill("", len(rows))
+            for cid in ordered_ids:
+                add_cat_pill(cid, cat_counts.get(cid, 0))
+        finally:
+            cat_guard["busy"] = False
+
+    rebuild_cat_rail()
 
     search = Gtk.SearchEntry()
     search.set_placeholder_text("Search apps, packages, or categories…")
@@ -4370,9 +4750,16 @@ def build_catalog_content(
         q = filter_query["q"].strip().lower()
         out: list[dict[str, str]] = []
         for r in rows:
-            if filter_cat["id"] and r["category_id"] != filter_cat["id"]:
-                continue
             inst = r["installed"] == "1"
+            if filter_cat["id"] == "mine":
+                if not inst:
+                    continue
+            elif filter_cat["id"]:
+                cid = r["category_id"]
+                if cid == "mine":
+                    cid = "added"
+                if cid != filter_cat["id"]:
+                    continue
             if filter_status["v"] == "available" and inst:
                 continue
             if filter_status["v"] == "installed" and not inst:
@@ -4438,6 +4825,12 @@ def build_catalog_content(
             if q:
                 empty_title = f"No matches for “{q}”"
                 empty_desc = "Try another name, or clear search to browse categories."
+            elif filter_cat["id"] == "mine":
+                empty_title = "No catalog apps installed"
+                empty_desc = (
+                    "Install from the catalog and they show up here. "
+                    "You can uninstall them from an app’s details."
+                )
             elif filter_cat["id"]:
                 empty_title = f"Nothing in {cat_full_label(filter_cat['id'])}"
                 empty_desc = "Clear filters to see more of the catalog."
@@ -4447,10 +4840,21 @@ def build_catalog_content(
             empty = Adw.StatusPage(
                 title=empty_title,
                 description=empty_desc,
-                icon_name="system-search-symbolic",
+                icon_name=(
+                    CAT_ICONS.get("mine", "starred-symbolic")
+                    if filter_cat["id"] == "mine"
+                    else "system-search-symbolic"
+                ),
             )
             empty.add_css_class("compact")
-            if filtered:
+            if filter_cat["id"] == "mine" and not q:
+                browse = Gtk.Button(label="Browse catalog")
+                browse.add_css_class("pill")
+                browse.add_css_class("suggested-action")
+                browse.set_halign(Gtk.Align.CENTER)
+                browse.connect("clicked", lambda *_: clear_filters())
+                empty.set_child(browse)
+            elif filtered:
                 reset = Gtk.Button(label="Clear filters")
                 reset.add_css_class("pill")
                 reset.add_css_class("suggested-action")
@@ -4688,6 +5092,22 @@ def build_catalog_content(
     keys.connect("key-pressed", on_apps_key)
     main.add_controller(keys)
 
+    def refresh_after_user_edit() -> None:
+        rebuild_cat_rail()
+        rebuild_list()
+
+    def show_add_app(*_a: object) -> None:
+        existing = {r.get("package", "") for r in rows if r.get("package")}
+
+        def on_added(row: dict[str, str]) -> None:
+            if any(r.get("id") == row.get("id") for r in rows):
+                return
+            rows.append(row)
+            filter_cat["id"] = "added"
+            refresh_after_user_edit()
+
+        _show_add_user_app_dialog(_widget_window(main), existing, on_added)
+
     def do_install_selected(*_a: object) -> None:
         if not selected:
             return
@@ -4711,6 +5131,17 @@ def build_catalog_content(
 
     actions = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
     actions.add_css_class("fu-actions")
+    add_btn = mk_btn(
+        "Add app",
+        "pill fu-secondary",
+        pick_icon("list-add-symbolic", "list-add"),
+    )
+    add_btn.set_hexpand(True)
+    add_btn.set_tooltip_text(
+        "Add a Flathub ID, DNF package, or Snap name to My apps"
+    )
+    add_btn.connect("clicked", show_add_app)
+    actions.append(add_btn)
     install_btn = mk_btn(
         "Install selected",
         "suggested-action pill fu-primary",
@@ -6540,8 +6971,8 @@ def build_settings_content(
             desc = ""
             if group_name == "Startup":
                 desc = (
-                    "Open UrStack with your session, and whether to check for "
-                    "updates as soon as the window appears."
+                    "Login, background checks, and desktop notifications. "
+                    "Daily check never applies updates on its own."
                 )
             elif group_name == "Advisories":
                 desc = "Reminders only — UrStack will not install updates for these."
@@ -7649,20 +8080,32 @@ def mode_shell(args: argparse.Namespace) -> int:
             if not (
                 action.startswith("install|")
                 or action.startswith("install-batch|")
+                or action.startswith("uninstall|")
             ):
                 finish(action)
                 return
             env_extra = {
                 "URSTACK_CATALOG_STATUS": str(getattr(args, "status_file", "") or ""),
             }
-            title = "Installing apps" if action.startswith("install-batch|") else "Installing"
+            if action.startswith("uninstall|"):
+                title = "Uninstalling"
+                success = "Uninstall finished"
+                fail = "Uninstall finished with errors"
+            elif action.startswith("install-batch|"):
+                title = "Installing apps"
+                success = "Install finished"
+                fail = "Install finished with errors"
+            else:
+                title = "Installing"
+                success = "Install finished"
+                fail = "Install finished with errors"
             run_embedded_job(
                 title=title,
                 argv=_urstack_command() + ["--catalog-choice", action],
                 env_extra=env_extra,
                 pulsate=False,
-                success_toast="Install finished",
-                fail_toast="Install finished with errors",
+                success_toast=success,
+                fail_toast=fail,
                 done_goes_home=False,
             )
 

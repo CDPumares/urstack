@@ -67,6 +67,8 @@ class DetectHarness:
 
     def run(self) -> dict[str, str]:
         out = self.tmp / "status.txt"
+        cfg = self.home / ".config" / "urstack"
+        cfg.mkdir(parents=True, exist_ok=True)
         env = {
             **os.environ,
             "HOME": str(self.home),
@@ -74,6 +76,8 @@ class DetectHarness:
             "STACKUP_ROOT": str(self.tmp),
             "PATH": f"{self.bin}:{os.environ.get('PATH', '')}",
             "XDG_DATA_DIRS": "",
+            "XDG_CONFIG_HOME": str(self.home / ".config"),
+            "FEDORA_UPDATES_CONFIG_DIR": str(cfg),
         }
         subprocess.run(
             ["bash", "-c", f'source "{CORE}/catalog.sh"; catalog_status_file "{out}"'],
@@ -87,7 +91,11 @@ class DetectHarness:
             parts = line.split("|")
             if len(parts) > 7:
                 result[parts[0]] = parts[7]
+        self._last_lines = out.read_text(encoding="utf-8").splitlines()
         return result
+
+    def rows(self) -> list[list[str]]:
+        return [ln.split("|") for ln in getattr(self, "_last_lines", [])]
 
 
 def app(aid: str, method: str, package: str, name: str = "") -> dict:
@@ -230,6 +238,74 @@ class TestCrossSourceDetection(unittest.TestCase):
         )
         self.assertEqual(got["vlc"], "1")
         self.assertEqual(got["git"], "1")
+
+
+class TestUserCatalogOverlay(unittest.TestCase):
+    def setUp(self) -> None:
+        self._dir = tempfile.TemporaryDirectory()
+        self.h = DetectHarness(Path(self._dir.name))
+
+    def tearDown(self) -> None:
+        self._dir.cleanup()
+
+    def _write_overlay(self, apps: list[dict]) -> None:
+        cfg = self.h.home / ".config" / "urstack"
+        cfg.mkdir(parents=True, exist_ok=True)
+        (cfg / "catalog-user.json").write_text(
+            json.dumps({"version": 1, "apps": apps}),
+            encoding="utf-8",
+        )
+
+    def test_user_app_appears_in_added(self) -> None:
+        self.h.setup(apps=[app("git", "dnf", "git")])
+        self._write_overlay(
+            [
+                {
+                    "id": "user-flatpak-org-kde-okular",
+                    "name": "Okular",
+                    "method": "flatpak",
+                    "package": "org.kde.okular",
+                }
+            ]
+        )
+        self.h.run()
+        added = [p for p in self.h.rows() if len(p) > 4 and p[4] == "added"]
+        self.assertEqual(len(added), 1)
+        self.assertEqual(added[0][0], "user-flatpak-org-kde-okular")
+        self.assertEqual(added[0][5], "flatpak")
+        self.assertEqual(added[0][12], "1")
+
+    def test_user_duplicate_of_curated_package_is_skipped(self) -> None:
+        self.h.setup(apps=[app("vlc", "dnf", "vlc")])
+        self._write_overlay(
+            [{"id": "user-dnf-vlc", "name": "VLC", "method": "dnf", "package": "vlc"}]
+        )
+        got = self.h.run()
+        self.assertIn("vlc", got)
+        self.assertFalse(any(p[0] == "user-dnf-vlc" for p in self.h.rows() if p))
+
+    def test_invalid_overlay_methods_are_ignored(self) -> None:
+        self.h.setup(apps=[app("git", "dnf", "git")])
+        self._write_overlay(
+            [
+                {
+                    "id": "user-script-evil",
+                    "method": "script",
+                    "package": "https://evil.example/x.sh",
+                    "url": "https://evil.example/x.sh",
+                },
+                {
+                    "id": "user-dnf-ripgrep",
+                    "name": "ripgrep",
+                    "method": "dnf",
+                    "package": "ripgrep",
+                },
+            ]
+        )
+        self.h.run()
+        ids = [p[0] for p in self.h.rows() if p]
+        self.assertIn("user-dnf-ripgrep", ids)
+        self.assertNotIn("user-script-evil", ids)
 
 
 if __name__ == "__main__":

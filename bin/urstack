@@ -10,6 +10,7 @@
 #   urstack --backup [dir]            Backup module (if enabled in config)
 #   urstack --restore [dir]
 #   urstack --install-timer           Daily user systemd timer
+#   urstack --remove-timer            Disable and remove that timer
 #   urstack --config                  Print config path / enabled sources
 #   urstack --detect                  Scan workstation; print what would be enabled
 #   urstack --detect --write-config
@@ -27,7 +28,7 @@ if [[ -z "${_FEDORA_UPDATES_RELAUNCHED:-}" ]]; then
   is_cli=0
   for _a in "${@:-}"; do
     case "$_a" in
-      --check|--yes|-y|--log|--backup|--restore|--install-timer|--include-firmware|--config|--detect|--write-config|--include-backup|--apply-sections|--catalog-choice|--check-dir|--refresh-check|--results-file|--sections-file|--health-scan|--health-apply|--health-status|--health-restore-point|--health-restore|--health-restore-list)
+      --check|--yes|-y|--log|--backup|--restore|--install-timer|--remove-timer|--include-firmware|--config|--detect|--write-config|--include-backup|--apply-sections|--catalog-choice|--check-dir|--refresh-check|--results-file|--sections-file|--health-scan|--health-apply|--health-status|--health-restore-point|--health-restore|--health-restore-list)
         is_cli=1; break ;;
     esac
   done
@@ -130,6 +131,7 @@ SHOW_LOG=0
 DO_BACKUP=0
 DO_RESTORE=0
 INSTALL_TIMER=0
+REMOVE_TIMER=0
 SHOW_CONFIG=0
 DO_DETECT=0
 WRITE_CONFIG=0
@@ -165,6 +167,7 @@ while [[ $_i -lt ${#_args[@]} ]]; do
     --write-config) WRITE_CONFIG=1 ;;
     --include-backup) INCLUDE_BACKUP_DETECT=1 ;;
     --install-timer) INSTALL_TIMER=1 ;;
+    --remove-timer) REMOVE_TIMER=1 ;;
     --refresh-check) DO_REFRESH_CHECK=1 ;;
     --health-scan) DO_HEALTH_SCAN=1 ;;
     --health-restore-point) DO_HEALTH_RP=1 ;;
@@ -418,8 +421,22 @@ EOF
   systemctl --user list-timers urstack-check.timer --no-pager 2>/dev/null || true
 }
 
+remove_systemd_timer() {
+  local unit_dir="${XDG_CONFIG_HOME:-$HOME/.config}/systemd/user"
+  systemctl --user disable --now urstack-check.timer 2>/dev/null || true
+  systemctl --user disable --now stackup-check.timer 2>/dev/null || true
+  systemctl --user disable --now fedora-updates-check.timer 2>/dev/null || true
+  rm -f "$unit_dir/urstack-check.timer" "$unit_dir/urstack-check.service"
+  systemctl --user daemon-reload 2>/dev/null || true
+  echo "Removed urstack-check.timer."
+}
+
 if [[ $INSTALL_TIMER -eq 1 ]]; then
   install_systemd_timer
+  exit 0
+fi
+if [[ $REMOVE_TIMER -eq 1 ]]; then
+  remove_systemd_timer
   exit 0
 fi
 

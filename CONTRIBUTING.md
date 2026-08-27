@@ -46,7 +46,7 @@ PolicyKit XML under `data/polkit/` must parse, and must **not** use `auth_admin_
 
 ## Catalog and icons
 
-App entries live in `data/catalog/apps.json` (and `winutil.json` for the winutil-mapped set). GUI editors and IDEs go in `developer`; command-line tools, language toolchains, and other non-app utilities go in `cli`. Helpers:
+App entries live in `data/catalog/apps.json` (and `winutil.json` for the winutil-mapped set). GUI editors and IDEs go in `developer`; command-line tools, language toolchains, and other non-app utilities go in `cli`. Users can pin extra Flathub / DNF / Snap listings in `~/.config/urstack/catalog-user.json` (**Added by you**); **My apps** is the installed catalog view. Do not add extra remotes or vendor scripts there. Helpers:
 
 ```bash
 python3 scripts/import-winutil-apps.py

@@ -323,6 +323,7 @@ tree_is_incomplete() { [[ -f "$1/$URSTACK_INCOMPLETE_NAME" ]]; }
 
 notify() {
   local summary="$1" body="${2:-}" urgency="${3:-normal}"
+  [[ "$(cfg_get notifications 1)" == "1" ]] || return 0
   command -v notify-send &>/dev/null || return 0
   local icon="${FEDORA_UPDATES_ROOT}/data/icons/urstack.png"
   [[ -f "$icon" ]] || icon="${FEDORA_UPDATES_ROOT}/data/icons/urstack.png"

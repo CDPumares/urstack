@@ -35,8 +35,11 @@
 #   restore_grub <base64 abs path to a grub default file>
 #   ensure_snapd
 #   snap_install <name>
+#   snap_remove <name>
 #   dnf_install_list <label> <base64 caller-owned package list>
 #   dnf_install_pkg <name>
+#   dnf_remove_pkg <name>
+#   flatpak_uninstall <id>
 #   usermod_add_groups <caller-username> <g1,g2,...>
 #   set_locale <LANG or en_GB.UTF-8>
 #   set_keymap <gb>
@@ -807,6 +810,41 @@ while IFS= read -r line || [[ -n "$line" ]]; do
         else
           exit_code=1
         fi
+      fi
+      ;;
+    snap_remove)
+      sname="${1:-}"
+      if [[ -n "${2:-}" ]]; then
+        log "snap_remove: extra arguments refused"; exit_code=1
+      elif ! _valid_snap_name "$sname"; then
+        log "snap_remove: refusing name '$sname'"; exit_code=1
+      elif ! _ensure_snapd_bin; then
+        exit_code=1
+      else
+        log "snap remove $sname"
+        /usr/bin/snap remove "$sname" || exit_code=1
+      fi
+      ;;
+    dnf_remove_pkg)
+      n="${1:-}"
+      if [[ -n "${2:-}" ]]; then
+        log "dnf_remove_pkg: extra arguments refused"; exit_code=1
+      elif ! _valid_pkg_name "$n"; then
+        log "dnf_remove_pkg: refusing name '$n'"; exit_code=1
+      else
+        log "dnf remove $n"
+        dnf remove -y "$n" || exit_code=1
+      fi
+      ;;
+    flatpak_uninstall)
+      fid="${1:-}"
+      if [[ -n "${2:-}" ]]; then
+        log "flatpak_uninstall: extra arguments refused"; exit_code=1
+      elif ! _valid_pkg_name "$fid"; then
+        log "flatpak_uninstall: refusing id '$fid'"; exit_code=1
+      else
+        log "flatpak uninstall --system $fid"
+        /usr/bin/flatpak uninstall -y --system "$fid" || exit_code=1
       fi
       ;;
     fwupd_update) fwupdmgr update -y || fwupdmgr update || exit_code=1 ;;

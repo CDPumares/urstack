@@ -71,6 +71,9 @@ catalog_install_app() {
   echo "# Installing $name ($method)..."
   case "$method" in
     flatpak)
+      if ! _catalog_valid_pkg_name "$package"; then
+        echo "# Refusing suspicious package name: $package"; return 1
+      fi
       catalog_ensure_flathub
       if flatpak install -y --user flathub "$package" 2>&1; then
         return 0
@@ -210,20 +213,75 @@ EOF
   esac
 }
 
+# Remove one catalog app. Only methods we can reverse: Flatpak, DNF, Snap,
+# Cursor/vendor RPM, and AppImage. Vendor scripts and browser links are refused.
+# Args: method package name [url]
+catalog_uninstall_app() {
+  local method="$1" package="$2"
+  local name="${3:-$package}"
+  echo "# Uninstalling $name ($method)..."
+  case "$method" in
+    flatpak)
+      if ! _catalog_valid_pkg_name "$package"; then
+        echo "# Refusing suspicious package name: $package"; return 1
+      fi
+      if flatpak uninstall -y --user "$package" 2>&1; then
+        return 0
+      fi
+      if flatpak uninstall -y --system "$package" 2>&1; then
+        return 0
+      fi
+      _catalog_priv flatpak_uninstall "$package"
+      ;;
+    snap)
+      if ! _catalog_valid_pkg_name "$package"; then
+        echo "# Refusing suspicious package name: $package"; return 1
+      fi
+      _catalog_priv snap_remove "$package"
+      ;;
+    dnf|cursor_rpm|rpm_url)
+      if ! _catalog_valid_pkg_name "$package"; then
+        echo "# Refusing suspicious package name: $package"; return 1
+      fi
+      _catalog_priv dnf_remove_pkg "$package"
+      ;;
+    appimage)
+      if ! _catalog_valid_pkg_name "$package"; then
+        echo "# Refusing suspicious package name: $package"; return 1
+      fi
+      local dest dir apps
+      dir=$(catalog_appimage_dir)
+      dest="$dir/${package}.AppImage"
+      apps="${XDG_DATA_HOME:-$HOME/.local/share}/applications"
+      rm -f "$dest" "$apps/${package}.desktop"
+      echo "# Removed AppImage and menu entry"
+      return 0
+      ;;
+    *)
+      echo "# Cannot uninstall $name from UrStack (method: $method)"
+      return 1
+      ;;
+  esac
+}
+
 # Build a status file for the UI:
 # id|name|summary|category|category_id|method|package|installed|url|badge|icon
 # Merges data/catalog/*.json (apps.json first), deduping winutil imports by package/name.
 catalog_status_file() {
   local out="$1"
-  local dir
+  local dir core_dir user_cat
   dir=$(catalog_dir)
   [[ -d "$dir" ]] || { : > "$out"; return 1; }
+  core_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  user_cat="${FEDORA_UPDATES_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/urstack}/catalog-user.json"
 
-  python3 - "$dir" "$out" <<'PY'
+  python3 - "$dir" "$out" "$user_cat" "$core_dir" <<'PY'
 import json, os, sys, subprocess
 from pathlib import Path
 
 catalog_dir, dest = Path(sys.argv[1]), sys.argv[2]
+user_cat = Path(sys.argv[3]) if len(sys.argv) > 3 else None
+core_dir = Path(sys.argv[4]) if len(sys.argv) > 4 else None
 home = Path.home()
 lines = []
 
@@ -599,7 +657,43 @@ for path in files:
                 clean(badge),
                 clean(icon_for(app)),
                 clean(app.get("repo_hint") or ""),
+                "0",
             ]))
+
+user_apps = []
+if user_cat is not None and core_dir is not None and user_cat.is_file():
+    try:
+        sys.path.insert(0, str(core_dir))
+        import user_catalog
+        user_apps = user_catalog.load_apps(user_cat)
+    except Exception:
+        user_apps = []
+
+for app in user_apps:
+    aid = app.get("id") or ""
+    package = (app.get("package") or "").strip()
+    if not aid or aid in seen_ids:
+        continue
+    if package and package in seen_packages:
+        continue
+    seen_ids.add(aid)
+    if package:
+        seen_packages.add(package)
+    lines.append("|".join([
+        clean(aid),
+        clean(app.get("name")),
+        clean(app.get("summary")),
+        "Added by you",
+        "added",
+        clean(app.get("method")),
+        clean(package),
+        installed(app),
+        "",
+        clean(app.get("method")),
+        clean(icon_for(app)),
+        "",
+        "1",
+    ]))
 
 open(dest, "w", encoding="utf-8").write("\n".join(lines) + ("\n" if lines else ""))
 PY

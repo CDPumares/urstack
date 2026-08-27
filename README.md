@@ -94,7 +94,9 @@ Each listing can include:
 - **Screenshots** shown inside UrStack — you can step through them without leaving the app or opening a browser.
 - **The install method that actually works on Fedora:** Flatpak (Flathub), DNF, Snap, or a vendor URL / AppImage when that is the realistic Linux path.
 
-Categories include browsers, communication, media, productivity, developer (IDEs and GUI tools), **CLIs & tools** (git, gh, language toolchains, terminal utilities), graphics, utilities, gaming, and vendor / direct downloads. Linux-mapped profiles inspired by [Chris Titus Tech’s winutil](https://github.com/ChrisTitusTech/winutil) sit beside the native catalog. Windows-only titles from that list are not imported.
+**My apps** lists catalog apps that are already on this machine. Open one to **Uninstall** (Flatpak, DNF, Snap, vendor RPM, or AppImage). **Add app** still pins extra Flathub / DNF / Snap names you want that are not in the curated catalog; those listings live in `~/.config/urstack/catalog-user.json` under **Added by you**, show up in My apps once installed, and come back with Backup / Restore. Extra yum, COPR, or Flatpak remotes, vendor scripts, and arbitrary RPM URLs cannot be added from the GUI.
+
+Categories include **My apps** (installed), **Added by you**, browsers, communication, media, productivity, developer (IDEs and GUI tools), **CLIs & tools** (git, gh, language toolchains, terminal utilities), graphics, utilities, gaming, and vendor / direct downloads. Linux-mapped profiles inspired by [Chris Titus Tech’s winutil](https://github.com/ChrisTitusTech/winutil) sit beside the native catalog. Windows-only titles from that list are not imported.
 
 That is the difference after a fresh OS: you rebuild the toolbox by browsing apps you recognize, with pictures and descriptions, instead of remembering package names.
 
@@ -119,6 +121,7 @@ You choose what to apply. Aggressive tweaks take a **restore point** first (DNF 
 Backup is a **blueprint**, not a full-disk image. A dated folder can include:
 
 - Package and CLI manifests (DNF user packages, Flatpak, Snap, npm, pip, pipx, cargo, rustup, nvm, PATH inventory)
+- Personal Apps overlay (`catalog-user.json`) so My apps can be reinstalled after a rebuild
 - Git repositories under configured project roots (build artefacts such as `node_modules` and `.venv` are skipped)
 - AppImages and vendor launchers
 - Desktop settings, themes, SSH / GPG material (opt-in), and browser profiles
@@ -187,7 +190,7 @@ After a user install, ensure `~/.local/bin` is on your `PATH`.
 ./install.sh --system --uninstall
 ```
 
-Config stays at `~/.config/urstack/config.conf`. Logs stay under `~/.local/state/urstack`.
+Config stays at `~/.config/urstack/config.conf`. Personal Apps listings stay in `~/.config/urstack/catalog-user.json`. Logs stay under `~/.local/state/urstack`.
 
 ---
 
@@ -199,7 +202,7 @@ The main window is a sidebar shell:
 | --- | --- |
 | **Overview** | Snapshot of updates, health score, and recent history. |
 | **Updates** | Parallel check, per-source cards, apply selected or all. |
-| **Apps** | Category catalog, filters, single or batch install. |
+| **Apps** | Category catalog, My apps overlay, filters, single or batch install. |
 | **Health** | Scan, pick actions, apply; restore points. |
 | **Backup** / **Restore** | Blueprint export and rebuild. |
 | **Settings** | Toggle sources, kernel keep-count, re-scan workstation. |
@@ -226,6 +229,7 @@ urstack --detect --write-config --include-backup
 urstack --backup [dir]
 urstack --restore [dir]
 urstack --install-timer         # Daily user systemd timer (check only)
+urstack --remove-timer
 urstack --health-scan --health-status <file>
 urstack --health-apply <id,id,…>
 urstack --health-restore-point
@@ -239,9 +243,10 @@ urstack --health-restore [id|latest]
 
 ```bash
 urstack --install-timer
+urstack --remove-timer
 ```
 
-Installs a user unit `urstack-check.timer` (`OnCalendar=daily`, randomized delay). It only **checks** and notifies; it does not apply updates. Legacy `stackup-check.timer` / `fedora-updates-check.timer` units are disabled.
+Installs a user unit `urstack-check.timer` (`OnCalendar=daily`, randomized delay). It only **checks** and notifies; it does not apply updates. Legacy `stackup-check.timer` / `fedora-updates-check.timer` units are disabled. The same timer can be toggled from Settings → Daily silent check.
 
 ---
 
@@ -251,6 +256,7 @@ User config (created on first run / install):
 
 ```text
 ~/.config/urstack/config.conf
+~/.config/urstack/catalog-user.json   # optional My apps overlay
 ```
 
 Keys are `1` / `0`. Shipped templates live in `config/default.conf` and `config/developer.conf`. Settings in the GUI write the same file (with a timestamped `.bak-*` copy).
@@ -269,7 +275,10 @@ Keys are `1` / `0`. Shipped templates live in `config/default.conf` and `config/
 | `quiet_gnome_software` | 1 | Pause GNOME Software’s background service during a GUI run |
 | `keep_kernels` | 3 | Kernels to keep when pruning |
 | `autostart` | 0 | Launch UrStack at login (`~/.config/autostart/urstack.desktop`) |
+| `autostart_background` | 0 | With autostart: run `urstack --check` instead of opening the window |
 | `scan_on_startup` | 1 | Run update and health scans when the app window opens |
+| `daily_check` | 0 | User systemd timer that checks once a day and notifies (does not apply) |
+| `notifications` | 1 | Desktop notifications when updates are found or an apply finishes |
 
 ### Plugins
 
@@ -305,6 +314,7 @@ Legacy `~/.config/stackup/` and `~/.config/fedora-workstation-updater/` are copi
 | What | Where |
 | --- | --- |
 | User config | `~/.config/urstack/config.conf` |
+| My apps overlay | `~/.config/urstack/catalog-user.json` |
 | Logs | `~/.local/state/urstack/` (`urstack.log` and per-run folders) |
 | Health restore points | `~/.local/state/urstack/health-restore-points/` |
 | User install | `~/.local/share/urstack/` |

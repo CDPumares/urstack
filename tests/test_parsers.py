@@ -187,6 +187,7 @@ class TestCatalogRows(unittest.TestCase):
         self.assertEqual(rows[0]["repo_hint"], "")
         self.assertEqual(rows[1]["url"], "https://www.google.com/chrome/")
         self.assertEqual(rows[1]["repo_hint"], "Needs the google-chrome yum repo")
+        self.assertEqual(rows[0]["user"], "0")
         self.assertEqual(
             self.ui._catalog_install_choice(rows[0]),
             "install|flatpak|org.mozilla.firefox|Firefox|",
@@ -196,6 +197,49 @@ class TestCatalogRows(unittest.TestCase):
         self.assertTrue(label.startswith("Install "))
         installed_label, _ = self.ui._app_primary_action(rows[1])
         self.assertEqual(installed_label, "")
+
+    def test_load_catalog_rows_user_field(self) -> None:
+        with tempfile.NamedTemporaryFile("w", delete=False, encoding="utf-8") as fh:
+            fh.write(
+                "user-dnf-ripgrep|ripgrep|Added by you · DNF|My apps|mine|"
+                "dnf|ripgrep|0||dnf|||1\n"
+            )
+            path = fh.name
+        rows = self.ui._load_catalog_rows(Path(path))
+        Path(path).unlink(missing_ok=True)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["user"], "1")
+        self.assertEqual(rows[0]["category_id"], "mine")
+        self.assertEqual(
+            self.ui._catalog_install_choice(rows[0]),
+            "install|dnf|ripgrep|ripgrep|",
+        )
+
+    def test_uninstall_choice_for_installed_dnf(self) -> None:
+        row = {
+            "id": "git",
+            "name": "Git",
+            "method": "dnf",
+            "package": "git",
+            "installed": "1",
+            "url": "",
+        }
+        self.assertTrue(self.ui._catalog_can_uninstall(row))
+        self.assertEqual(
+            self.ui._catalog_uninstall_choice(row),
+            "uninstall|dnf|git|Git|",
+        )
+        row["installed"] = "0"
+        self.assertFalse(self.ui._catalog_can_uninstall(row))
+        browser = {
+            "id": "zoom",
+            "name": "Zoom",
+            "method": "browser",
+            "package": "zoom",
+            "installed": "1",
+            "url": "https://zoom.us/download",
+        }
+        self.assertFalse(self.ui._catalog_can_uninstall(browser))
 
 
 class TestNoShadowedHelpers(unittest.TestCase):
@@ -338,10 +382,17 @@ _detect_prev01 "{file}" "{key}" "{default}"
     def test_reads_existing_keys(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             cfg = Path(d) / "config.conf"
-            cfg.write_text("autostart=1\nscan_on_startup=0\napply_fw=1\n", encoding="utf-8")
+            cfg.write_text(
+                "autostart=1\nscan_on_startup=0\napply_fw=1\n"
+                "daily_check=1\nnotifications=0\nautostart_background=1\n",
+                encoding="utf-8",
+            )
             self.assertEqual(self._prev(str(cfg), "autostart", "0"), "1")
             self.assertEqual(self._prev(str(cfg), "scan_on_startup", "1"), "0")
             self.assertEqual(self._prev(str(cfg), "apply_fw", "0"), "1")
+            self.assertEqual(self._prev(str(cfg), "daily_check", "0"), "1")
+            self.assertEqual(self._prev(str(cfg), "notifications", "1"), "0")
+            self.assertEqual(self._prev(str(cfg), "autostart_background", "0"), "1")
 
     def test_missing_file_and_key_use_defaults(self) -> None:
         self.assertEqual(self._prev("/no/such/config.conf", "autostart", "0"), "0")
@@ -352,6 +403,43 @@ _detect_prev01 "{file}" "{key}" "{default}"
             self.assertEqual(self._prev(str(cfg), "scan_on_startup", "1"), "1")
 
 
+class TestNotifyGate(unittest.TestCase):
+    def test_disabled_notifications_do_not_run_notify_send(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            marker = Path(d) / "called"
+            fake = Path(d) / "notify-send"
+            fake.write_text(f"#!/bin/sh\necho called > '{marker}'\n", encoding="utf-8")
+            fake.chmod(0o755)
+            script = f"""
+source "{CORE}/common.sh"
+export PATH="{d}:$PATH"
+CFG_notifications=0
+notify "title" "body"
+"""
+            p = subprocess.run(["bash", "-c", script], capture_output=True, text=True, timeout=15)
+            self.assertEqual(p.returncode, 0, p.stderr)
+            self.assertFalse(marker.exists())
+
+    def test_enabled_notifications_run_notify_send(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            marker = Path(d) / "called"
+            fake = Path(d) / "notify-send"
+            fake.write_text(
+                f"#!/bin/sh\necho called > '{marker}'\nexit 0\n", encoding="utf-8"
+            )
+            fake.chmod(0o755)
+            script = f"""
+source "{CORE}/common.sh"
+export PATH="{d}:$PATH"
+CFG_notifications=1
+# Skip --action helper (setsid) by using a notify-send that has no --help action.
+notify "title" "body"
+"""
+            p = subprocess.run(["bash", "-c", script], capture_output=True, text=True, timeout=15)
+            self.assertEqual(p.returncode, 0, p.stderr)
+            self.assertTrue(marker.exists(), p.stdout + p.stderr)
+
+
 class TestStartupSettings(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -359,13 +447,28 @@ class TestStartupSettings(unittest.TestCase):
             cls.ui = load_ui_module()
         except Exception as exc:
             raise unittest.SkipTest(f"GTK/libadwaita unavailable: {exc}") from exc
+        cls._prev_apply = os.environ.get("URSTACK_APPLY_SYSTEMD")
+        os.environ["URSTACK_APPLY_SYSTEMD"] = "0"
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        if cls._prev_apply is None:
+            os.environ.pop("URSTACK_APPLY_SYSTEMD", None)
+        else:
+            os.environ["URSTACK_APPLY_SYSTEMD"] = cls._prev_apply
 
     def test_setting_keys_include_startup(self) -> None:
         keys = {k for k, _g, _t, _s in self.ui.SETTING_KEYS}
         self.assertIn("autostart", keys)
+        self.assertIn("autostart_background", keys)
         self.assertIn("scan_on_startup", keys)
+        self.assertIn("daily_check", keys)
+        self.assertIn("notifications", keys)
         self.assertEqual(self.ui.setting_default("autostart"), "0")
+        self.assertEqual(self.ui.setting_default("autostart_background"), "0")
         self.assertEqual(self.ui.setting_default("scan_on_startup"), "1")
+        self.assertEqual(self.ui.setting_default("daily_check"), "0")
+        self.assertEqual(self.ui.setting_default("notifications"), "1")
 
     def test_sync_xdg_autostart_writes_and_removes(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -375,8 +478,25 @@ class TestStartupSettings(unittest.TestCase):
             self.assertIn("[Desktop Entry]", text)
             self.assertIn("X-GNOME-Autostart-enabled=true", text)
             self.assertIn("Exec=", text)
+            self.assertNotIn("--check", text)
+            self.ui.sync_xdg_autostart(True, background=True, path=dest)
+            self.assertIn(" --check", dest.read_text(encoding="utf-8"))
             self.ui.sync_xdg_autostart(False, path=dest)
             self.assertFalse(dest.exists())
+
+    def test_daily_check_units_are_check_only(self) -> None:
+        svc, tmr = self.ui.daily_check_unit_texts("/opt/urstack")
+        self.assertIn("ExecStart=/opt/urstack --check", svc)
+        self.assertIn("SuccessExitStatus=0 1", svc)
+        self.assertIn("OnCalendar=daily", tmr)
+        with tempfile.TemporaryDirectory() as d:
+            unit_dir = Path(d) / "systemd" / "user"
+            os.environ["URSTACK_APPLY_SYSTEMD"] = "0"
+            self.ui.sync_daily_check_timer(True, unit_dir=unit_dir)
+            self.assertTrue((unit_dir / "urstack-check.timer").is_file())
+            self.assertTrue((unit_dir / "urstack-check.service").is_file())
+            self.ui.sync_daily_check_timer(False, unit_dir=unit_dir)
+            self.assertFalse((unit_dir / "urstack-check.timer").exists())
 
     def test_write_config_map_syncs_autostart(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -386,14 +506,29 @@ class TestStartupSettings(unittest.TestCase):
             env_home = str(Path(d) / "xdg")
             old = os.environ.get("XDG_CONFIG_HOME")
             os.environ["XDG_CONFIG_HOME"] = env_home
+            os.environ["URSTACK_APPLY_SYSTEMD"] = "0"
             try:
-                self.ui.write_config_map(cfg, {"autostart": "1", "scan_on_startup": "0"})
+                self.ui.write_config_map(
+                    cfg,
+                    {
+                        "autostart": "1",
+                        "autostart_background": "1",
+                        "scan_on_startup": "0",
+                        "daily_check": "1",
+                    },
+                )
                 saved = self.ui.read_config_map(cfg)
                 self.assertEqual(saved["autostart"], "1")
+                self.assertEqual(saved["autostart_background"], "1")
                 self.assertEqual(saved["scan_on_startup"], "0")
+                self.assertEqual(saved["daily_check"], "1")
                 self.assertTrue(auto.is_file(), "enabling autostart must create the desktop file")
-                self.ui.write_config_map(cfg, {"autostart": "0"})
+                self.assertIn(" --check", auto.read_text(encoding="utf-8"))
+                timer = Path(env_home) / "systemd" / "user" / "urstack-check.timer"
+                self.assertTrue(timer.is_file())
+                self.ui.write_config_map(cfg, {"autostart": "0", "daily_check": "0"})
                 self.assertFalse(auto.exists())
+                self.assertFalse(timer.exists())
             finally:
                 if old is None:
                     os.environ.pop("XDG_CONFIG_HOME", None)

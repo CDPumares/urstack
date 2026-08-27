@@ -693,6 +693,40 @@ catalog_consume_choice() {
       fi
       return 0
       ;;
+    'uninstall|'*)
+      local method package name url
+      IFS='|' read -r _ method package name url <<< "$choice"
+      (
+        echo "5"
+        echo "# Preparing to uninstall $name..."
+        catalog_uninstall_app "$method" "$package" "$name" "$url"
+        ec=$?
+        if [[ $ec -eq 0 ]]; then
+          echo "100"
+          echo "# Uninstalled $name"
+        else
+          echo "100"
+          echo "# Failed to uninstall $name"
+        fi
+        echo "$ec" > "${status_f}.ec"
+      ) | pipe_to_progress "UrStack — Uninstall $name" 0
+      local ec
+      ec=$(cat "${status_f}.ec" 2>/dev/null || echo 1)
+      rm -f "${status_f}.ec"
+      if [[ "${URSTACK_EMBEDDED_PROGRESS:-0}" == "1" ]]; then
+        return 0
+      fi
+      if [[ -f "$_ui" ]]; then
+        if [[ "$ec" == "0" ]]; then
+          python3 "$_ui" message --type info --title "$APP_NAME" \
+            --text "Uninstalled $name." 2>/dev/null || true
+        else
+          python3 "$_ui" message --type error --title "$APP_NAME" \
+            --text "Could not uninstall $name."$'\n\n'"Method: $method"$'\n'"Package: $package" 2>/dev/null || true
+        fi
+      fi
+      return 0
+      ;;
     *) return 1 ;;
   esac
 }

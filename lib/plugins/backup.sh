@@ -181,6 +181,27 @@ _restore_fail() {
 }
 _restore_skip() { echo "$1" >> "${_RESTORE_SKIP_FILE:-/dev/null}"; }
 
+# Bring back the personal Apps overlay so My apps can be reinstalled from the GUI.
+_restore_user_catalog() {
+  local dest="$1"
+  local cfg="${FEDORA_UPDATES_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/urstack}"
+  local src=""
+  if [[ -f "$dest/config/home-overlay/.config/urstack/catalog-user.json" ]]; then
+    src="$dest/config/home-overlay/.config/urstack/catalog-user.json"
+  elif [[ -f "$dest/manifests/catalog-user.json" ]]; then
+    src="$dest/manifests/catalog-user.json"
+  fi
+  if [[ -z "$src" ]]; then
+    return 0
+  fi
+  mkdir -p "$cfg" 2>/dev/null || true
+  if cp -a "$src" "$cfg/catalog-user.json" 2>/dev/null; then
+    _restore_ok "My apps catalog"
+  else
+    _restore_fail "My apps catalog"
+  fi
+}
+
 # Run a restore step; on failure record label (does not abort the restore).
 _restore_try() {
   local label="$1"
@@ -926,6 +947,9 @@ _backup_manifests() {
   snap list 2>/dev/null > "$m/snap-packages.txt" || true
   snap list 2>/dev/null | awk 'NR>1 {print $1}' > "$m/snap-package-names.txt" || true
 
+  _copy_file "${FEDORA_UPDATES_CONFIG_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/urstack}/catalog-user.json" \
+    "$m/catalog-user.json"
+
   # Verbose npm trees (human) + clean installable package-name lists (restore)
   npm list -g --depth=0 2>/dev/null > "$m/npm-global.txt" || true
   npm list -g --prefix "$HOME/.local" --depth=0 2>/dev/null > "$m/npm-user.txt" || true
@@ -1404,6 +1428,7 @@ _backup_config() {
   _overlay_home "$HOME/.config/input-remapper-2" "$dest"
   _overlay_home "$HOME/.config/autostart" "$dest"
   _overlay_home "$HOME/.config/systemd/user" "$dest"
+  _overlay_home "$HOME/.config/urstack/catalog-user.json" "$dest"
   _overlay_home "$HOME/.nvidia-settings-rc" "$dest"
   _overlay_home "$HOME/.local/state/wireplumber" "$dest"
 
@@ -1701,6 +1726,25 @@ def dump_list(title, items, bullet=True):
 dump_list("DNF user packages", dnf)
 dump_list("Flatpak apps", flatpak)
 dump_list("Snap packages", snaps)
+user_cat = dest / "manifests" / "catalog-user.json"
+if user_cat.is_file():
+    try:
+        _uc = json.loads(user_cat.read_text(encoding="utf-8"))
+        _uapps = list(_uc.get("apps") or [])
+        if not _uapps:
+            for _cat in _uc.get("categories") or []:
+                if isinstance(_cat, dict):
+                    _uapps.extend(_cat.get("apps") or [])
+        dump_list(
+            "My apps (UrStack overlay)",
+            [
+                f"{a.get('name') or a.get('package')} ({a.get('method')}: {a.get('package')})"
+                for a in _uapps
+                if isinstance(a, dict)
+            ],
+        )
+    except (OSError, json.JSONDecodeError, TypeError, UnicodeDecodeError):
+        pass
 dump_list("npm global (nvm)", npm_g)
 dump_list("npm user (~/.local)", npm_u)
 dump_list("pip user packages", pip)
@@ -1806,7 +1850,8 @@ categories = {
     "Apps": [
         ".claude.json", ".claude", ".config/warp-terminal", ".config/libreoffice", ".config/kate",
         ".config/vlc", ".config/qBittorrent", ".config/kdeconnect", ".config/input-remapper-2",
-        ".config/autostart", ".config/systemd/user", ".nvidia-settings-rc", ".local/state/wireplumber",
+        ".config/autostart", ".config/systemd/user", ".config/urstack/catalog-user.json",
+        ".nvidia-settings-rc", ".local/state/wireplumber",
         ".local/share/applications", ".local/share/flatpak/overrides",
     ],
     "Cursor / VS Code": [".config/Cursor/User"],
@@ -2802,6 +2847,7 @@ fedora_setup_restore_from() {
     else
       _restore_skip "Home settings overlay (disabled)"
     fi
+    _restore_user_catalog "$dest"
 
     if [[ "$(_backup_include browsers 1)" == "1" ]]; then
       if [[ -f "$dest/config/firefox-bookmarks/places.sqlite" ]]; then
