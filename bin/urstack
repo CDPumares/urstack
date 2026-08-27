@@ -2,7 +2,8 @@
 # UrStack — desktop app entrypoint
 #
 # Usage:
-#   urstack                           GUI check + apply
+#   urstack                           GUI (grey tray icon while the window is open)
+#   urstack --page backup             GUI, opening a specific page
 #   urstack --check                   Print results; exit 1 if updates available
 #   urstack --check --tray            Silent check with a taskbar / tray icon
 #   urstack --yes                     Non-interactive apply (skips firmware)
@@ -109,20 +110,10 @@ OWNED_CHECK_DIR=1
 prog_fifo=$(mktemp -u)
 results_file=""
 prog_pid=""
-tray_pid=""
-tray_fd=""
-tray_fifo=""
-tray_persist=0
-
 cleanup() {
   restore_competing_updaters
-  if [[ -n "${tray_pid:-}" && "${tray_persist:-0}" -eq 0 ]]; then
-    [[ -n "${tray_fd:-}" ]] && echo quit >&"$tray_fd" 2>/dev/null || true
-    wait "$tray_pid" 2>/dev/null || true
-    tray_pid=""
-  fi
-  [[ -n "${tray_fd:-}" ]] && exec {tray_fd}>&- 2>/dev/null || true
-  [[ -n "${tray_fifo:-}" ]] && rm -f "$tray_fifo"
+  # The tray is deliberately not touched here: it is detached and owns its own
+  # lifetime, ending only when the user picks Quit from its menu.
   rm -f "$tmp" "$results_file" "$prog_fifo"
   if [[ "${OWNED_CHECK_DIR:-1}" -eq 1 ]]; then
     rm -rf "$check_dir"
@@ -132,14 +123,32 @@ cleanup() {
 }
 trap cleanup EXIT
 
-start_silent_tray() {
-  [[ "${CHECK_ONLY:-0}" -eq 1 && "${SHOW_TRAY:-0}" -eq 1 ]] || return 0
+# Fixed path so any run can talk to an indicator started by an earlier one.
+tray_fifo_path() {
+  printf '%s/urstack-tray.fifo' "${XDG_RUNTIME_DIR:-${TMPDIR:-/tmp}}"
+}
+
+# Tell a running tray what this run is doing. Opening read/write means a tray
+# that has since quit can never block the update run on a reader-less pipe.
+tray_say() {
+  local fifo
+  fifo=$(tray_fifo_path)
+  [[ -p "$fifo" ]] || return 0
+  {
+    exec {_tfd}<>"$fifo" || return 0
+    printf '%s\n' "$1" 1>&"$_tfd"
+    exec {_tfd}>&-
+  } 2>/dev/null || true
+}
+
+start_tray() {
   command -v python3 &>/dev/null || return 0
   local tray_py="$FEDORA_UPDATES_LIB/tray.py"
   [[ -f "$tray_py" ]] || return 0
 
   local icon="" candidate
   for candidate in \
+    "$FEDORA_UPDATES_ROOT/data/icons/hicolor/48x48/apps/urstack-tray.png" \
     "$FEDORA_UPDATES_ROOT/data/icons/hicolor/48x48/apps/urstack.png" \
     "$FEDORA_UPDATES_ROOT/data/icons/urstack.png"
   do
@@ -149,18 +158,21 @@ start_silent_tray() {
     fi
   done
 
-  tray_fifo=$(mktemp -u "${TMPDIR:-/tmp}/urstack-tray.XXXXXX")
-  mkfifo "$tray_fifo" || { tray_fifo=""; return 0; }
-  # Keep a read/write fd so the Python reader does not block on open,
-  # and so later `echo` commands never stall on a full pipe.
-  exec {tray_fd}<>"$tray_fifo" || { rm -f "$tray_fifo"; tray_fifo=""; return 0; }
-  python3 "$tray_py" \
-    --fifo "$tray_fifo" \
+  # setsid so the indicator survives this run; a second copy detects the first
+  # over D-Bus and exits by itself, so no PID bookkeeping is needed here.
+  setsid python3 "$tray_py" \
     --icon "$icon" \
     --open-cmd "$FEDORA_UPDATES_ROOT/bin/urstack" \
-    &
-  tray_pid=$!
-  echo checking >&"$tray_fd" 2>/dev/null || true
+    </dev/null >/dev/null 2>&1 &
+  disown 2>/dev/null || true
+
+  # Wait for the command FIFO so the status sent right after this lands on the
+  # new tray instead of disappearing before it finished starting.
+  local i
+  for (( i=0; i<40; i++ )); do
+    [[ -p "$(tray_fifo_path)" ]] && return 0
+    sleep 0.05
+  done
 }
 
 sections=()
@@ -197,6 +209,7 @@ DO_HEALTH_RP_LIST=0
 HEALTH_APPLY_IDS=""
 HEALTH_STATUS_FILE=""
 HEALTH_RESTORE_ID="latest"
+START_PAGE=""
 
 _args=("$@")
 _i=0
@@ -204,6 +217,13 @@ while [[ $_i -lt ${#_args[@]} ]]; do
   case "${_args[$_i]}" in
     --check) CHECK_ONLY=1 ;;
     --tray) SHOW_TRAY=1 ;;
+    --page)
+      _next="${_args[$((_i + 1))]:-}"
+      if [[ -n "$_next" && "$_next" != --* ]]; then
+        START_PAGE="$_next"
+        _i=$((_i + 1))
+      fi
+      ;;
     --yes|-y) AUTO_YES=1 ;;
     --include-firmware) INCLUDE_FIRMWARE=1 ;;
     --log)   SHOW_LOG=1 ;;
@@ -544,6 +564,14 @@ if [[ $CHECK_ONLY -eq 0 && $AUTO_YES -eq 0 && -n "${DISPLAY:-}" && -f "$_FEDORA_
   : > "$tmp"
   _scan_on_open="$(cfg_get scan_on_startup 1)"
   [[ "$_scan_on_open" == "1" ]] || _scan_on_open=0
+  # The grey tray belongs with the window, not only with --check --tray: it is
+  # how you raise UrStack, jump to a page, or quit from the panel.
+  start_tray
+  if [[ "$_scan_on_open" == "1" ]]; then
+    tray_say checking
+  else
+    tray_say idle
+  fi
   URSTACK_PENDING_CHECK="$_scan_on_open" show_action_menu 0 "$tmp"
   exit 0
 fi
@@ -561,7 +589,10 @@ if [[ $CHECK_ONLY -eq 0 && $AUTO_YES -eq 0 && -n "${DISPLAY:-}" ]]; then
   fi
 fi
 
-start_silent_tray
+if [[ "${SHOW_TRAY:-0}" -eq 1 ]]; then
+  start_tray
+fi
+tray_say checking
 run_all_checks_parallel
 
 exec 4>&- 2>/dev/null || true
@@ -581,20 +612,14 @@ if [[ $CHECK_ONLY -eq 1 ]]; then
   if [[ $has_any -eq 1 ]]; then
     notify "Updates available" "Run $APP_NAME to review and apply." "normal"
   fi
-  if [[ -n "${tray_pid:-}" ]]; then
-    if [[ $has_any -eq 1 && $SHOW_TRAY -eq 1 ]]; then
-      echo updates >&"$tray_fd" 2>/dev/null || true
-      tray_persist=1
-      # Let "Open" launch a second urstack instance.
-      release_update_lock
-      wait "$tray_pid" 2>/dev/null || true
-      tray_pid=""
-    else
-      echo quit >&"$tray_fd" 2>/dev/null || true
-      wait "$tray_pid" 2>/dev/null || true
-      tray_pid=""
-    fi
+  # The tray keeps running on its own, so this run just reports and exits;
+  # holding the lock any longer would stop "Open" starting a real session.
+  if [[ $has_any -eq 1 ]]; then
+    tray_say updates
+  else
+    tray_say idle
   fi
+  release_update_lock
   exit "$has_any"
 fi
 
@@ -611,7 +636,15 @@ fi
 printf '%s' "$msg" > "$tmp"
 
 if command -v zenity &>/dev/null; then
-  show_action_menu "$has_any" "$tmp"
+  # An interactive session is "the app running", so the indicator belongs here
+  # too — it then stays behind after the window closes.
+  start_tray
+  if [[ $has_any -eq 1 ]]; then
+    tray_say updates
+  else
+    tray_say idle
+  fi
+  URSTACK_START_PAGE="$START_PAGE" show_action_menu "$has_any" "$tmp"
 else
   echo -e "$msg"
   if [[ $has_any -eq 1 ]]; then

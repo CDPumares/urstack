@@ -60,14 +60,18 @@ jobs:
       - name: Compile all modules
         run: python -m compileall -q lib scripts tests
 
-      # GTK-dependent tests skip themselves when libadwaita is missing.
       - name: Install GTK for UI tests
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-gi gir1.2-gtk-4.0 gir1.2-adw-1
 
+      # apt installs the gi bindings only for the runner's system Python, so the
+      # tests must run there too. Using the setup-python interpreter above would
+      # silently skip every GTK test class instead of failing.
       - name: Unit tests
-        run: python -m unittest discover -s tests -v
+        run: |
+          /usr/bin/python3 -c "import gi; gi.require_version('Adw', '1')"
+          /usr/bin/python3 -m unittest discover -s tests -v
 
   polkit:
     name: PolicyKit policy

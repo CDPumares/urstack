@@ -330,7 +330,7 @@ class TestBackupCapturesDesktopBits(unittest.TestCase):
         self.assertIn("RESTORE_PRESETS", text)
         self.assertIn("This computer", text)
         self.assertIn("New computer", text)
-        self.assertIn("No secrets", text)
+        self.assertIn("Everything + secrets", text)
         self.assertIn("Packages only", text)
 
     def test_restore_shows_failures_and_offers_reboot(self) -> None:
@@ -356,6 +356,18 @@ class TestDnf5InstallSyntax(unittest.TestCase):
                 re.search(needle, text),
                 f"{rel} still uses dnf install -y -- which dnf5 rejects",
             )
+
+
+class TestCursorCatalogPlatform(unittest.TestCase):
+    def test_cursor_rpm_fallback_follows_uname(self) -> None:
+        text = (ROOT / "lib" / "core" / "catalog.sh").read_text(encoding="utf-8")
+        self.assertIn("linux-arm64", text)
+        self.assertIn("uname -m", text)
+        self.assertNotIn(
+            "api/update/linux-x64/cursor/",
+            text,
+            "Cursor install fallback still pins linux-x64",
+        )
 
 
 if __name__ == "__main__":

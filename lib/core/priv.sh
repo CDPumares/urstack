@@ -465,6 +465,15 @@ _regenerate_grub() {
 
 _validate_jobs_file "$JOBS_FILE"
 
+# The caller keeps write access to the jobs file for the whole batch, and the
+# dispatch loop at the bottom streams it line by line. Reading it directly would
+# let a same-uid process append extra jobs mid-run, executing them as root off
+# the single pkexec prompt the user already approved. Snapshot it once, into a
+# root-owned file, and only ever read that copy.
+JOBS_SNAPSHOT=$(mktemp /tmp/urstack-jobs.XXXXXX) || die "priv: cannot create jobs snapshot"
+trap 'rm -f "$JOBS_SNAPSHOT"' EXIT
+cat -- "$JOBS_FILE" > "$JOBS_SNAPSHOT" || die "priv: cannot read jobs file"
+
 # Health package installs: skip dead mirrors; don't let fastestmirror pin a 404 host.
 _dnf_install() {
   dnf install -y --setopt=skip_if_unavailable=true --setopt=fastestmirror=false "$@"
@@ -1088,7 +1097,7 @@ EOF
         if [[ -f "$files/99-urstack.conf.state" ]]; then
           st=$(tr -d '[:space:]' < "$files/99-urstack.conf.state")
           if [[ "$st" == present && -f "$files/99-urstack.conf" ]]; then
-            cp -a "$files/99-urstack.conf" /etc/sysctl.d/99-urstack.conf
+            install -o root -g root -m 0644 "$files/99-urstack.conf" /etc/sysctl.d/99-urstack.conf
           else
             rm -f /etc/sysctl.d/99-urstack.conf
           fi
@@ -1099,7 +1108,8 @@ EOF
           st=$(tr -d '[:space:]' < "$files/99-urstack-speed-dnf.conf.state")
           if [[ "$st" == present && -f "$files/99-urstack-speed-dnf.conf" ]]; then
             mkdir -p /etc/dnf/dnf.conf.d
-            cp -a "$files/99-urstack-speed-dnf.conf" /etc/dnf/dnf.conf.d/99-urstack-speed.conf
+            install -o root -g root -m 0644 "$files/99-urstack-speed-dnf.conf" \
+              /etc/dnf/dnf.conf.d/99-urstack-speed.conf
           else
             rm -f /etc/dnf/dnf.conf.d/99-urstack-speed.conf
           fi
@@ -1108,7 +1118,8 @@ EOF
           st=$(tr -d '[:space:]' < "$files/99-urstack-speed-libdnf5.conf.state")
           if [[ "$st" == present && -f "$files/99-urstack-speed-libdnf5.conf" ]]; then
             mkdir -p /etc/dnf/libdnf5.conf.d
-            cp -a "$files/99-urstack-speed-libdnf5.conf" /etc/dnf/libdnf5.conf.d/99-urstack-speed.conf
+            install -o root -g root -m 0644 "$files/99-urstack-speed-libdnf5.conf" \
+              /etc/dnf/libdnf5.conf.d/99-urstack-speed.conf
           else
             rm -f /etc/dnf/libdnf5.conf.d/99-urstack-speed.conf
           fi
@@ -1170,7 +1181,7 @@ EOF
   else
     exit_code=0
   fi
-done < "$JOBS_FILE"
+done < "$JOBS_SNAPSHOT"
 
 if _restore_cancel_requested && [[ ! -f "${URSTACK_RESTORE_UNDO:-}/priv-unwound" ]]; then
   _priv_unwind_restore_session || true

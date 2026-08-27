@@ -1223,20 +1223,31 @@ def _last_backup_conf_path() -> Path:
     return Path.home() / ".config" / "urstack" / "last-backup.conf"
 
 
-def _save_last_backup(dest: str) -> None:
+def _save_last_backup(dest: str, *, size_bytes: int | None = None) -> None:
     """Remember the most recent successful backup destination for Overview."""
     dest_path = Path(dest).expanduser()
     conf = _last_backup_conf_path()
+    previous = read_config_map(conf) if conf.is_file() else {}
     conf.parent.mkdir(parents=True, exist_ok=True)
     from datetime import datetime
 
-    created = datetime.now(UTC).astimezone().isoformat(timespec="seconds")
+    same_dest = previous.get("dest") == str(dest_path)
+    created = previous.get("created", "").strip() if same_dest else ""
+    if not created:
+        created = datetime.now(UTC).astimezone().isoformat(timespec="seconds")
     lines = [
         f"dest={dest_path}",
         f"parent={dest_path.parent}",
         f"created={created}",
         f"name={dest_path.name}",
     ]
+    size = size_bytes
+    if size is None and same_dest:
+        raw = previous.get("size_bytes", "").strip()
+        if raw.isdigit():
+            size = int(raw)
+    if size is not None and size >= 0:
+        lines.append(f"size_bytes={size}")
     conf.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
@@ -1263,19 +1274,8 @@ def _pretty_backup_when(iso: str) -> str:
         return iso[:19].replace("T", " ")
 
 
-def _dir_size_label(path: Path) -> str:
-    if not path.is_dir():
-        return ""
-    total = 0
-    try:
-        for root, _dirs, files in os.walk(path):
-            for name in files:
-                try:
-                    total += (Path(root) / name).stat().st_size
-                except OSError:
-                    continue
-    except OSError:
-        return ""
+def format_byte_size(total: int) -> str:
+    """Human size for Overview (1024-based). Empty string for non-positive."""
     if total <= 0:
         return ""
     units = ["B", "KB", "MB", "GB", "TB"]
@@ -1286,6 +1286,71 @@ def _dir_size_label(path: Path) -> str:
                 return f"{int(size)} {unit}"
             return f"{size:.1f} {unit}"
         size /= 1024.0
+    return ""
+
+
+# dest -> (dir mtime_ns, label). Filled off the UI thread; hit on later paints.
+_BACKUP_SIZE_CACHE: dict[str, tuple[int, str]] = {}
+_BACKUP_SIZE_INFLIGHT: set[str] = set()
+_BACKUP_SIZE_READY: list[Callable[[], bool]] = []
+
+
+def _walk_dir_size(path: Path) -> int:
+    total = 0
+    try:
+        for root, _dirs, files in os.walk(path):
+            for name in files:
+                try:
+                    total += (Path(root) / name).stat().st_size
+                except OSError:
+                    continue
+    except OSError:
+        return 0
+    return total
+
+
+def _dir_size_label(path: Path) -> str:
+    """Return a cached size, or schedule a walk and return '' for this paint.
+
+    Walking a backup of tens of thousands of files on the GTK thread froze
+    Overview for ~1 s; the walk now happens in a daemon thread.
+    """
+    if not path.is_dir():
+        return ""
+    key = str(path)
+    try:
+        mtime_ns = path.stat().st_mtime_ns
+    except OSError:
+        return ""
+    cached = _BACKUP_SIZE_CACHE.get(key)
+    if cached is not None and cached[0] == mtime_ns:
+        return cached[1]
+    if key in _BACKUP_SIZE_INFLIGHT:
+        return ""
+    _BACKUP_SIZE_INFLIGHT.add(key)
+
+    def work() -> None:
+        try:
+            total = _walk_dir_size(path)
+            label = format_byte_size(total)
+            try:
+                now_mtime = path.stat().st_mtime_ns
+            except OSError:
+                now_mtime = mtime_ns
+            _BACKUP_SIZE_CACHE[key] = (now_mtime, label)
+            if total > 0:
+                try:
+                    prev = read_config_map(_last_backup_conf_path())
+                    if prev.get("dest") == str(path):
+                        _save_last_backup(str(path), size_bytes=total)
+                except OSError:
+                    pass
+        finally:
+            _BACKUP_SIZE_INFLIGHT.discard(key)
+            for cb in _BACKUP_SIZE_READY:
+                GLib.idle_add(cb)
+
+    threading.Thread(target=work, daemon=True).start()
     return ""
 
 
@@ -1351,7 +1416,12 @@ def _overview_backup_snapshot() -> tuple[str, list[str]]:
             lines.append(str(dest))
             if when:
                 lines.append(f"Finished: {when}")
-            size = _dir_size_label(dest)
+            size = ""
+            raw_bytes = (meta.get("size_bytes") or "").strip()
+            if raw_bytes.isdigit():
+                size = format_byte_size(int(raw_bytes))
+            if not size:
+                size = _dir_size_label(dest)
             if size:
                 lines.append(f"Size: {size}")
         else:
@@ -1619,7 +1689,7 @@ def build_overview_content(
             badge="Backup",
             badge_ok=backup_sub.startswith("Last backup"),
             badge_warn=backup_sub.startswith("Last backup folder missing"),
-            blurb="Packages, configs, SSH/GPG, and optional project trees into a dated fedora-setup folder.",
+            blurb="Packages, configs, optional secrets, and project trees into a dated fedora-setup folder.",
             lines=backup_lines,
         )
     )
@@ -2075,6 +2145,25 @@ def configure_app_identity() -> None:
         Gtk.Window.set_default_icon_name("urstack")
     except Exception:  # noqa: BLE001
         pass
+
+
+def tray_say(mode: str) -> None:
+    """Tell the grey tray indicator what this window is doing. Never blocks."""
+    line = (mode or "").strip()
+    if not line:
+        return
+    base = os.environ.get("XDG_RUNTIME_DIR") or "/tmp"
+    fifo = Path(base) / "urstack-tray.fifo"
+    try:
+        if not fifo.is_fifo():
+            return
+        fd = os.open(fifo, os.O_WRONLY | os.O_NONBLOCK)
+        try:
+            os.write(fd, f"{line}\n".encode())
+        finally:
+            os.close(fd)
+    except OSError:
+        return
 
 
 def run_app(app_id: str, build, *, unique: bool = True) -> int:
@@ -2920,7 +3009,9 @@ SETTING_KEYS: list[tuple[str, str, str, str]] = [
         "autostart_background",
         "Startup",
         "Check in the background at login",
-        "When Launch at login is on, run a silent check instead of opening the window. A taskbar icon shows while it scans; click it if updates are waiting.",
+        "When Launch at login is on, run a silent check instead of opening "
+        "the window. The grey tray icon shows while it scans; click it if "
+        "updates are waiting.",
     ),
     (
         "scan_on_startup",
@@ -6076,7 +6167,11 @@ def build_health_content(
         destructive = [selected[i] for i in ids if i in DESTRUCTIVE]
         note = ""
         if make_rp["v"]:
-            note = "\n\nA restore point will be created first so you can roll back."
+            note = (
+                "\n\nA restore point will be created first. It can undo UrStack's "
+                "config changes and service enablement, plus the DNF transaction for "
+                "package actions. Deleted caches, trash and logs cannot be recovered."
+            )
         if destructive and parent_win is not None:
             body_lines = [f"• {r['title']}: {r['detail']}" for r in destructive]
             body = (
@@ -6505,8 +6600,9 @@ BACKUP_INCLUDE_OPTIONS: list[tuple[str, str, str, bool]] = [
     (
         "secrets",
         "Secrets & identity",
-        "SSH keys, GPG, git credentials, GitHub CLI config. Sensitive — keep the backup private.",
-        True,
+        "SSH keys, GPG, git credentials, GitHub CLI config, KDE Wallet. "
+        "Sensitive — off by default; keep the backup private if you turn it on.",
+        False,
     ),
     (
         "browsers",
@@ -6568,8 +6664,8 @@ RESTORE_INCLUDE_OPTIONS: list[tuple[str, str, str, bool]] = [
     (
         "secrets",
         "Secrets & identity",
-        "Restore SSH, GPG, and credential files from the overlay.",
-        True,
+        "Restore SSH, GPG, and credential files from the overlay. Off by default.",
+        False,
     ),
     (
         "browsers",
@@ -6597,27 +6693,37 @@ RESTORE_INCLUDE_OPTIONS: list[tuple[str, str, str, bool]] = [
     ),
 ]
 
-# Quick include combinations shown above the per-section switches.
+# Quick include combinations shown above the per-section switches. Secrets are
+# left off by every preset except the explicitly labelled one, so no single click
+# can quietly sweep SSH keys, GPG material and wallets into a backup.
 BACKUP_PRESETS: list[tuple[str, str, dict[str, bool]]] = [
-    ("this", "This computer", {key: True for key, *_rest in BACKUP_INCLUDE_OPTIONS}),
+    (
+        "this",
+        "This computer",
+        {key: key != "secrets" for key, *_rest in BACKUP_INCLUDE_OPTIONS},
+    ),
     (
         "packages",
         "Packages only",
         {key: key == "manifests" for key, *_rest in BACKUP_INCLUDE_OPTIONS},
     ),
     (
-        "no_secrets",
-        "No secrets",
-        {key: key != "secrets" for key, *_rest in BACKUP_INCLUDE_OPTIONS},
+        "everything",
+        "Everything + secrets",
+        {key: True for key, *_rest in BACKUP_INCLUDE_OPTIONS},
     ),
 ]
 RESTORE_PRESETS: list[tuple[str, str, dict[str, bool]]] = [
-    ("this", "This computer", {key: True for key, *_rest in RESTORE_INCLUDE_OPTIONS}),
+    (
+        "this",
+        "This computer",
+        {key: key != "secrets" for key, *_rest in RESTORE_INCLUDE_OPTIONS},
+    ),
     (
         "new",
         "New computer",
         {
-            key: key not in {"drivers", "system"}
+            key: key not in {"drivers", "system", "secrets"}
             for key, *_rest in RESTORE_INCLUDE_OPTIONS
         },
     ),
@@ -6630,9 +6736,9 @@ RESTORE_PRESETS: list[tuple[str, str, dict[str, bool]]] = [
         },
     ),
     (
-        "no_secrets",
-        "No secrets",
-        {key: key != "secrets" for key, *_rest in RESTORE_INCLUDE_OPTIONS},
+        "everything",
+        "Everything + secrets",
+        {key: True for key, *_rest in RESTORE_INCLUDE_OPTIONS},
     ),
 ]
 DESKTOP_PRESETS: list[tuple[str, str]] = [
@@ -7733,10 +7839,12 @@ def mode_shell(args: argparse.Namespace) -> int:
                     if not ok:
                         rebuild_hub(raw=err or fail_message, has_updates=False)
                         rebuild_overview()
+                        tray_say("idle")
                         toast.add_toast(Adw.Toast(title=fail_toast))
                         return False
                     rebuild_hub(raw=raw, has_updates=has_u)
                     rebuild_overview()
+                    tray_say("updates" if has_u else "idle")
                     toast.add_toast(
                         Adw.Toast(
                             title="Updates available" if has_u else "You're up to date"
@@ -7773,6 +7881,7 @@ def mode_shell(args: argparse.Namespace) -> int:
 
             scan_inflight["updates"] = True
             _sync_checking_flag()
+            tray_say("checking")
             rebuild_overview()
             run_background_health_scan(toast_on_done=False)
 
@@ -7789,6 +7898,7 @@ def mode_shell(args: argparse.Namespace) -> int:
                 return
             scan_inflight["updates"] = True
             _sync_checking_flag()
+            tray_say("checking")
             rebuild_hub()
 
             _refresh_updates_async(
@@ -8480,8 +8590,10 @@ def mode_shell(args: argparse.Namespace) -> int:
                         dialog = Adw.AlertDialog(
                             heading="Restore latest health point?",
                             body=(
-                                "This rolls back DNF transactions and UrStack Health "
-                                "config changes from the latest restore point. "
+                                "This rolls back UrStack Health config changes, "
+                                "service and user-unit enablement, and — if the point "
+                                "was taken for a package action — the DNF transaction. "
+                                "Deleted caches, trash and logs are not recovered. "
                                 "Continue?"
                             ),
                         )
@@ -8832,6 +8944,52 @@ def mode_shell(args: argparse.Namespace) -> int:
             GLib.idle_add(push_backup)
         elif start == "restore":
             GLib.idle_add(push_restore)
+        elif start == "home":
+            GLib.idle_add(push_updates)
+
+        def _on_backup_size_ready() -> bool:
+            if not closing["confirmed"] and session.get("nav") == "overview":
+                rebuild_overview()
+            return False
+
+        _BACKUP_SIZE_READY.clear()
+        _BACKUP_SIZE_READY.append(_on_backup_size_ready)
+
+        def _present_window() -> None:
+            try:
+                win.present()
+            except Exception:  # noqa: BLE001
+                pass
+
+        def on_tray_page(_act: Gio.SimpleAction, param: GLib.Variant | None) -> None:
+            page = (param.get_string() if param is not None else "").strip().lower()
+            _present_window()
+            if page in {"", "overview"}:
+                go_overview()
+                return
+            if page in {"updates", "home"}:
+                push_updates()
+                return
+            handler = nav_handlers.get(page)
+            if callable(handler):
+                handler()
+
+        def on_tray_check(_act: Gio.SimpleAction, _param: GLib.Variant | None) -> None:
+            _present_window()
+            start_overview_refresh()
+
+        def on_tray_quit(_act: Gio.SimpleAction, _param: GLib.Variant | None) -> None:
+            finish("close")
+
+        page_act = Gio.SimpleAction.new("open-page", GLib.VariantType("s"))
+        page_act.connect("activate", on_tray_page)
+        app.add_action(page_act)
+        check_act = Gio.SimpleAction.new("check", None)
+        check_act.connect("activate", on_tray_check)
+        app.add_action(check_act)
+        quit_act = Gio.SimpleAction.new("quit", None)
+        quit_act.connect("activate", on_tray_quit)
+        app.add_action(quit_act)
 
         def on_close(*_a: object) -> bool:
             if not closing["confirmed"]:

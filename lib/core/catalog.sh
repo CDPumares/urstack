@@ -97,15 +97,23 @@ catalog_install_app() {
       if _catalog_priv dnf_install_pkg cursor; then
         return 0
       fi
-      # Fallback: update API → direct RPM
+      # Fallback: update API → direct RPM (same platform pick as checks.sh)
       local installed latest rpm_url body http_code
+      local plat="linux-x64" rpm_dir="linux/x64/rpm/x86_64" rpm_arch="x86_64"
+      case "$(uname -m)" in
+        aarch64|arm64) plat="linux-arm64"; rpm_dir="linux/arm64/rpm/aarch64"; rpm_arch="aarch64" ;;
+      esac
       installed=$(rpm -q --qf '%{VERSION}' cursor 2>/dev/null || echo "0.0.0")
       body=$(mktemp)
       http_code=$(curl -sS -o "$body" -w '%{http_code}' \
-        "https://api2.cursor.sh/updates/api/update/linux-x64/cursor/${installed}/stable" 2>/dev/null) || true
+        "https://api2.cursor.sh/updates/api/update/${plat}/cursor/${installed}/stable" 2>/dev/null) || true
       if [[ "$http_code" == "200" ]]; then
-        rpm_url=$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); u=d.get("url","");
-import re; h=re.search(r"/production/([^/]+)/", u); print(("https://downloads.cursor.com/production/%s/linux/x64/rpm/x86_64/cursor-%s.el8.x86_64.rpm"%(h.group(1), d.get("version",""))) if h else "")' "$body" 2>/dev/null) || true
+        rpm_url=$(python3 -c 'import json,sys,re
+d=json.load(open(sys.argv[1]))
+u=d.get("url","")
+h=re.search(r"/production/([^/]+)/", u)
+print(("https://downloads.cursor.com/production/%s/%s/cursor-%s.el8.%s.rpm"%(h.group(1), sys.argv[2], d.get("version",""), sys.argv[3])) if h else "")' \
+          "$body" "$rpm_dir" "$rpm_arch" 2>/dev/null) || true
       fi
       rm -f "$body"
       if [[ -n "$rpm_url" ]]; then

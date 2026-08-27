@@ -903,7 +903,10 @@ fedora_health_restore_point_create() {
   _ppd_get 2>/dev/null > "$dest/state/power-profile.txt" || true
   systemctl is-enabled earlyoom 2>/dev/null > "$dest/state/earlyoom.enabled" || echo "unknown" > "$dest/state/earlyoom.enabled"
   systemctl is-enabled tlp 2>/dev/null > "$dest/state/tlp.enabled" || echo "unknown" > "$dest/state/tlp.enabled"
-  systemctl --user list-unit-files --state=enabled --no-pager 2>/dev/null > "$dest/state/user-units-enabled.txt" || true
+  # Bare unit names, one per line: restore reads this back to re-enable whatever
+  # a userunit-* action turned off, so it has to be parseable rather than a table.
+  systemctl --user list-unit-files --state=enabled --no-legend --no-pager 2>/dev/null \
+    | awk '{print $1}' > "$dest/state/user-units-enabled.txt" || true
 
   _health_snapshot_file /etc/sysctl.d/99-urstack.conf "$files" "99-urstack.conf"
   _health_snapshot_file /etc/dnf/dnf.conf.d/99-urstack-speed.conf "$files" "99-urstack-speed-dnf.conf"
@@ -979,8 +982,9 @@ fedora_health_restore_point_apply() {
   hist=$(grep '^dnf_history_id=' "$dest/meta.conf" 2>/dev/null | cut -d= -f2)
   local dnf_rollback=""
   dnf_rollback=$(grep '^dnf_rollback=' "$dest/meta.conf" 2>/dev/null | cut -d= -f2)
-  # Legacy points (no flag) keep the old rollback behaviour
-  [[ -n "$dnf_rollback" ]] || dnf_rollback=1
+  # A point with no flag was not taken for a package-changing action, so rolling
+  # back DNF history would undo unrelated transactions the user ran since.
+  [[ -n "$dnf_rollback" ]] || dnf_rollback=0
   local jobs
   jobs=$(mktemp)
   {
@@ -1011,6 +1015,30 @@ fedora_health_restore_point_apply() {
     local pp
     pp=$(tr -d '[:space:]' < "$dest/state/power-profile.txt")
     [[ -n "$pp" && "$pp" != "unknown" ]] && _ppd_set "$pp" 2>/dev/null || true
+  fi
+
+  # The userunit-* actions disable user units, so put back anything that was
+  # enabled when the point was taken. Unprivileged on purpose: `systemctl --user`
+  # talks to the caller's own manager, so this must not go through the priv batch.
+  if [[ -s "$dest/state/user-units-enabled.txt" ]]; then
+    local unit restored=0
+    while IFS= read -r unit; do
+      [[ -n "$unit" ]] || continue
+      [[ "$(systemctl --user is-enabled "$unit" 2>/dev/null)" == "enabled" ]] && continue
+      systemctl --user enable --now "$unit" >/dev/null 2>&1 && restored=$((restored + 1))
+    done < "$dest/state/user-units-enabled.txt"
+    if [[ $restored -gt 0 ]]; then
+      _health_prog "Re-enabled $restored user unit(s)"
+    fi
+  fi
+
+  echo "90"
+
+  # Package inventories are captured for diagnosis, not rollback: DNF history is
+  # the only safe automatic revert (queued above when the action warranted it),
+  # and Flatpak has no equivalent. Say so rather than implying a full rewind.
+  if [[ "$dnf_rollback" != "1" ]] && [[ -s "$dest/state/rpm-qa.txt" || -s "$dest/state/flatpak.txt" ]]; then
+    _health_prog "Package lists under $dest/state are a record only — installed packages were not reverted."
   fi
 
   echo "100"

@@ -148,13 +148,22 @@ class TestTerminateProcessGroup(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        spec = importlib.util.spec_from_file_location("urstack_ui_cancel", UI)
-        cls.ui = importlib.util.module_from_spec(spec)
-        sys.modules["urstack_ui_cancel"] = cls.ui
+        # Shares the "fedora_ui" cache entry with test_parsers: ui.py registers
+        # process-global GObject types, so a second load under another module
+        # name fails and leaves a broken partial module behind.
+        cached = sys.modules.get("fedora_ui")
+        if cached is not None:
+            cls.ui = cached
+            return
+        spec = importlib.util.spec_from_file_location("fedora_ui", UI)
+        mod = importlib.util.module_from_spec(spec)
+        sys.modules["fedora_ui"] = mod
         try:
-            spec.loader.exec_module(cls.ui)
+            spec.loader.exec_module(mod)
         except Exception as exc:
+            sys.modules.pop("fedora_ui", None)
             raise unittest.SkipTest(f"GTK unavailable: {exc}") from exc
+        cls.ui = mod
 
     def test_children_die_with_the_job(self) -> None:
         # A script that outlives its parent unless the group is signalled.

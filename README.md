@@ -114,7 +114,16 @@ That helps when Fedora has been running for months (or you just restored a bluep
 | Power | `power-profiles-daemon` profiles; warn if TLP and ppd both want control |
 | Advanced | `fstrim`, DNF parallel downloads, sysctl drop-in (`/etc/sysctl.d/99-urstack.conf`) |
 
-You choose what to apply. Aggressive tweaks take a **restore point** first (DNF state, unit enablement, UrStack sysctl drop-ins) under `~/.local/state/urstack/health-restore-points/`. You can list, create, and roll those back from the Health page or the CLI — so Health is a guided cleanup, not a one-way script.
+You choose what to apply. Aggressive tweaks take a **restore point** first, under `~/.local/state/urstack/health-restore-points/`. You can list, create, and roll those back from the Health page or the CLI — so Health is a guided cleanup, not a one-way script.
+
+A restore point rolls back:
+
+- UrStack's own drop-ins (`/etc/sysctl.d/99-urstack.conf` and the DNF speed configs)
+- `earlyoom` / `tlp` enablement and the `power-profiles-daemon` profile
+- User units that a `userunit-*` action disabled
+- The DNF transaction, when the point was taken for a package-changing action (old kernels, RPM Fusion, codecs)
+
+It does **not** reinstall packages or Flatpaks removed by other means, and it cannot bring back emptied caches or trash. The RPM and Flatpak lists in the restore point are kept as a record to compare against, not as an automatic rewind.
 
 ### Backup and rebuild
 
@@ -124,7 +133,8 @@ Backup is a **blueprint**, not a full-disk image. A dated folder can include:
 - Personal Apps overlay (`catalog-user.json`) so My apps can be reinstalled after a rebuild
 - Git repositories under configured project roots (build artefacts such as `node_modules` and `.venv` are skipped)
 - AppImages and vendor launchers
-- Desktop settings, themes, SSH / GPG material (opt-in), and browser profiles
+- Desktop settings, themes, and browser profiles
+- SSH / GPG material, git and GitHub CLI credentials, and KDE Wallet — **opt-in, off by default**; tick *Secrets & identity* on the Backup page (or pass `secrets=1`) to include them
 - Hardware / driver inventory so restore can distinguish same-PC vs different-GPU machines
 
 Restore reinstalls from those manifests and overlays settings. Enable the module in Settings or with `--include-backup` when writing a detected config.
@@ -217,9 +227,10 @@ Checks run in the background after launch. You can open Apps, Backup, Settings, 
 With no flags, UrStack opens the GUI (and detaches from the terminal). Flags stay in the foreground.
 
 ```text
-urstack                         # GUI
+urstack                         # GUI, with a grey tray icon while it is open
+urstack --page backup           # GUI, opening a specific page
 urstack --check                 # Print results; exit 1 if anything is pending
-urstack --check --tray          # Same, with a taskbar / tray icon while it scans
+urstack --check --tray          # Same, with the grey tray icon while it scans
 urstack --yes                   # Non-interactive apply (skips firmware unless Settings apply_fw=1)
 urstack --yes --include-firmware
 urstack --log                   # History viewer
@@ -238,7 +249,9 @@ urstack --health-restore-list
 urstack --health-restore [id|latest]
 ```
 
-`--check` is suitable for scripts and the daily timer: exit `0` if the stack is current, `1` if updates exist, `3` if another instance holds the lock. `--check --tray` is what login autostart uses in background mode: a tray icon (StatusNotifierItem on Plasma, Cinnamon, XFCE, COSMIC; a small window on the GNOME dash if there is no tray) while the scan runs, and it stays until you click it if updates were found.
+`--check` is suitable for scripts and the daily timer: exit `0` if the stack is current, `1` if updates exist, `3` if another instance holds the lock. `--check --tray` is what login autostart uses in background mode.
+
+The GUI also shows that grey tray icon (`urstack-tray`) while the window is open. Left-click raises UrStack; right-click offers Check, Updates, Apps, Health, Backup, Restore, Settings, and Quit. On Plasma, Cinnamon, XFCE and COSMIC this is a StatusNotifierItem; on GNOME (no tray) a small window sits on the dash instead. The indicator stays until you pick Quit from its menu, so you can close the window and reopen from the tray.
 
 ### Daily check timer
 

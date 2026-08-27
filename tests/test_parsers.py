@@ -17,15 +17,23 @@ CORE = ROOT / "lib" / "core"
 
 
 def load_ui_module():
+    # ui.py registers GObject types, whose names are process-global, so it can
+    # only be executed once per process. Every test module must therefore share
+    # this cache entry rather than loading ui.py under its own module name.
     existing = sys.modules.get("fedora_ui")
-    if existing is not None and getattr(existing, "parse_sections", None):
+    if existing is not None:
         return existing
     path = CORE / "ui.py"
     spec = importlib.util.spec_from_file_location("fedora_ui", path)
     assert spec and spec.loader
     mod = importlib.util.module_from_spec(spec)
     sys.modules["fedora_ui"] = mod
-    spec.loader.exec_module(mod)
+    try:
+        spec.loader.exec_module(mod)
+    except BaseException:
+        # Never leave a half-executed module behind for the next caller to find.
+        sys.modules.pop("fedora_ui", None)
+        raise
     return mod
 
 
@@ -753,9 +761,85 @@ class TestSilentTray(unittest.TestCase):
         self.assertGreater(height, 0)
         self.assertEqual(len(data), width * height * 4)
 
+    def test_pixmap_from_grey_tray_icon(self) -> None:
+        icon = ROOT / "data" / "icons" / "hicolor" / "48x48" / "apps" / "urstack-tray.png"
+        if not icon.is_file():
+            raise unittest.SkipTest("grey tray icon missing")
+        pix = self.tray.icon_pixmap_from_png(str(icon))
+        self.assertEqual(len(pix), 1)
+        width, height, data = pix[0]
+        self.assertEqual(len(data), width * height * 4)
+
+    def test_menu_includes_pages(self) -> None:
+        actions = {a for _i, a, _label in self.tray.MENU_ITEMS if a}
+        for needed in (
+            "open",
+            "check",
+            "updates",
+            "apps",
+            "health",
+            "backup",
+            "restore",
+            "settings",
+            "quit",
+        ):
+            self.assertIn(needed, actions)
+        self.assertEqual(self.tray.TRAY_ICON_NAME, "urstack-tray")
+        self.assertEqual(self.tray.APP_BUS_NAME, "com.local.urstack")
+
+    def test_activate_running_app_false_when_idle(self) -> None:
+        # No UrStack window in this test process, so the helper must not claim
+        # success and skip spawning.
+        self.assertFalse(self.tray.activate_running_app())
+        self.assertFalse(self.tray.activate_running_app(page="backup"))
+        self.assertFalse(self.tray.activate_running_app(action="quit"))
+
     def test_pixmaps_variant_type(self) -> None:
         var = self.tray._pixmaps_variant([(2, 2, bytes(16))])
         self.assertEqual(var.get_type_string(), "a(iiay)")
+
+
+class TestBackupSizeAndSecrets(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        try:
+            cls.ui = load_ui_module()
+        except Exception as exc:
+            raise unittest.SkipTest(f"GTK/libadwaita unavailable: {exc}") from exc
+
+    def test_format_byte_size(self) -> None:
+        self.assertEqual(self.ui.format_byte_size(0), "")
+        self.assertEqual(self.ui.format_byte_size(512), "512 B")
+        self.assertEqual(self.ui.format_byte_size(1024), "1.0 KB")
+
+    def test_dir_size_label_returns_immediately(self) -> None:
+        import time
+
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d)
+            (path / "blob").write_bytes(b"x" * 64)
+            started = time.monotonic()
+            first = self.ui._dir_size_label(path)
+            elapsed = time.monotonic() - started
+            self.assertEqual(first, "")
+            self.assertLess(elapsed, 0.25)
+
+    def test_this_computer_preset_leaves_secrets_off(self) -> None:
+        this = next(p for p in self.ui.BACKUP_PRESETS if p[0] == "this")
+        self.assertFalse(this[2]["secrets"])
+        everything = next(p for p in self.ui.BACKUP_PRESETS if p[0] == "everything")
+        self.assertTrue(everything[2]["secrets"])
+        secrets = next(t for t in self.ui.BACKUP_INCLUDE_OPTIONS if t[0] == "secrets")
+        self.assertFalse(secrets[-1])
+
+    def test_gui_launch_starts_tray(self) -> None:
+        text = (ROOT / "bin" / "urstack").read_text(encoding="utf-8")
+        idx = text.find('_FEDORA_UI="$FEDORA_UPDATES_LIB/ui.py"')
+        self.assertGreater(idx, 0)
+        chunk = text[idx : idx + 1200]
+        self.assertIn("start_tray", chunk)
+        self.assertIn("show_action_menu", chunk)
+        self.assertIn("urstack-tray.png", text)
 
 
 if __name__ == "__main__":

@@ -768,7 +768,9 @@ show_action_menu() {
   local choice
   local _ui="$FEDORA_UPDATES_LIB/ui.py"
   local enable_backup="${ENABLE_BACKUP:-0}"
-  local status_f start_page="" sections_f
+  # Only seeds the first iteration: the loop clears it below so returning from a
+  # sub-page does not bounce the user back to where they started every time.
+  local status_f start_page="${URSTACK_START_PAGE:-}" sections_f
   status_f=$(mktemp)
   sections_f=$(mktemp)
   local runs_dir="${XDG_STATE_HOME:-$HOME/.local/state}/urstack/runs"

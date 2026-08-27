@@ -197,10 +197,15 @@ if [[ -d "$ROOT/data/icons/hicolor" ]]; then
     base=$(basename "$rel")
     dir=$(dirname "$rel")
     run_priv mkdir -p "$HICOLOR/$dir"
-    if [[ "$base" == "urstack.png" || "$base" == "stackup.png" || "$base" == "fedora-updates.png" ]]; then
+    # The grey tray variant keeps its own name; the older app icon names are all
+    # folded onto urstack.png so upgrades from a previous name still resolve.
+    if [[ "$base" == "urstack-tray.png" ]]; then
+      run_priv install -m 644 "$iconfile" "$HICOLOR/$dir/urstack-tray.png"
+    elif [[ "$base" == "urstack.png" || "$base" == "stackup.png" || "$base" == "fedora-updates.png" ]]; then
       run_priv install -m 644 "$iconfile" "$HICOLOR/$dir/urstack.png"
     fi
-  done < <(find "$ROOT/data/icons/hicolor" -type f \( -name 'urstack.png' -o -name 'stackup.png' -o -name 'fedora-updates.png' \) -print0)
+  done < <(find "$ROOT/data/icons/hicolor" -type f \
+    \( -name 'urstack.png' -o -name 'urstack-tray.png' -o -name 'stackup.png' -o -name 'fedora-updates.png' \) -print0)
 fi
 run_priv mkdir -p "$ICON_DIR"
 run_priv install -m 644 "$ROOT/data/icons/hicolor/96x96/apps/urstack.png" \
@@ -215,7 +220,9 @@ fi
 if [[ -n "$POLKIT_DIR" && -f "$ROOT/data/polkit/com.local.urstack.policy" ]]; then
   run_priv install -m 644 "$ROOT/data/polkit/com.local.urstack.policy" \
     "$POLKIT_DIR/com.local.urstack.policy"
-  run_priv rm -f "$POLKIT_DIR/com.local.urstack.policy"
+  # Remove old policy names
+  run_priv rm -f "$POLKIT_DIR/com.local.stackup.policy" \
+    "$POLKIT_DIR/com.local.fedoraworkstationupdater.policy"
 fi
 
 # Migrate legacy config if needed

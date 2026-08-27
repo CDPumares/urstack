@@ -227,10 +227,12 @@ _ensure_pre_restore_dir() {
   if mkdir -p "$d" 2>/dev/null; then
     _PRE_RESTORE_DIR="$d"
     _HOME_RSYNC_OPTS=(--backup --backup-dir="$d")
-  else
-    echo "# WARNING: could not create $d — restore will not be reversible" >&2
+    return 0
   fi
-  return 0
+  # Fail closed: without --backup-dir the rsyncs below would overwrite $HOME
+  # with no way back, so callers must skip them rather than proceed.
+  echo "# ERROR: could not create $d — refusing to overwrite \$HOME without an undo copy" >&2
+  return 1
 }
 
 _b64() { printf '%s' "$1" | base64 -w0; }
@@ -1340,7 +1342,7 @@ _backup_config() {
 
   local want_settings want_secrets want_browsers want_system want_full
   want_settings="$(_backup_include settings 1)"
-  want_secrets="$(_backup_include secrets 1)"
+  want_secrets="$(_backup_include secrets 0)"
   want_browsers="$(_backup_include browsers 1)"
   want_system="$(_backup_include system 1)"
   want_full="$(_backup_include full_dotconfig 1)"
@@ -1382,7 +1384,6 @@ _backup_config() {
   _overlay_home "$HOME/.local/share/kscreen" "$dest"
   _overlay_home "$HOME/.local/share/dolphin" "$dest"
   _overlay_home "$HOME/.local/share/user-places.xbel" "$dest"
-  _overlay_home "$HOME/.local/share/kwalletd" "$dest"
   fi
 
   _overlay_home "$HOME/.local/share/flatpak/overrides" "$dest"
@@ -1404,10 +1405,12 @@ _backup_config() {
   fi
   fi
 
-  # Secrets / identity (optional)
+  # Secrets / identity (opt-in)
   if [[ "$want_secrets" == "1" ]]; then
     _overlay_home "$HOME/.ssh" "$dest"
     _overlay_home "$HOME/.gnupg" "$dest"
+    # Stored passwords, so it belongs here rather than with desktop settings.
+    _overlay_home "$HOME/.local/share/kwalletd" "$dest"
     _overlay_home "$HOME/.netrc" "$dest"
     _overlay_home "$HOME/.git-credentials" "$dest"
     _overlay_home "$HOME/.config/gh" "$dest"
@@ -1467,12 +1470,12 @@ _backup_config() {
   fi
 
   if [[ "$want_settings" == "1" ]]; then
-  # Resolve wallpaper / menu icon paths from appletsrc + lock screen
+  # Resolve wallpaper / menu icon paths from appletsrc + lock screen.
+  # Read line by line: wallpaper filenames routinely contain spaces, which
+  # word-splitting a $(...) would shred into fragments that silently fail the
+  # -f test below and never make it into the backup.
   local img
-  for img in $(grep -hE '^(Image|customButtonImage|PreviewImage)=' \
-      "$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc" \
-      "$HOME/.config/kscreenlockerrc" 2>/dev/null \
-      | sed 's/^[^=]*=//;s|^file://||' | sort -u); do
+  while IFS= read -r img; do
     [[ -f "$img" ]] || continue
     if [[ "$img" == "$HOME"/* ]]; then
       _overlay_home "$img" "$dest"
@@ -1480,15 +1483,18 @@ _backup_config() {
       mkdir -p "$dest/config/extra-media"
       cp -a "$img" "$dest/config/extra-media/" 2>/dev/null || true
     fi
-  done
+  done < <(grep -hE '^(Image|customButtonImage|PreviewImage)=' \
+      "$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc" \
+      "$HOME/.config/kscreenlockerrc" 2>/dev/null \
+      | sed 's/^[^=]*=//;s|^file://||' | sort -u)
   fi
   if [[ "$want_browsers" == "1" ]]; then
-    for img in $(grep -h '^Icon=/' "$HOME/.local/share/applications"/chrome-*.desktop 2>/dev/null | cut -d= -f2-); do
+    while IFS= read -r img; do
       [[ -f "$img" ]] || continue
       if [[ "$img" == "$HOME"/* ]]; then
         _overlay_home "$img" "$dest"
       fi
-    done
+    done < <(grep -h '^Icon=/' "$HOME/.local/share/applications"/chrome-*.desktop 2>/dev/null | cut -d= -f2-)
 
     # Firefox bookmarks (places)
     local ffprofile
@@ -2134,7 +2140,7 @@ fedora_setup_backup_to() {
     echo "50"; _fs_progress "Archiving custom paths..."
     _backup_extra_user_paths "$dest"
     if [[ "$(_backup_include settings 1)" == "1" \
-       || "$(_backup_include secrets 1)" == "1" \
+       || "$(_backup_include secrets 0)" == "1" \
        || "$(_backup_include browsers 1)" == "1" \
        || "$(_backup_include full_dotconfig 1)" == "1" \
        || "$(_backup_include system 1)" == "1" ]]; then
@@ -2174,6 +2180,8 @@ fedora_setup_backup_to() {
     echo "parent=$(dirname -- "$dest")"
     echo "name=$(basename -- "$dest")"
     echo "created=$(date -Iseconds)"
+    # So Overview does not have to walk the tree on the GTK thread next launch.
+    echo "size_bytes=$(du -sb -- "$dest" 2>/dev/null | awk '{print $1}')"
   } > "${XDG_CONFIG_HOME:-$HOME/.config}/urstack/last-backup.conf" 2>/dev/null || true
 
   if [[ "${URSTACK_EMBEDDED_PROGRESS:-0}" == "1" ]]; then
@@ -2789,17 +2797,23 @@ fedora_setup_restore_from() {
     if [[ "$(_backup_include projects 1)" == "1" ]]; then
       _fs_progress "Projects..."
       if [[ -d "$dest/projects" ]]; then
-        _ensure_pre_restore_dir
-        rsync -a "${_HOME_RSYNC_OPTS[@]}" "$dest/projects"/ "$HOME"/ 2>&1 \
-          && _restore_ok "Project trees" || _restore_fail "Project trees"
+        if _ensure_pre_restore_dir; then
+          rsync -a "${_HOME_RSYNC_OPTS[@]}" "$dest/projects"/ "$HOME"/ 2>&1 \
+            && _restore_ok "Project trees" || _restore_fail "Project trees"
+        else
+          _restore_fail "Project trees (no undo copy possible — nothing was overwritten)"
+        fi
       else
         _restore_skip "Project trees (none in backup)"
       fi
       if [[ -d "$dest/extra" ]]; then
         _fs_progress "Custom paths..."
-        _ensure_pre_restore_dir
-        rsync -a "${_HOME_RSYNC_OPTS[@]}" --exclude='_outside/' "$dest/extra"/ "$HOME"/ 2>&1 \
-          && _restore_ok "Custom paths" || _restore_fail "Custom paths"
+        if _ensure_pre_restore_dir; then
+          rsync -a "${_HOME_RSYNC_OPTS[@]}" --exclude='_outside/' "$dest/extra"/ "$HOME"/ 2>&1 \
+            && _restore_ok "Custom paths" || _restore_fail "Custom paths"
+        else
+          _restore_fail "Custom paths (no undo copy possible — nothing was overwritten)"
+        fi
         if [[ -d "$dest/extra/_outside" ]]; then
           # Outside-$HOME paths are kept for reference; copy next to home as recoverable tree
           mkdir -p "$HOME/UrStack-restored-outside"
@@ -2817,10 +2831,11 @@ fedora_setup_restore_from() {
       _fs_progress "Home overlay (settings)..."
       if [[ -d "$dest/config/home-overlay" ]]; then
         local -a ov_excludes=()
-        if [[ "$(_backup_include secrets 1)" != "1" ]]; then
+        if [[ "$(_backup_include secrets 0)" != "1" ]]; then
           ov_excludes+=(
             --exclude='.ssh/'
             --exclude='.gnupg/'
+            --exclude='.local/share/kwalletd/'
             --exclude='.netrc'
             --exclude='.git-credentials'
             --exclude='.config/gh/'
@@ -2832,8 +2847,9 @@ fedora_setup_restore_from() {
             --exclude='.mozilla/'
           )
         fi
-        _ensure_pre_restore_dir
-        if rsync -a "${_HOME_RSYNC_OPTS[@]}" "${ov_excludes[@]}" "$dest/config/home-overlay"/ "$HOME"/ 2>&1; then
+        if ! _ensure_pre_restore_dir; then
+          _restore_fail "Home settings overlay (no undo copy possible — nothing was overwritten)"
+        elif rsync -a "${_HOME_RSYNC_OPTS[@]}" "${ov_excludes[@]}" "$dest/config/home-overlay"/ "$HOME"/ 2>&1; then
           _restore_ok "Home settings overlay"
         else
           _restore_fail "Home settings overlay"
@@ -2854,6 +2870,14 @@ fedora_setup_restore_from() {
         local ffprofile
         ffprofile=$(find "$HOME/.mozilla/firefox" -maxdepth 1 -type d -name '*.default-release' 2>/dev/null | head -1)
         if [[ -n "$ffprofile" ]]; then
+          # places.sqlite holds live bookmarks *and* history, so keep the current
+          # one next to the pre-restore copies before replacing it.
+          if _ensure_pre_restore_dir && [[ -f "$ffprofile/places.sqlite" ]]; then
+            mkdir -p "$_PRE_RESTORE_DIR/firefox" 2>/dev/null || true
+            cp -a "$ffprofile/places.sqlite" "$_PRE_RESTORE_DIR/firefox/" 2>/dev/null || true
+            [[ -f "$ffprofile/favicons.sqlite" ]] && \
+              cp -a "$ffprofile/favicons.sqlite" "$_PRE_RESTORE_DIR/firefox/" 2>/dev/null || true
+          fi
           cp -a "$dest/config/firefox-bookmarks/places.sqlite" "$ffprofile/" 2>/dev/null \
             && _restore_ok "Firefox bookmarks" || _restore_fail "Firefox bookmarks"
           [[ -f "$dest/config/firefox-bookmarks/favicons.sqlite" ]] && \
