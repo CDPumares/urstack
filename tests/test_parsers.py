@@ -414,6 +414,7 @@ class TestStyleSheet(unittest.TestCase):
         self.assertIn("#3c90e4", css)
         self.assertIn("#b43ce4", css)
         self.assertIn("@define-color accent_bg_color #3c90e4", css)
+        self.assertIn(".fu-shell-sidebar-collapsed", css)
 
     def test_stylesheet_keeps_status_green_and_red(self) -> None:
         css = self.ui.STYLE_SHEET.read_text(encoding="utf-8")
@@ -422,12 +423,10 @@ class TestStyleSheet(unittest.TestCase):
         self.assertIn(".fu-badge-warn", css)
         self.assertIn("@error_color", css)
         self.assertIn(".fu-page-hero-ok", css)
-        self.assertIn("#26a269", css)
+        self.assertIn("#33d17e", css)
         self.assertIn(".fu-page-hero-warn", css)
-        self.assertIn("#e01b24", css)
-        # Heroes stay on the logo gradient; green/red are accent bars, not fills.
-        self.assertIn("box-shadow: inset 5px 0 0 0 #26a269", css)
-        self.assertIn("box-shadow: inset 5px 0 0 0 #e01b24", css)
+        self.assertIn("#ff8a80", css)
+        self.assertNotIn("box-shadow: inset 5px 0 0 0", css)
         self.assertIn("background-color: #0a0c10", css)
 
     def test_overview_and_updates_share_apps_page_inset(self) -> None:

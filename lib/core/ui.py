@@ -799,12 +799,20 @@ def build_checking_content(
 
 
 def mk_btn(label: str, css: str | None = None, icon: str | None = None) -> Gtk.Button:
+    btn = Gtk.Button()
     if icon:
-        btn = Gtk.Button()
-        content = Adw.ButtonContent(label=label, icon_name=icon)
-        btn.set_child(content)
+        box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        box.set_halign(Gtk.Align.CENTER)
+        box.set_valign(Gtk.Align.CENTER)
+        if label:
+            lab = Gtk.Label(label=label)
+            box.append(lab)
+        img = Gtk.Image.new_from_icon_name(icon)
+        img.set_valign(Gtk.Align.CENTER)
+        box.append(img)
+        btn.set_child(box)
     else:
-        btn = Gtk.Button(label=label)
+        btn.set_label(label)
     if css:
         for c in css.split():
             btn.add_css_class(c)
@@ -1059,7 +1067,7 @@ def _overview_stat_card(
     foot.set_margin_top(12)
     foot.set_hexpand(True)
     css = "suggested-action pill fu-primary" if badge_warn else "pill fu-secondary"
-    go = mk_btn("Open", css, None)
+    go = mk_btn("Open", css, icon_name)
     go.set_hexpand(True)
     go.connect("clicked", lambda *_: on_action(action))
     foot.append(go)
@@ -1879,11 +1887,14 @@ def build_shell_sidebar(
     on_action: Callable[[str], None],
     *,
     has_updates: bool = False,
+    config_file: str = "",
 ) -> tuple[Gtk.Widget, Callable[[str], None], Callable[[bool], None]]:
     """Persistent left nav for the main shell. Returns (widget, set_active, set_has_updates)."""
+    cfg_path = Path(config_file).expanduser() if config_file else default_config_path()
+    collapsed = {"v": read_config_map(cfg_path).get("sidebar_collapsed", "0") == "1"}
+
     sidebar = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
     sidebar.add_css_class("fu-shell-sidebar")
-    sidebar.set_size_request(212, -1)
     sidebar.set_vexpand(True)
 
     brand = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
@@ -1926,18 +1937,74 @@ def build_shell_sidebar(
         ("runs", "Runs", page_icon("runs")),
         ("close", "Close", page_icon("close")),
     ]
-    rows: dict[str, Adw.ActionRow] = {}
+    rows: dict[str, Gtk.ListBoxRow] = {}
+    nav_labels: list[Gtk.Widget] = []
+    nav_inners: list[Gtk.Box] = []
     suppress = {"v": False}
 
     for item_id, label, icon_name in items:
-        row = Adw.ActionRow(title=label)
+        row = Gtk.ListBoxRow()
         row.set_name(item_id)
         row.set_activatable(True)
+        row.add_css_class("fu-shell-nav-row")
+        inner = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+        inner.add_css_class("fu-shell-nav-inner")
         icon = Gtk.Image.new_from_icon_name(icon_name)
         icon.set_pixel_size(18)
-        row.add_prefix(icon)
+        icon.set_valign(Gtk.Align.CENTER)
+        inner.append(icon)
+        lab = Gtk.Label(label=label, xalign=0.0)
+        lab.add_css_class("fu-shell-nav-label")
+        lab.set_hexpand(True)
+        lab.set_ellipsize(Pango.EllipsizeMode.END)
+        inner.append(lab)
+        row.set_child(inner)
+        row.set_tooltip_text(label)
         listbox.append(row)
         rows[item_id] = row
+        nav_labels.append(lab)
+        nav_inners.append(inner)
+
+    toggle = Gtk.Button()
+    toggle.add_css_class("flat")
+    toggle.add_css_class("fu-shell-sidebar-toggle")
+    toggle.set_valign(Gtk.Align.CENTER)
+    toggle_img = Gtk.Image()
+    toggle.set_child(toggle_img)
+    sidebar.append(toggle)
+
+    def apply_collapsed() -> None:
+        on = collapsed["v"]
+        if on:
+            sidebar.add_css_class("fu-shell-sidebar-collapsed")
+        else:
+            sidebar.remove_css_class("fu-shell-sidebar-collapsed")
+        sidebar.set_size_request(56 if on else 212, -1)
+        brand_text.set_visible(not on)
+        sec.set_visible(not on)
+        for lab in nav_labels:
+            lab.set_visible(not on)
+        for inner in nav_inners:
+            inner.set_halign(Gtk.Align.CENTER if on else Gtk.Align.FILL)
+            inner.set_hexpand(True)
+        toggle_img.set_from_icon_name(
+            "go-next-symbolic" if on else "go-previous-symbolic"
+        )
+        toggle.set_tooltip_text("Expand sidebar" if on else "Collapse sidebar")
+        toggle.set_halign(Gtk.Align.CENTER if on else Gtk.Align.END)
+
+    def on_toggle(*_a: object) -> None:
+        collapsed["v"] = not collapsed["v"]
+        apply_collapsed()
+        try:
+            write_config_map(
+                cfg_path, {"sidebar_collapsed": "1" if collapsed["v"] else "0"}
+            )
+        except OSError:
+            pass
+
+    toggle.connect("clicked", on_toggle)
+    apply_collapsed()
 
     def set_active(nav_id: str) -> None:
         # Apply is not a sidebar destination — map it to Updates
@@ -4707,30 +4774,26 @@ def build_catalog_content(
         finally:
             cat_guard["busy"] = False
 
-    def add_cat_pill(cid: str, count: int) -> None:
+    def add_cat_pill(cid: str) -> None:
         label = cat_chip_label(cid)
-        inner = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+        inner = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
         icon = Gtk.Image.new_from_icon_name(
             CAT_ICONS.get(
                 cid,
                 pick_icon("application-x-executable-symbolic", "applications-other-symbolic"),
             )
         )
-        icon.set_pixel_size(12)
+        icon.set_pixel_size(16)
         inner.append(icon)
         name = Gtk.Label(label=label)
         name.set_single_line_mode(True)
         inner.append(name)
-        nlab = Gtk.Label(label=str(count))
-        nlab.add_css_class("fu-cat-count")
-        nlab.add_css_class("dim-label")
-        inner.append(nlab)
         btn = Gtk.ToggleButton()
         btn.set_child(inner)
         btn.add_css_class("flat")
         btn.add_css_class("fu-cat-pill")
         btn.set_active(cid == filter_cat["id"])
-        btn.set_tooltip_text(f"{cat_full_label(cid)} · {count} apps")
+        btn.set_tooltip_text(cat_full_label(cid))
         btn.connect("toggled", lambda b, k=cid: on_cat_toggle(b, k))
         cat_btns[cid] = btn
         cat_rail.append(btn)
@@ -4745,9 +4808,9 @@ def build_catalog_content(
                 cat_rail.remove(child)
                 child = nxt
             cat_btns.clear()
-            add_cat_pill("", len(rows))
+            add_cat_pill("")
             for cid in ordered_ids:
-                add_cat_pill(cid, cat_counts.get(cid, 0))
+                add_cat_pill(cid)
         finally:
             cat_guard["busy"] = False
 
@@ -7746,6 +7809,7 @@ def mode_shell(args: argparse.Namespace) -> int:
         sidebar, set_active, set_has_updates = build_shell_sidebar(
             on_sidebar_action,
             has_updates=bool(session["has_updates"]),
+            config_file=str(getattr(args, "config_file", "") or ""),
         )
         sidebar_ctl["set_active"] = set_active
         sidebar_ctl["set_has_updates"] = set_has_updates

@@ -139,7 +139,7 @@ window.urstack headerbar windowcontrols.start > image {
 }
 
 .fu-cat-scroll {
-  min-height: 24px;
+  min-height: 32px;
 }
 
 .fu-cat-rail {
@@ -147,10 +147,10 @@ window.urstack headerbar windowcontrols.start > image {
 }
 
 button.fu-cat-pill {
-  padding: 0 7px 0 5px;
+  padding: 2px 12px 2px 8px;
   border-radius: 999px;
-  min-height: 22px;
-  font-size: 11px;
+  min-height: 28px;
+  font-size: 13px;
   font-weight: 500;
   background-image: none;
   background-color: alpha(@card_bg_color, 0.92);
@@ -159,7 +159,7 @@ button.fu-cat-pill {
 }
 
 button.fu-cat-pill label {
-  font-size: 11px;
+  font-size: 13px;
 }
 
 button.fu-cat-pill:hover {
@@ -177,18 +177,6 @@ button.fu-cat-pill:checked {
 }
 
 button.fu-cat-pill:checked label {
-  color: #ffffff;
-}
-
-.fu-cat-count {
-  font-size: 10px;
-  font-weight: 650;
-  opacity: 0.58;
-  min-width: 1em;
-}
-
-button.fu-cat-pill:checked .fu-cat-count {
-  opacity: 0.95;
   color: #ffffff;
 }
 
@@ -217,6 +205,36 @@ button.fu-cat-pill:checked .fu-cat-count {
   border-right: 1px solid alpha(#3c90e4, 0.28);
   min-width: 200px;
   padding: 8px 0 12px 0;
+}
+
+.fu-shell-sidebar.fu-shell-sidebar-collapsed {
+  min-width: 56px;
+}
+
+.fu-shell-sidebar-brand {
+  padding: 12px 14px 10px 14px;
+}
+
+.fu-shell-sidebar-collapsed .fu-shell-sidebar-brand {
+  padding: 12px 8px 8px 8px;
+}
+
+.fu-shell-nav-inner {
+  padding: 8px 12px;
+}
+
+.fu-shell-sidebar-collapsed .fu-shell-nav-inner {
+  padding: 10px 0;
+}
+
+.fu-shell-sidebar-toggle {
+  margin: 8px 10px 4px 10px;
+  min-width: 32px;
+  min-height: 32px;
+}
+
+.fu-shell-sidebar-collapsed .fu-shell-sidebar-toggle {
+  margin: 8px 4px 4px 4px;
 }
 
 .fu-shell-sidebar-brand {
@@ -326,23 +344,18 @@ button.fu-cat-pill:checked .fu-cat-count {
   background-color: alpha(#ffffff, 0.35);
 }
 
-/* Status stays on badges / a left bar — heroes keep the logo gradient. */
+/* Status stays on badges and the score; heroes keep one uniform radius. */
 .fu-page-hero-ok,
-.fu-health-hero-ok {
-  border-color: alpha(#33d17e, 0.55);
-  box-shadow: inset 5px 0 0 0 #26a269;
+.fu-health-hero-ok,
+.fu-page-hero-warn,
+.fu-health-hero-warn {
+  box-shadow: none;
 }
 
 .fu-page-hero-ok .fu-page-score,
 .fu-health-hero-ok .fu-page-score,
 .fu-health-hero-ok .fu-health-score {
   color: #33d17e;
-}
-
-.fu-page-hero-warn,
-.fu-health-hero-warn {
-  border-color: alpha(#ff7b63, 0.55);
-  box-shadow: inset 5px 0 0 0 #e01b24;
 }
 
 .fu-page-hero-warn .fu-page-score,
@@ -773,18 +786,6 @@ window.urstack.fu-light .fu-health-hero {
   border: 1px solid alpha(#243c6c, 0.18);
 }
 
-window.urstack.fu-light .fu-page-hero-ok,
-window.urstack.fu-light .fu-health-hero-ok {
-  border-color: alpha(#1a7f4a, 0.55);
-  box-shadow: inset 5px 0 0 0 #26a269;
-}
-
-window.urstack.fu-light .fu-page-hero-warn,
-window.urstack.fu-light .fu-health-hero-warn {
-  border-color: alpha(#c01c28, 0.50);
-  box-shadow: inset 5px 0 0 0 #e01b24;
-}
-
 window.urstack.fu-light .fu-page-callout,
 window.urstack.fu-light .fu-health-rp {
   background-color: #ffffff;
@@ -858,18 +859,6 @@ window.urstack.fu-dark .fu-health-hero {
     #243c6c 48%,
     #b43ce4 100%
   );
-}
-
-window.urstack.fu-dark .fu-page-hero-ok,
-window.urstack.fu-dark .fu-health-hero-ok {
-  border-color: alpha(#33d17e, 0.50);
-  box-shadow: inset 5px 0 0 0 #26a269;
-}
-
-window.urstack.fu-dark .fu-page-hero-warn,
-window.urstack.fu-dark .fu-health-hero-warn {
-  border-color: alpha(#ff7b63, 0.50);
-  box-shadow: inset 5px 0 0 0 #e01b24;
 }
 
 window.urstack.fu-dark .fu-overview-card,
