@@ -110,7 +110,7 @@ import re; h=re.search(r"/production/([^/]+)/", u); print(("https://downloads.cu
         rpm_tmp=$(mktemp --suffix=.rpm)
         echo "# Downloading Cursor RPM..."
         curl -fL --progress-bar -o "$rpm_tmp" "$rpm_url" \
-          && _catalog_install_rpm "$rpm_tmp"
+          && _catalog_priv cursor_rpm "$rpm_tmp"
         local ec=$?
         rm -f "$rpm_tmp"
         return $ec

@@ -156,6 +156,62 @@ run_priv_jobs() {
   return "$ec"
 }
 
+# priv.sh prints `#result <job> ok|fail` per job. The batch exit code is 1 if
+# *any* job failed, so DNF used to show as failed whenever Cursor did.
+priv_job_ec() {
+  local job="$1"
+  local logf="${RUN_LOG_DIR:-}/priv.log"
+  local line=""
+  [[ -n "${RUN_LOG_DIR:-}" && -f "$logf" ]] || return 1
+  line=$(grep -E "^#result ${job}( |$)" "$logf" 2>/dev/null | tail -1) || true
+  [[ "$line" == *" ok" ]] && return 0
+  [[ "$line" == *" fail" ]] && return 1
+  return 1
+}
+
+priv_section_ec() {
+  local section="$1" fallback="${2:-1}"
+  local logf="${RUN_LOG_DIR:-}/priv.log"
+  if [[ -z "${RUN_LOG_DIR:-}" || ! -f "$logf" ]]; then
+    echo "$fallback"
+    return 0
+  fi
+  case "$section" in
+    dnf)
+      if grep -qE '^#result dnf_upgrade ' "$logf"; then
+        priv_job_ec dnf_upgrade || { echo 1; return 0; }
+        if grep -qE '^#result akmods_wait fail' "$logf"; then
+          echo 1; return 0
+        fi
+        echo 0; return 0
+      fi
+      ;;
+    snap)
+      if grep -qE '^#result snap_refresh ' "$logf"; then
+        priv_job_ec snap_refresh && echo 0 || echo 1
+        return 0
+      fi
+      ;;
+    fw)
+      if grep -qE '^#result fwupd_update ' "$logf"; then
+        priv_job_ec fwupd_update && echo 0 || echo 1
+        return 0
+      fi
+      ;;
+    cursor)
+      if grep -qE '^#result cursor_rpm ' "$logf"; then
+        priv_job_ec cursor_rpm && echo 0 || echo 1
+        return 0
+      fi
+      if grep -qE '^#result cursor_dnf ' "$logf"; then
+        priv_job_ec cursor_dnf && echo 0 || echo 1
+        return 0
+      fi
+      ;;
+  esac
+  echo "$fallback"
+}
+
 apply_user_section() {
   local key="$1"
   local exit_code=0
@@ -298,14 +354,14 @@ run_all_updates() {
   if [[ -n "$priv_jobs" ]]; then
     run_priv_jobs "$priv_jobs" || priv_ec=$?
     rm -f "$priv_jobs"
-    # Mark priv sections
+    # Mark priv sections from per-job #result lines when the log is present
     for s in dnf snap fw cursor; do
       has_section "$s" || continue
       section_is_selected "$s" "$selected" || continue
       if [[ "$s" == "fw" ]] && skip_firmware "$selected"; then
         continue
       fi
-      echo "$s:$priv_ec" >> "$results_file"
+      echo "$s:$(priv_section_ec "$s" "$priv_ec")" >> "$results_file"
     done
     if has_section dnf && section_is_selected dnf "$selected"; then
       record_kernel_reboot_hint

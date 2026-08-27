@@ -383,6 +383,38 @@ class TestCatalogInstallSafety(unittest.TestCase):
         self.assertIn("_catalog_install_rpm", catalog)
         priv = PRIV.read_text(encoding="utf-8")
         self.assertIn("localpkg_gpgcheck=1", priv)
+        # Generic catalog downloads still go through the signed verb.
+        self.assertIn("_catalog_install_rpm", catalog)
+        self.assertIn("install_local_rpm", catalog)
+
+    def test_cursor_cdn_rpm_is_a_separate_unsigned_path(self) -> None:
+        """Cursor's production CDN RPMs are unsigned; that exception must not
+        weaken install_local_rpm, and must still refuse a non-Cursor payload."""
+        priv = PRIV.read_text(encoding="utf-8")
+        catalog = self.CATALOG.read_text(encoding="utf-8")
+        self.assertIn("_install_cursor_rpm", priv)
+        self.assertNotIn("cursor_rpm|install_local_rpm)", priv)
+        self.assertIn("%{NAME}", priv)
+        self.assertIn("%{VENDOR}", priv)
+        self.assertIn("localpkg_gpgcheck=$gpg", priv)
+        # Catalog fallback must use the Cursor verb, not the signed-only one.
+        self.assertIn('_catalog_priv cursor_rpm', catalog)
+
+    def test_cursor_rpm_refuses_a_non_rpm_payload(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            fake = Path(d) / "not-cursor.rpm"
+            fake.write_text("not an rpm\n", encoding="utf-8")
+            jobs = Path(d) / "jobs"
+            jobs.write_text(f"cursor_rpm {fake}\n", encoding="utf-8")
+            jobs.chmod(0o600)
+            out = subprocess.run(
+                ["bash", str(PRIV), str(jobs)], capture_output=True, text=True, timeout=60
+            )
+            combined = out.stdout + out.stderr
+            self.assertNotEqual(out.returncode, 0)
+            self.assertIn("refusing package", combined)
+            self.assertIn("expected cursor", combined)
+            self.assertNotIn("dnf install", combined)
 
     def test_priv_helper_accepts_the_generic_rpm_verb(self) -> None:
         with tempfile.TemporaryDirectory() as d:
@@ -402,6 +434,35 @@ class TestCatalogInstallSafety(unittest.TestCase):
         self.assertNotIn("pkexec snap", catalog)
         self.assertIn("_catalog_priv dnf_install_pkg", catalog)
         self.assertIn("_catalog_priv snap_install", catalog)
+
+
+@unittest.skipIf(shutil.which("bash") is None, "bash required")
+class TestPrivSectionResults(unittest.TestCase):
+    """A Cursor CDN failure must not mark a successful DNF upgrade as failed."""
+
+    APPLY = ROOT / "lib" / "core" / "apply.sh"
+
+    def section_ec(self, log_text: str | None, section: str, fallback: str = "9") -> str:
+        with tempfile.TemporaryDirectory() as d:
+            if log_text is not None:
+                Path(d, "priv.log").write_text(log_text, encoding="utf-8")
+            script = f"""
+source {self.APPLY}
+RUN_LOG_DIR={d}
+priv_section_ec {section} {fallback}
+"""
+            p = subprocess.run(["bash", "-c", script], capture_output=True, text=True, timeout=30)
+            self.assertEqual(p.returncode, 0, p.stderr)
+            return p.stdout.strip()
+
+    def test_cursor_fail_leaves_dnf_ok(self) -> None:
+        log = "#result dnf_upgrade ok\n#result akmods_wait ok\n#result cursor_rpm fail\n"
+        self.assertEqual(self.section_ec(log, "dnf"), "0")
+        self.assertEqual(self.section_ec(log, "cursor"), "1")
+
+    def test_missing_log_uses_fallback(self) -> None:
+        self.assertEqual(self.section_ec(None, "cursor", "1"), "1")
+        self.assertEqual(self.section_ec(None, "dnf", "0"), "0")
 
 
 @unittest.skipIf(shutil.which("bash") is None, "bash required")

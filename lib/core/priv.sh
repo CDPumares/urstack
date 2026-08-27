@@ -10,8 +10,8 @@
 #   snap_refresh
 #   fwupd_update
 #   pip_build_deps
-#   cursor_rpm </abs/path.rpm>            (alias of install_local_rpm)
-#   install_local_rpm </abs/path.rpm>
+#   cursor_rpm </abs/path.rpm>            (official Cursor CDN RPM; NAME/Vendor checked)
+#   install_local_rpm </abs/path.rpm>     (requires a verifiable OpenPGP signature)
 #   cursor_dnf
 #   akmods_wait
 #   dnf_clean_all
@@ -503,8 +503,8 @@ ensure_discover_exclude() {
 }
 
 ensure_cursor_repo() {
-  [[ -f /etc/yum.repos.d/cursor.repo ]] && return 0
-  cat > /etc/yum.repos.d/cursor.repo <<'CURSORREPO'
+  if [[ ! -f /etc/yum.repos.d/cursor.repo ]]; then
+    cat > /etc/yum.repos.d/cursor.repo <<'CURSORREPO'
 [cursor]
 name=Cursor
 baseurl=https://downloads.cursor.com/yumrepo
@@ -513,7 +513,48 @@ gpgcheck=1
 gpgkey=https://downloads.cursor.com/keys/anysphere.asc
 repo_gpgcheck=1
 CURSORREPO
-  log "Created /etc/yum.repos.d/cursor.repo"
+    log "Created /etc/yum.repos.d/cursor.repo"
+  fi
+  # Local CDN RPMs are installed from @commandline, which does not import the
+  # repo's gpgkey. Pull it in so a signed Cursor RPM can verify.
+  if ! rpm -q gpg-pubkey --qf '%{SUMMARY}\n' 2>/dev/null | grep -qi 'Anysphere'; then
+    log "Importing Cursor (Anysphere) packaging key"
+    rpm --import https://downloads.cursor.com/keys/anysphere.asc \
+      || log "Could not import Anysphere packaging key"
+  fi
+}
+
+# Cursor's production CDN RPMs are often unsigned (the yum repo is signed but
+# lags). Confirm this is actually Cursor before installing without a local
+# OpenPGP check. Generic catalog RPMs must keep using install_local_rpm.
+_install_cursor_rpm() {
+  local rpm_path="$1" name vendor sig gpg=1
+  if [[ -z "$rpm_path" || ! -f "$rpm_path" ]]; then
+    log "cursor_rpm: missing file"; return 1
+  fi
+  if ! _valid_caller_path "$rpm_path"; then
+    log "cursor_rpm: refusing untrusted path $rpm_path"; return 1
+  fi
+  if [[ "$rpm_path" != *.rpm ]]; then
+    log "cursor_rpm: not an .rpm path"; return 1
+  fi
+  name=$(rpm -qp --qf '%{NAME}' "$rpm_path" 2>/dev/null) || name=""
+  vendor=$(rpm -qp --qf '%{VENDOR}' "$rpm_path" 2>/dev/null) || vendor=""
+  if [[ "$name" != "cursor" ]]; then
+    log "cursor_rpm: refusing package '${name:-unreadable}' (expected cursor)"
+    return 1
+  fi
+  if [[ "$vendor" != "Cursor" ]]; then
+    log "cursor_rpm: refusing vendor '${vendor:-unknown}' (expected Cursor)"
+    return 1
+  fi
+  sig=$(rpm -qp --qf '%{RSAHEADER:pgpsig}\n%{DSAHEADER:pgpsig}' "$rpm_path" 2>/dev/null \
+    | grep -vE '^\(none\)$|^$' | head -1) || sig=""
+  if [[ -z "$sig" ]]; then
+    log "cursor_rpm: CDN RPM has no OpenPGP signature — installing after NAME/Vendor check"
+    gpg=0
+  fi
+  dnf install -y --setopt=localpkg_gpgcheck=$gpg "$rpm_path"
 }
 
 dnf_upgrade() {
@@ -773,7 +814,10 @@ while IFS= read -r line || [[ -n "$line" ]]; do
       dnf install -y portaudio-devel cairo-devel cairo-gobject-devel \
         python3-devel libxkbcommon-devel openssl-devel libffi-devel || exit_code=1
       ;;
-    cursor_rpm|install_local_rpm)
+    cursor_rpm)
+      _install_cursor_rpm "${1:-}" || exit_code=1
+      ;;
+    install_local_rpm)
       rpm_path="${1:-}"
       if [[ -z "$rpm_path" || ! -f "$rpm_path" ]]; then
         log "$job: missing file"; exit_code=1
