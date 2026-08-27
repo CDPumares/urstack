@@ -8061,12 +8061,15 @@ def mode_shell(args: argparse.Namespace) -> int:
                     has_updates = line.split("=", 1)[1].strip() == "1"
                     break
             raw = read_text(results_file, None) if results_file else session["raw"]
+            if (raw or "").lstrip().lower().startswith("nothing to update"):
+                has_updates = False
             return True, has_updates, raw, ""
 
         def apply_hub_refresh(ok: bool, has_updates: bool, raw: str, err: str) -> bool:
             if ok:
                 rebuild_hub(raw=raw, has_updates=has_updates)
                 rebuild_overview()
+                tray_say("updates" if has_updates else "idle")
                 toast.add_toast(
                     Adw.Toast(
                         title=(

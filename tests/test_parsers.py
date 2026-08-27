@@ -788,15 +788,36 @@ class TestSilentTray(unittest.TestCase):
         self.assertEqual(self.tray.APP_BUS_NAME, "com.local.urstack")
 
     def test_activate_running_app_false_when_idle(self) -> None:
-        # No UrStack window in this test process, so the helper must not claim
-        # success and skip spawning.
-        self.assertFalse(self.tray.activate_running_app())
-        self.assertFalse(self.tray.activate_running_app(page="backup"))
-        self.assertFalse(self.tray.activate_running_app(action="quit"))
+        orig = self.tray.APP_BUS_NAME
+        self.tray.APP_BUS_NAME = "com.local.urstack.TestDoesNotExist"
+        try:
+            self.assertFalse(self.tray.activate_running_app())
+            self.assertFalse(self.tray.activate_running_app(page="backup"))
+            self.assertFalse(self.tray.activate_running_app(action="quit"))
+        finally:
+            self.tray.APP_BUS_NAME = orig
 
     def test_pixmaps_variant_type(self) -> None:
         var = self.tray._pixmaps_variant([(2, 2, bytes(16))])
         self.assertEqual(var.get_type_string(), "a(iiay)")
+
+    def test_updates_mode_does_not_pulse(self) -> None:
+        ind = self.tray.SilentIndicator(icon="", open_cmd=["urstack"], pixmaps=[])
+        ind.set_mode("updates")
+        self.assertEqual(ind.status, "Active")
+        self.assertIn("Updates available", ind.body)
+        ind.set_mode("idle")
+        self.assertEqual(ind.status, "Active")
+        self.assertIn("up to date", ind.body.lower())
+
+    def test_sni_icon_name_uses_grey_file_path(self) -> None:
+        grey = ROOT / "data" / "icons" / "hicolor" / "48x48" / "apps" / "urstack-tray.png"
+        if not grey.is_file():
+            raise unittest.SkipTest("grey tray icon missing")
+        name = self.tray.sni_icon_name(str(grey), has_pixmap=True)
+        self.assertTrue(name.endswith("urstack-tray.png"), name)
+        self.assertNotEqual(name, "urstack")
+        self.assertEqual(self.tray.sni_icon_name("", has_pixmap=True), "")
 
 
 class TestBackupSizeAndSecrets(unittest.TestCase):

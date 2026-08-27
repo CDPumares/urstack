@@ -216,6 +216,26 @@ def _pixmaps_variant(pix: list[tuple[int, int, bytes]]) -> GLib.Variant:
     return GLib.Variant("a(iiay)", [(w, h, p) for w, h, p in pix])
 
 
+def sni_icon_name(path: str, *, has_pixmap: bool = False) -> str:
+    """Name Plasma should load.
+
+    An absolute path beats the theme lookup: 'urstack-tray' is often missing
+    from the icon cache when running from a git checkout, and the host then
+    falls back to the colour 'urstack' desktop icon. If we have an embedded
+    pixmap and no file, return empty so the host must use IconPixmap.
+    """
+    if path:
+        try:
+            resolved = Path(path).expanduser().resolve()
+        except OSError:
+            resolved = None
+        if resolved is not None and resolved.is_file():
+            return str(resolved)
+    if has_pixmap:
+        return ""
+    return TRAY_ICON_NAME
+
+
 def _session_bus() -> Gio.DBusConnection | None:
     try:
         return Gio.bus_get_sync(Gio.BusType.SESSION, None)
@@ -335,6 +355,7 @@ class SilentIndicator:
         self.icon = icon
         self.open_cmd = open_cmd
         self.pixmaps = pixmaps
+        self.icon_name = sni_icon_name(icon, has_pixmap=bool(pixmaps))
         self.status = "Active"
         self.title = APP_NAME
         self.body = "Checking for updates…"
@@ -403,7 +424,11 @@ class SilentIndicator:
             self.status = "Active"
             self.body = "Checking for updates…"
         elif mode == "updates":
-            self.status = "NeedsAttention"
+            # Stay Active: NeedsAttention makes Plasma pulse the icon and, when
+            # urstack-tray is not in the theme cache, substitute the colour app
+            # icon from the .desktop file. The tooltip and menu already say
+            # updates are waiting.
+            self.status = "Active"
             self.body = "Updates available — click to open"
         elif mode == "idle":
             self.status = "Active"
@@ -417,7 +442,7 @@ class SilentIndicator:
     # -- StatusNotifierItem ------------------------------------------------
     def _tooltip_variant(self) -> GLib.Variant:
         return GLib.Variant.new_tuple(
-            GLib.Variant("s", TRAY_ICON_NAME),
+            GLib.Variant("s", self.icon_name or TRAY_ICON_NAME),
             _pixmaps_variant(self.pixmaps),
             GLib.Variant("s", self.title),
             GLib.Variant("s", self.body),
@@ -426,17 +451,15 @@ class SilentIndicator:
     def _prop(self, name: str) -> GLib.Variant | None:
         mapping = {
             "Category": GLib.Variant("s", "ApplicationStatus"),
-            "Id": GLib.Variant("s", "urstack"),
+            "Id": GLib.Variant("s", "urstack-tray"),
             "Title": GLib.Variant("s", self.title),
             "Status": GLib.Variant("s", self.status),
             "WindowId": GLib.Variant("i", 0),
-            "IconName": GLib.Variant("s", TRAY_ICON_NAME),
+            "IconName": GLib.Variant("s", self.icon_name),
             "IconPixmap": _pixmaps_variant(self.pixmaps),
             "OverlayIconName": GLib.Variant("s", ""),
             "OverlayIconPixmap": _empty_pixmaps(),
-            # Same grey art when attention is requested: the panel highlights the
-            # item itself, and a sudden colour icon would break tray convention.
-            "AttentionIconName": GLib.Variant("s", TRAY_ICON_NAME),
+            "AttentionIconName": GLib.Variant("s", self.icon_name),
             "AttentionIconPixmap": _pixmaps_variant(self.pixmaps),
             "ToolTip": self._tooltip_variant(),
             # False keeps left-click as Activate; the host uses Menu for right-click.
