@@ -462,6 +462,36 @@ class TestStyleSheet(unittest.TestCase):
         self.assertEqual(updates.get_margin_end(), pad)
         first_hero(updates)
 
+    def test_overview_section_grid_is_two_rows_of_four(self) -> None:
+        page = self.ui.build_overview_content(
+            raw="",
+            has_updates=False,
+            on_action=lambda *_: None,
+        )
+        grid = None
+        stack = [page]
+        while stack:
+            w = stack.pop()
+            if w.has_css_class("fu-overview-flow"):
+                grid = w
+                break
+            child = w.get_first_child()
+            while child is not None:
+                stack.append(child)
+                child = child.get_next_sibling()
+        self.assertIsNotNone(grid)
+        self.assertTrue(grid.get_row_homogeneous())
+        self.assertTrue(grid.get_vexpand())
+        n = 0
+        child = grid.get_first_child()
+        while child is not None:
+            n += 1
+            child = child.get_next_sibling()
+        self.assertEqual(n, 8)
+        self.assertIsNotNone(grid.get_child_at(3, 1))
+        self.assertIsNone(grid.get_child_at(0, 2))
+        self.assertIsNone(grid.get_child_at(4, 0))
+
     def test_load_css_survives_a_missing_stylesheet(self) -> None:
         """An unstyled window is still usable; a crash at startup is not."""
         original = self.ui.STYLE_SHEET

@@ -678,7 +678,9 @@ def page_scroll_body(
     return scrolled, col, col
 
 
-def page_card_grid(cards: list[Gtk.Widget], columns: int = 3) -> Gtk.Widget:
+def page_card_grid(
+    cards: list[Gtk.Widget], columns: int = 3, *, fill: bool = False
+) -> Gtk.Widget:
     """Fixed N-column grid so Overview / Health cards share width and side inset."""
     grid = Gtk.Grid()
     grid.add_css_class("fu-overview-flow")
@@ -687,11 +689,18 @@ def page_card_grid(cards: list[Gtk.Widget], columns: int = 3) -> Gtk.Widget:
     grid.set_column_homogeneous(True)
     grid.set_hexpand(True)
     grid.set_halign(Gtk.Align.FILL)
-    grid.set_valign(Gtk.Align.START)
+    if fill:
+        grid.set_row_homogeneous(True)
+        grid.set_vexpand(True)
+        grid.set_valign(Gtk.Align.FILL)
+    else:
+        grid.set_valign(Gtk.Align.START)
     for i, card in enumerate(cards):
         card.set_hexpand(True)
         card.set_halign(Gtk.Align.FILL)
         card.set_valign(Gtk.Align.FILL)
+        if fill:
+            card.set_vexpand(True)
         grid.attach(card, i % columns, i // columns, 1, 1)
     return grid
 
@@ -964,7 +973,7 @@ def _overview_stat_card(
     lines: list[str] | None = None,
     spinning: bool = False,
 ) -> Gtk.Widget:
-    """Overview info card for the 3-column section grid."""
+    """Overview info card for the 4×2 section grid."""
     card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
     card.add_css_class("fu-overview-card")
     if badge_warn:
@@ -1419,7 +1428,12 @@ def build_overview_content(
         heading_trailing=refresh_top,
     )
 
-    scrolled, _clamp, col = page_scroll_body(spacing=14, side_pad=0)
+    col = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14)
+    col.add_css_class("fu-page-scroll")
+    col.set_hexpand(True)
+    col.set_vexpand(True)
+    col.set_margin_top(4)
+    col.set_margin_bottom(8)
 
     sections = parse_sections(raw)
     update_secs = [s for s in sections if s.kind == "update" and s.title != "Overview"]
@@ -1652,9 +1666,9 @@ def build_overview_content(
             lines=run_lines,
         )
     )
-    col.append(page_card_grid(section_cards))
+    col.append(page_card_grid(section_cards, columns=4, fill=True))
 
-    outer.append(scrolled)
+    outer.append(col)
 
     actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
     actions.add_css_class("fu-actions")

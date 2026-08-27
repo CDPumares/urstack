@@ -420,6 +420,7 @@ button.fu-health-item-btn:hover {
   padding: 18px 16px 14px 16px;
   border-radius: 16px;
   min-width: 0;
+  min-height: 0;
   background-color: @card_bg_color;
   background-image: none;
   border: 1px solid alpha(#3c90e4, 0.28);
