@@ -545,7 +545,7 @@ def page_hero(
                     texts.append(hs)
                 head.append(texts)
         if heading_trailing is not None:
-            heading_trailing.set_valign(Gtk.Align.START)
+            heading_trailing.set_valign(Gtk.Align.CENTER)
             head.append(heading_trailing)
         head.set_hexpand(True)
         head.set_halign(Gtk.Align.FILL)
