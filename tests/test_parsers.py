@@ -495,6 +495,44 @@ class TestStyleSheet(unittest.TestCase):
         self.assertTrue(footer.has_css_class("fu-actions"))
         self.assertFalse(footer.get_vexpand())
 
+    def test_overview_cards_keep_three_detail_slots_while_scanning(self) -> None:
+        """Scan vs done must not add chrome or extra lines that stretch the fill grid."""
+
+        def walk(root):
+            stack = [root]
+            while stack:
+                w = stack.pop()
+                yield w
+                child = w.get_first_child()
+                while child is not None:
+                    stack.append(child)
+                    child = child.get_next_sibling()
+
+        def line_counts(page):
+            counts = []
+            for w in walk(page):
+                if w.has_css_class("fu-overview-card"):
+                    n = sum(1 for c in walk(w) if c.has_css_class("fu-overview-card-line"))
+                    counts.append(n)
+            return counts
+
+        scanning = self.ui.build_overview_content(
+            raw="",
+            has_updates=False,
+            checking=True,
+            checking_updates=True,
+            checking_health=True,
+            on_action=lambda *_: None,
+        )
+        done = self.ui.build_overview_content(
+            raw="",
+            has_updates=False,
+            on_action=lambda *_: None,
+        )
+        self.assertFalse(any(w.has_css_class("fu-page-callout") for w in walk(scanning)))
+        self.assertEqual(line_counts(scanning), [3] * 8)
+        self.assertEqual(line_counts(done), [3] * 8)
+
     def test_load_css_survives_a_missing_stylesheet(self) -> None:
         """An unstyled window is still usable; a crash at startup is not."""
         original = self.ui.STYLE_SHEET

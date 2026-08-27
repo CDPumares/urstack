@@ -1050,24 +1050,25 @@ def _overview_stat_card(
     if blurb:
         b = Gtk.Label(label=blurb, xalign=0.0, wrap=True)
         b.add_css_class("fu-overview-card-blurb")
-        b.set_lines(3)
+        b.set_lines(2)
         b.set_ellipsize(Pango.EllipsizeMode.END)
         card.append(b)
 
-    detail_lines = [ln for ln in (lines or []) if ln][:3]
+    padded = ([ln for ln in (lines or []) if ln] + ["", "", ""])[:3]
     body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
     body.set_vexpand(True)
     body.set_valign(Gtk.Align.FILL)
-    if detail_lines:
-        details = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-        details.set_margin_top(10)
-        for line in detail_lines:
-            row = Gtk.Label(label=f"· {line}", xalign=0.0, wrap=True)
-            row.add_css_class("fu-overview-card-line")
-            row.set_lines(2)
-            row.set_ellipsize(Pango.EllipsizeMode.END)
-            details.append(row)
-        body.append(details)
+    details = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+    details.set_margin_top(10)
+    for line in padded:
+        row = Gtk.Label(label=f"· {line}" if line else " ", xalign=0.0)
+        row.add_css_class("fu-overview-card-line")
+        row.set_lines(1)
+        row.set_ellipsize(Pango.EllipsizeMode.END)
+        if not line:
+            row.set_opacity(0)
+        details.append(row)
+    body.append(details)
     card.append(body)
 
     foot = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
@@ -1475,12 +1476,16 @@ def build_overview_content(
     scan_label = " & ".join(scan_bits) if scan_bits else "system"
 
     if checking:
+        badge = Gtk.Label(label="Scanning")
+        badge.add_css_class("fu-badge")
+        badge.set_valign(Gtk.Align.CENTER)
         hero = page_hero(
             "…",
             "Scanning",
             f"Checking {scan_label}",
             "Updates and health run in the background — cards refresh as each scan finishes.",
             warn=False,
+            trailing=badge,
             **hero_head,
         )
     elif has_updates and update_secs:
@@ -1524,15 +1529,6 @@ def build_overview_content(
         )
 
     outer.append(hero)
-
-    if checking:
-        outer.append(
-            page_callout(
-                "Hang tight",
-                "You can still open Apps, Backup, Settings, and History from the sidebar while this runs.",
-            )
-        )
-
     outer.append(page_section_label("Sections"))
 
     section_cards: list[Gtk.Widget] = []
