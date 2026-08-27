@@ -217,7 +217,7 @@ button.fu-cat-pill:checked label {
 }
 
 .fu-shell-sidebar-collapsed .fu-shell-sidebar-brand {
-  padding: 12px 8px 10px 8px;
+  padding: 12px 0 10px 0;
 }
 
 .fu-shell-nav-section-host {

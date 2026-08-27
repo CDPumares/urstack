@@ -1532,13 +1532,6 @@ def build_overview_content(
                 "You can still open Apps, Backup, Settings, and History from the sidebar while this runs.",
             )
         )
-    else:
-        outer.append(
-            page_callout(
-                "Tip",
-                "Each card is a section of UrStack — Open jumps straight there.",
-            )
-        )
 
     outer.append(page_section_label("Sections"))
 
@@ -1918,7 +1911,11 @@ def build_shell_sidebar(
 
     brand = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
     brand.add_css_class("fu-shell-sidebar-brand")
-    brand.append(app_icon_image(36))
+    brand.set_hexpand(True)
+    logo = app_icon_image(36)
+    logo.set_halign(Gtk.Align.START)
+    logo.set_valign(Gtk.Align.CENTER)
+    brand.append(logo)
     brand_text = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
     brand_text.set_valign(Gtk.Align.CENTER)
     bt = Gtk.Label(label="UrStack", xalign=0.0)
@@ -2006,6 +2003,10 @@ def build_shell_sidebar(
             sidebar.remove_css_class("fu-shell-sidebar-collapsed")
         sidebar.set_size_request(56 if on else 212, -1)
         brand_text.set_visible(not on)
+        brand.set_halign(Gtk.Align.FILL)
+        brand.set_spacing(0 if on else 10)
+        logo.set_halign(Gtk.Align.CENTER if on else Gtk.Align.START)
+        logo.set_hexpand(on)
         sec.set_visible(not on)
         for lab in nav_labels:
             lab.set_visible(not on)
