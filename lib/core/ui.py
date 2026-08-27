@@ -43,6 +43,7 @@ if _CORE_DIR not in sys.path:
     sys.path.insert(0, _CORE_DIR)
 from page_icons import PAGE_ICON_CANDIDATES, svg_reads_as_symbolic  # noqa: E402
 import look as look_engine  # noqa: E402
+import theme_store as theme_store_mod  # noqa: E402
 import user_catalog  # noqa: E402
 
 DEFAULT_W, DEFAULT_H = 1440, 920
@@ -78,6 +79,23 @@ def _theme_icon_svg(theme: Gtk.IconTheme, name: str) -> str:
         return ""
 
 
+_ICON_THEMES_SEEDED: set[int] = set()
+
+
+def _ensure_bundled_icon_path(theme: Gtk.IconTheme) -> None:
+    """So source and install trees find urstack-look-symbolic under data/icons."""
+    key = id(theme)
+    if key in _ICON_THEMES_SEEDED:
+        return
+    extra = APP_ROOT / "data" / "icons"
+    if extra.is_dir():
+        try:
+            theme.add_search_path(str(extra))
+        except Exception:  # noqa: BLE001
+            return
+    _ICON_THEMES_SEEDED.add(key)
+
+
 def pick_icon(*names: str) -> str:
     """Return the first icon the current theme actually provides."""
     display = Gdk.Display.get_default()
@@ -86,6 +104,7 @@ def pick_icon(*names: str) -> str:
         if display is not None
         else Gtk.IconTheme.new()
     )
+    _ensure_bundled_icon_path(theme)
     for name in names:
         if not name or not theme.has_icon(name):
             continue
@@ -3448,11 +3467,316 @@ def _look_file_filters() -> tuple[Gio.ListStore, Gtk.FileFilter]:
     return store, filt
 
 
+def _clear_box(box: Gtk.Widget) -> None:
+    child = box.get_first_child()
+    while child is not None:
+        nxt = child.get_next_sibling()
+        box.remove(child)
+        child = nxt
+
+
+def _look_preview_async(pic: Gtk.Picture, url: str) -> None:
+    gen = int(getattr(pic, "_prev_gen", 0)) + 1
+    pic._prev_gen = gen  # type: ignore[attr-defined]
+
+    def work() -> None:
+        try:
+            path = theme_store_mod.cached_preview(url)
+        except Exception:  # noqa: BLE001
+            path = None
+
+        def apply() -> bool:
+            if int(getattr(pic, "_prev_gen", 0)) != gen:
+                return False
+            if path is None or not Path(path).is_file():
+                return False
+            try:
+                pic.set_file(Gio.File.new_for_path(str(path)))
+            except Exception:  # noqa: BLE001
+                return False
+            return False
+
+        GLib.idle_add(apply)
+
+    threading.Thread(target=work, daemon=True).start()
+
+
+def _look_store_section(
+    *,
+    parent_win: Gtk.Window,
+    desktop: str,
+    on_store_install: Callable[[str, str], None],
+) -> Gtk.Widget:
+    """Browse free GTK / Plasma / icon packs from GNOME Look and KDE Look."""
+    kinds = theme_store_mod.categories_for(desktop)
+    if not kinds:
+        kinds = ["gtk", "icons", "cursors", "wallpapers"]
+    state = {"kind": theme_store_mod.default_kind(desktop), "q": "", "gen": 0}
+    if state["kind"] not in kinds:
+        state["kind"] = kinds[0]
+
+    kind_icons = {
+        "gtk": pick_icon(
+            "urstack-look-symbolic",
+            "color-select-symbolic",
+            "applications-graphics-symbolic",
+        ),
+        "plasma": pick_icon(
+            "preferences-desktop-wallpaper-symbolic",
+            "urstack-look-symbolic",
+            page_icon("look"),
+        ),
+        "shell": pick_icon("desktop-symbolic", "computer-symbolic"),
+        "icons": pick_icon("folder-pictures-symbolic", "emblem-photos-symbolic"),
+        "cursors": pick_icon("input-mouse-symbolic", "input-tablet-symbolic"),
+        "wallpapers": pick_icon(
+            "preferences-desktop-wallpaper-symbolic", "folder-pictures-symbolic"
+        ),
+    }
+
+    wrap = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+    wrap.append(
+        page_callout(
+            "From GNOME Look and KDE Look",
+            "Free GTK, Plasma, icon, cursor, and wallpaper packs. Paid files and "
+            "web-page links are skipped. Install stays in your home directory — "
+            "the same rules as a theme archive.",
+        )
+    )
+
+    cat_rail = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+    cat_rail.add_css_class("fu-cat-rail")
+    cat_scroll = Gtk.ScrolledWindow()
+    cat_scroll.add_css_class("fu-cat-scroll")
+    cat_scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
+    cat_scroll.set_hexpand(True)
+    cat_scroll.set_vexpand(False)
+    try:
+        cat_scroll.set_propagate_natural_height(True)
+        cat_scroll.set_overlay_scrolling(True)
+    except Exception:  # noqa: BLE001
+        pass
+    cat_scroll.set_child(cat_rail)
+    wrap.append(cat_scroll)
+
+    search = Gtk.SearchEntry()
+    search.set_placeholder_text("Search themes…")
+    search.add_css_class("fu-apps-search")
+    search.set_hexpand(True)
+    wrap.append(search)
+
+    status = Gtk.Label(label="Loading…", xalign=0.0)
+    status.add_css_class("fu-app-mini-sub")
+    wrap.append(status)
+
+    host = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+    host.set_hexpand(True)
+    wrap.append(host)
+
+    cat_btns: dict[str, Gtk.ToggleButton] = {}
+    cat_guard = {"busy": False}
+    search_timeout = {"id": 0}
+
+    def make_card(row: dict[str, str]) -> Gtk.Widget:
+        card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+        card.add_css_class("fu-look-card")
+        card.set_hexpand(True)
+        card.set_size_request(200, -1)
+
+        pic = Gtk.Picture()
+        pic.add_css_class("fu-look-card-preview")
+        pic.set_size_request(-1, 108)
+        pic.set_hexpand(True)
+        try:
+            pic.set_content_fit(Gtk.ContentFit.COVER)
+        except Exception:  # noqa: BLE001
+            pass
+        card.append(pic)
+        preview = (row.get("preview") or "").strip()
+        if preview:
+            _look_preview_async(pic, preview)
+
+        body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        body.add_css_class("fu-look-card-body")
+        name = Gtk.Label(label=row.get("name") or "", xalign=0.0)
+        name.add_css_class("fu-app-mini-title")
+        name.set_ellipsize(Pango.EllipsizeMode.END)
+        name.set_single_line_mode(True)
+        body.append(name)
+        bits: list[str] = []
+        if row.get("author"):
+            bits.append(row["author"])
+        downloads = theme_store_mod.format_count(row.get("downloads") or "")
+        if downloads:
+            bits.append(f"{downloads} downloads")
+        sub = Gtk.Label(label=" · ".join(bits) or (row.get("typename") or ""), xalign=0.0)
+        sub.add_css_class("fu-app-mini-sub")
+        sub.set_ellipsize(Pango.EllipsizeMode.END)
+        body.append(sub)
+        if row.get("summary"):
+            blurb = Gtk.Label(label=row["summary"], xalign=0.0)
+            blurb.add_css_class("fu-app-mini-sub")
+            blurb.set_ellipsize(Pango.EllipsizeMode.END)
+            blurb.set_lines(2)
+            blurb.set_wrap(True)
+            body.append(blurb)
+
+        foot = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        inst = Gtk.Button(label="Install")
+        inst.add_css_class("pill")
+        inst.add_css_class("suggested-action")
+        inst.set_hexpand(True)
+        host_id = row.get("host") or ""
+        content_id = row.get("id") or ""
+        inst.connect(
+            "clicked",
+            lambda *_a, h=host_id, i=content_id: on_store_install(h, i),
+        )
+        foot.append(inst)
+        detail = (row.get("detailpage") or "").strip()
+        if detail:
+            openb = Gtk.Button.new_from_icon_name(
+                pick_icon("adw-external-link-symbolic", "web-browser-symbolic")
+            )
+            openb.add_css_class("flat")
+            openb.set_tooltip_text("Open listing")
+            openb.connect("clicked", lambda *_a, u=detail: _open_uri(u, parent_win))
+            foot.append(openb)
+        body.append(foot)
+        card.append(body)
+        return card
+
+    def show_status_only(message: str, *, spin: bool = False) -> None:
+        _clear_box(host)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
+        box.set_halign(Gtk.Align.CENTER)
+        box.set_valign(Gtk.Align.CENTER)
+        if spin:
+            spinner = Gtk.Spinner()
+            spinner.set_size_request(28, 28)
+            spinner.start()
+            box.append(spinner)
+        lab = Gtk.Label(label=message, wrap=True)
+        lab.set_justify(Gtk.Justification.CENTER)
+        lab.add_css_class("fu-app-mini-sub")
+        box.append(lab)
+        host.append(box)
+
+    def apply_rows(gen: int, rows: list[dict[str, str]], err: str, store_label: str) -> bool:
+        if gen != state["gen"]:
+            return False
+        if err:
+            status.set_label(err)
+            show_status_only(err)
+            return False
+        kind_lab = theme_store_mod.category_label(state["kind"])
+        origin = store_label or "the theme store"
+        if not rows:
+            status.set_label(f"No {kind_lab.lower()} on {origin}")
+            show_status_only("Nothing matched. Try another search or category.")
+            return False
+        status.set_label(f"{len(rows)} {kind_lab.lower()} from {origin} · free archives only")
+        _clear_box(host)
+        flow = Gtk.FlowBox()
+        flow.set_selection_mode(Gtk.SelectionMode.NONE)
+        flow.set_homogeneous(True)
+        flow.set_max_children_per_line(4)
+        flow.set_min_children_per_line(2)
+        flow.set_row_spacing(10)
+        flow.set_column_spacing(10)
+        flow.set_hexpand(True)
+        for row in rows:
+            flow.append(make_card(row))
+        host.append(flow)
+        return False
+
+    def reload() -> None:
+        state["gen"] += 1
+        gen = state["gen"]
+        kind = state["kind"]
+        query = state["q"]
+        kind_lab = theme_store_mod.category_label(kind)
+        status.set_label(f"Loading {kind_lab.lower()}…")
+        show_status_only(f"Loading {kind_lab.lower()}…", spin=True)
+
+        def work() -> None:
+            rows: list[dict[str, str]] = []
+            err = ""
+            label = ""
+            try:
+                rows, label = theme_store_mod.list_themes(kind, desktop, search=query)
+            except theme_store_mod.ThemeStoreError as exc:
+                err = str(exc)
+            except Exception as exc:  # noqa: BLE001
+                err = f"Could not load themes ({exc})"
+            GLib.idle_add(apply_rows, gen, rows, err, label)
+
+        threading.Thread(target=work, daemon=True).start()
+
+    def sync_cat_btns() -> None:
+        cat_guard["busy"] = True
+        try:
+            current = state["kind"]
+            for key, btn in cat_btns.items():
+                btn.set_active(key == current)
+        finally:
+            cat_guard["busy"] = False
+
+    def on_cat_toggle(btn: Gtk.ToggleButton, key: str) -> None:
+        if cat_guard["busy"]:
+            return
+        if btn.get_active():
+            if state["kind"] == key:
+                return
+            state["kind"] = key
+            sync_cat_btns()
+            reload()
+            return
+        if state["kind"] == key:
+            cat_guard["busy"] = True
+            try:
+                btn.set_active(True)
+            finally:
+                cat_guard["busy"] = False
+
+    for cid in kinds:
+        inner = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
+        icon = Gtk.Image.new_from_icon_name(kind_icons.get(cid, page_icon("look")))
+        icon.set_pixel_size(16)
+        inner.append(icon)
+        inner.append(Gtk.Label(label=theme_store_mod.category_label(cid)))
+        btn = Gtk.ToggleButton()
+        btn.set_child(inner)
+        btn.add_css_class("flat")
+        btn.add_css_class("fu-cat-pill")
+        btn.set_active(cid == state["kind"])
+        btn.connect("toggled", lambda b, k=cid: on_cat_toggle(b, k))
+        cat_btns[cid] = btn
+        cat_rail.append(btn)
+
+    def on_search(*_a: object) -> None:
+        if search_timeout["id"]:
+            GLib.source_remove(search_timeout["id"])
+
+        def fire() -> bool:
+            search_timeout["id"] = 0
+            state["q"] = (search.get_text() or "").strip()
+            reload()
+            return False
+
+        search_timeout["id"] = GLib.timeout_add(380, fire)
+
+    search.connect("search-changed", on_search)
+    reload()
+    return wrap
+
+
 def build_look_content(
     *,
     parent_win: Gtk.Window,
     on_export: Callable[[str, str], None],
     on_install: Callable[[str], None],
+    on_store_install: Callable[[str, str], None] | None = None,
 ) -> Gtk.Widget:
     """Current desktop look: pack it, or install a theme archive."""
     outer = page_frame()
@@ -3473,11 +3797,11 @@ def build_look_content(
             (str(snap_d.get("desktop") or "desktop")).capitalize(),
             "desktop",
             snap_d.get("summary") or "Current look",
-            "Pack what is on screen — wallpaper, custom icons, widgets, and theme files — or open a theme archive to install it.",
+            "Pack what is on screen, install a theme archive, or download a free GTK, Plasma, icon, or wallpaper pack.",
             warn=False,
             ok=True,
             heading="Look",
-            heading_sub="The theme this workstation is using, including custom icons and wallpaper.",
+            heading_sub="The theme this workstation is using, plus free packs from GNOME Look and KDE Look.",
             icon_name=page_icon("look"),
         )
     )
@@ -3541,6 +3865,16 @@ def build_look_content(
         group.add(row)
     wrap.append(group)
     col.append(wrap)
+
+    if on_store_install is not None:
+        col.append(page_section_label("Browse themes"))
+        col.append(
+            _look_store_section(
+                parent_win=parent_win,
+                desktop=str(snap_d.get("desktop") or "unknown"),
+                on_store_install=on_store_install,
+            )
+        )
 
     col.append(page_section_label("Include in the pack"))
     include_group = Adw.PreferencesGroup(
@@ -8572,9 +8906,11 @@ def mode_shell(args: argparse.Namespace) -> int:
                             "It is marked incomplete, so a restore will refuse it. "
                             "Delete it when you no longer need it."
                         )
-                elif ok and meta.get("dest"):
+                elif ok and meta.get("dest") and title == "Backup":
                     summary = f"Backup saved to {meta['dest']}"
-                elif ok and meta.get("report"):
+                elif ok and meta.get("dest") and title == "Saving look pack":
+                    summary = f"Look pack saved to {meta['dest']}"
+                elif ok and meta.get("report") and title == "Restore":
                     fails = meta.get("fails", "0")
                     summary = (
                         f"Restore finished ({fails} failed step(s))"
@@ -8584,7 +8920,7 @@ def mode_shell(args: argparse.Namespace) -> int:
 
                 def finalize(final_summary: str = summary) -> bool:
                     job_busy["v"] = False
-                    if ok and meta.get("dest"):
+                    if ok and meta.get("dest") and title == "Backup":
                         try:
                             _save_last_backup(meta["dest"])
                         except Exception:  # noqa: BLE001
@@ -8682,6 +9018,18 @@ def mode_shell(args: argparse.Namespace) -> int:
 
             threading.Thread(target=work, daemon=True).start()
 
+        def return_to_look(_ok: bool = False) -> None:
+            try:
+                job = nav.find_page("job-progress")
+                if job is not None and nav.get_visible_page() == job:
+                    nav.pop()
+            except Exception:  # noqa: BLE001
+                pass
+            set_act = sidebar_ctl.get("set_active")
+            if callable(set_act):
+                set_act("look")
+            session["nav"] = "look"
+
         def start_look_export(path: str, include: str) -> None:
             argv = _look_py_command() + ["export", "--out", path]
             if include:
@@ -8693,7 +9041,9 @@ def mode_shell(args: argparse.Namespace) -> int:
                 success_toast="Look pack saved",
                 fail_toast="Could not save the look pack",
                 cancellable=True,
+                on_complete=return_to_look,
                 done_goes_home=False,
+                auto_complete=True,
             )
 
         def start_look_install(path: str) -> None:
@@ -8703,7 +9053,24 @@ def mode_shell(args: argparse.Namespace) -> int:
                 pulsate=False,
                 success_toast="Theme installed",
                 fail_toast="Could not install this archive",
+                on_complete=return_to_look,
                 done_goes_home=False,
+                auto_complete=True,
+            )
+
+        def start_look_store_install(host: str, content_id: str) -> None:
+            if not host or not content_id:
+                return
+            run_embedded_job(
+                title="Downloading theme",
+                argv=_look_py_command()
+                + ["download-install", "--host", host, "--id", content_id],
+                pulsate=False,
+                success_toast="Theme installed",
+                fail_toast="Could not download this theme",
+                on_complete=return_to_look,
+                done_goes_home=False,
+                auto_complete=True,
             )
 
         def start_backup_or_restore(action: str) -> None:
@@ -9039,6 +9406,7 @@ def mode_shell(args: argparse.Namespace) -> int:
                 parent_win=win,
                 on_export=start_look_export,
                 on_install=start_look_install,
+                on_store_install=start_look_store_install,
             )
             push_page("Look", content, "Theme pack and install", tag="look")
             return False

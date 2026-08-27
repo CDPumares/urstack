@@ -20,8 +20,10 @@ PAGE_ICON_CANDIDATES: dict[str, tuple[str, ...]] = {
     ),
     "health": ("computer-symbolic", "applications-system-symbolic"),
     "look": (
-        "preferences-desktop-theme-symbolic",
+        "urstack-look-symbolic",
+        "color-select-symbolic",
         "preferences-desktop-wallpaper-symbolic",
+        "preferences-desktop-theme-symbolic",
         "applications-graphics-symbolic",
     ),
     "backup": ("document-save-symbolic",),

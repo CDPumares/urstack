@@ -201,11 +201,14 @@ if [[ -d "$ROOT/data/icons/hicolor" ]]; then
     # folded onto urstack.png so upgrades from a previous name still resolve.
     if [[ "$base" == "urstack-tray.png" ]]; then
       run_priv install -m 644 "$iconfile" "$HICOLOR/$dir/urstack-tray.png"
+    elif [[ "$base" == "urstack-look-symbolic.svg" ]]; then
+      run_priv install -m 644 "$iconfile" "$HICOLOR/$dir/urstack-look-symbolic.svg"
     elif [[ "$base" == "urstack.png" || "$base" == "stackup.png" || "$base" == "fedora-updates.png" ]]; then
       run_priv install -m 644 "$iconfile" "$HICOLOR/$dir/urstack.png"
     fi
   done < <(find "$ROOT/data/icons/hicolor" -type f \
-    \( -name 'urstack.png' -o -name 'urstack-tray.png' -o -name 'stackup.png' -o -name 'fedora-updates.png' \) -print0)
+    \( -name 'urstack.png' -o -name 'urstack-tray.png' -o -name 'stackup.png' \
+       -o -name 'fedora-updates.png' -o -name 'urstack-look-symbolic.svg' \) -print0)
 fi
 run_priv mkdir -p "$ICON_DIR"
 run_priv install -m 644 "$ROOT/data/icons/hicolor/96x96/apps/urstack.png" \

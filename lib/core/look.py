@@ -1249,17 +1249,27 @@ def install_archive(
     home: Path | None = None,
     apply: bool = True,
     environ: dict[str, str] | None = None,
+    progress_base: int = 0,
 ) -> dict[str, Any]:
     home = Path(home) if home is not None else Path.home()
     path = Path(path)
-    _progress("Inspecting archive…", 8)
+    base = max(0, min(90, int(progress_base)))
+
+    def prog(msg: str, pct: int | None = None) -> None:
+        if pct is None:
+            _progress(msg, None)
+            return
+        mapped = base + int((100 - base) * max(0, min(100, int(pct))) / 100)
+        _progress(msg, mapped)
+
+    prog("Inspecting archive…", 8)
     info = inspect_archive(path)
     if info.unsafe:
         raise LookError(f"Refusing archive ({info.unsafe})")
     staging = Path(tempfile.mkdtemp(prefix="urstack-look-in-"))
     installed: list[str] = []
     try:
-        _progress("Extracting…", 20)
+        prog("Extracting…", 20)
         _extract_all(path, staging)
         root = staging
         if (staging / "manifest.json").is_file():
@@ -1281,7 +1291,7 @@ def install_archive(
             except json.JSONDecodeError:
                 manifest = {}
 
-        _progress("Installing into your home directory…", 45)
+        prog("Installing into your home directory…", 45)
         if manifest.get("format") == FORMAT:
             installed.extend(_install_urstack_pack(root, home, manifest))
         else:
@@ -1289,10 +1299,10 @@ def install_archive(
 
         applied: list[str] = []
         if apply:
-            _progress("Applying the look…", 80)
+            prog("Applying the look…", 80)
             applied = apply_look(home, manifest if manifest.get("format") == FORMAT else None, environ=environ)
 
-        _progress("Look installed", 100)
+        prog("Look installed", 100)
         result = {
             "ok": True,
             "name": info.name,
@@ -1586,6 +1596,10 @@ def main(argv: list[str] | None = None) -> int:
     inst.add_argument("archive")
     inst.add_argument("--no-apply", action="store_true")
 
+    dl = sub.add_parser("download-install", help="Download a GNOME/KDE Look listing and install it")
+    dl.add_argument("--host", required=True, choices=("gnome-look", "kde-look", "xfce-look"))
+    dl.add_argument("--id", required=True)
+
     args = p.parse_args(argv)
     home = Path(args.home).expanduser() if args.home else Path.home()
     try:
@@ -1604,6 +1618,16 @@ def main(argv: list[str] | None = None) -> int:
                 home=home,
                 apply=not args.no_apply,
             )
+            return 0
+        if args.cmd == "download-install":
+            import theme_store as theme_store_mod
+
+            try:
+                theme_store_mod.install_from_store(args.host, args.id, home=home)
+            except theme_store_mod.ThemeStoreError as exc:
+                print(f"error: {exc}", file=sys.stderr)
+                print(f"# {exc}", flush=True)
+                return 2
             return 0
     except LookError as exc:
         print(f"error: {exc}", file=sys.stderr)
