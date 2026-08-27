@@ -62,5 +62,6 @@ Prefer Flatpak, DNF, or Snap when that is the realistic Fedora path. Vendor / br
 - One concern per PR when you can.
 - Include a short test plan (CLI flag, GUI page, or Fedora spin).
 - Update `README.md` if you change user-facing flags, config keys, or install behaviour.
+- Add a bullet under **Unreleased** in [CHANGELOG.md](CHANGELOG.md) for anything a user would notice.
 
 Open an issue first for large design changes (new package sources, restore behaviour, PolicyKit jobs).

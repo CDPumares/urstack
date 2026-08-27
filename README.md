@@ -18,6 +18,7 @@
   <a href="#cli-usage">CLI</a> ·
   <a href="#configuration">Configuration</a> ·
   <a href="#roadmap">Roadmap</a> ·
+  <a href="CHANGELOG.md">Changelog</a> ·
   <a href="#project-layout">Layout</a> ·
   <a href="#ai-use">AI use</a> ·
   <a href="#contributing">Contributing</a>
@@ -26,6 +27,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/OS-Fedora_Linux-blue?logo=fedora" alt="Fedora">
   <img src="https://img.shields.io/badge/GUI-GTK4%2Flibadwaita-3584e4?logo=gnome" alt="GTK4 / libadwaita">
+  <img src="https://img.shields.io/badge/version-0.3.0-blue" alt="Version 0.3.0">
   <img src="https://github.com/CDPumares/urstack/actions/workflows/ci.yml/badge.svg" alt="CI">
   <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
 </p>
@@ -381,6 +383,7 @@ lib/plugins/             health.sh, backup.sh
 scripts/                 Catalog / icon-map helpers
 tests/                   Parser unit tests
 packaging/NOTES.md       RPM / Flatpak notes
+CHANGELOG.md             Version history (Keep a Changelog)
 ```
 
 Privileged work is batched through `lib/core/priv.sh` (pkexec). The GTK UI is `lib/core/ui.py`.
@@ -394,6 +397,14 @@ Flatpak packaging is a poor fit: DNF and fwupd need host privileges. An RPM (for
 UrStack is Fedora-first today. I want to add **other Linux operating systems** so this is not a Fedora-only tool — Ubuntu, Debian, Arch, openSUSE, and the rest should be able to use the same app for updates, the catalog, health, and backup.
 
 The GTK desktop, Flatpak/Snap/firmware, and much of the catalog already travel well. What still needs work is distro-native packages (DNF vs apt vs pacman vs zypper), PolicyKit helpers, health checks, and restore. Help on those ports is welcome.
+
+---
+
+## Changelog
+
+What shipped in each version is in [CHANGELOG.md](CHANGELOG.md). GitHub’s [Releases](https://github.com/CDPumares/urstack/releases) tab is the same list once a version is tagged (`v0.3.0`, …).
+
+**Current:** 0.3.0 — tray icon, login/daily checks, My apps, secrets opt-in, and the safety fixes from the 2026-08-27 pass.
 
 ---
 
