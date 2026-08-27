@@ -491,6 +491,10 @@ class TestStyleSheet(unittest.TestCase):
         self.assertIsNotNone(grid.get_child_at(3, 1))
         self.assertIsNone(grid.get_child_at(0, 2))
         self.assertIsNone(grid.get_child_at(4, 0))
+        footer = page.get_last_child()
+        self.assertIsNotNone(footer)
+        self.assertTrue(footer.has_css_class("fu-actions"))
+        self.assertFalse(footer.get_vexpand())
 
     def test_load_css_survives_a_missing_stylesheet(self) -> None:
         """An unstyled window is still usable; a crash at startup is not."""

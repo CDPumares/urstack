@@ -662,6 +662,8 @@ def page_scroll_body(
     try:
         scrolled.set_kinetic_scrolling(True)
         scrolled.set_overlay_scrolling(True)
+        scrolled.set_propagate_natural_height(False)
+        scrolled.set_propagate_natural_width(False)
     except Exception:  # noqa: BLE001
         pass
     col = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=spacing)
@@ -714,6 +716,14 @@ def page_frame() -> Gtk.Box:
     box.set_margin_start(PAGE_SIDE_PAD)
     box.set_margin_end(PAGE_SIDE_PAD)
     return box
+
+
+def pin_page_footer(widget: Gtk.Widget) -> Gtk.Widget:
+    """Keep apply / install / save bars on screen below the scroller."""
+    widget.set_hexpand(True)
+    widget.set_vexpand(False)
+    widget.set_valign(Gtk.Align.END)
+    return widget
 
 
 def page_chrome_box(*, side_pad: int = PAGE_SIDE_PAD) -> Gtk.Box:
@@ -1428,13 +1438,6 @@ def build_overview_content(
         heading_trailing=refresh_top,
     )
 
-    col = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14)
-    col.add_css_class("fu-page-scroll")
-    col.set_hexpand(True)
-    col.set_vexpand(True)
-    col.set_margin_top(4)
-    col.set_margin_bottom(8)
-
     sections = parse_sections(raw)
     update_secs = [s for s in sections if s.kind == "update" and s.title != "Overview"]
     update_count = len(update_secs)
@@ -1460,12 +1463,6 @@ def build_overview_content(
             "Updates and health run in the background — cards refresh as each scan finishes.",
             warn=False,
             **hero_head,
-        )
-        col.append(
-            page_callout(
-                "Hang tight",
-                "You can still open Apps, Backup, Settings, and History from the sidebar while this runs.",
-            )
         )
     elif has_updates and update_secs:
         badge = Gtk.Label(label="Action needed")
@@ -1509,15 +1506,22 @@ def build_overview_content(
 
     outer.append(hero)
 
-    if not checking:
-        col.append(
+    if checking:
+        outer.append(
+            page_callout(
+                "Hang tight",
+                "You can still open Apps, Backup, Settings, and History from the sidebar while this runs.",
+            )
+        )
+    else:
+        outer.append(
             page_callout(
                 "Tip",
                 "Each card is a section of UrStack — Open jumps straight there.",
             )
         )
 
-    col.append(page_section_label("Sections"))
+    outer.append(page_section_label("Sections"))
 
     section_cards: list[Gtk.Widget] = []
 
@@ -1666,9 +1670,19 @@ def build_overview_content(
             lines=run_lines,
         )
     )
-    col.append(page_card_grid(section_cards, columns=4, fill=True))
-
-    outer.append(col)
+    scrolled = Gtk.ScrolledWindow()
+    scrolled.add_css_class("fu-page-scroll")
+    scrolled.set_vexpand(True)
+    scrolled.set_hexpand(True)
+    scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+    try:
+        scrolled.set_kinetic_scrolling(True)
+        scrolled.set_overlay_scrolling(True)
+        scrolled.set_propagate_natural_height(False)
+    except Exception:  # noqa: BLE001
+        pass
+    scrolled.set_child(page_card_grid(section_cards, columns=4, fill=True))
+    outer.append(scrolled)
 
     actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
     actions.add_css_class("fu-actions")
@@ -1697,7 +1711,7 @@ def build_overview_content(
         health_btn = mk_btn("Health", "flat fu-secondary", page_icon("health"))
         health_btn.connect("clicked", lambda *_: on_action("health"))
         actions.append(health_btn)
-    outer.append(actions)
+    outer.append(pin_page_footer(actions))
     return outer
 
 
@@ -1857,7 +1871,7 @@ def build_hub_content(
         actions.append(grid)
 
     if actions.get_first_child() is not None:
-        outer.append(actions)
+        outer.append(pin_page_footer(actions))
     return outer, rebuild_action_grid
 
 
@@ -2165,7 +2179,7 @@ def build_checklist_content(
     go_row.append(cancel_btn)
     go_row.append(ok_btn)
     actions.append(go_row)
-    outer.append(actions)
+    outer.append(pin_page_footer(actions))
     return outer
 
 
@@ -2269,7 +2283,7 @@ def mode_radio(args: argparse.Namespace) -> int:
         ok_btn.connect("clicked", lambda *_: finish(True))
         actions.append(cancel_btn)
         actions.append(ok_btn)
-        outer.append(actions)
+        outer.append(pin_page_footer(actions))
         wrap_shell(win, args.title, outer)
 
         def on_close(*_a: object) -> bool:
@@ -2323,7 +2337,7 @@ def mode_text(args: argparse.Namespace) -> int:
         close_btn.set_hexpand(True)
         close_btn.connect("clicked", lambda *_: win.close())
         actions.append(close_btn)
-        outer.append(actions)
+        outer.append(pin_page_footer(actions))
         wrap_shell(win, args.title, outer, "History")
 
         def on_close(*_a: object) -> bool:
@@ -2390,7 +2404,7 @@ def mode_message(args: argparse.Namespace) -> int:
         ok_btn.set_hexpand(True)
         ok_btn.connect("clicked", lambda *_: win.close())
         actions.append(ok_btn)
-        outer.append(actions)
+        outer.append(pin_page_footer(actions))
         wrap_shell(win, args.title, outer)
 
         def on_close(*_a: object) -> bool:
@@ -2436,7 +2450,7 @@ def mode_ask(args: argparse.Namespace) -> int:
         yes_btn.connect("clicked", lambda *_: finish(True))
         actions.append(no_btn)
         actions.append(yes_btn)
-        outer.append(actions)
+        outer.append(pin_page_footer(actions))
         wrap_shell(win, args.title, outer)
 
         def on_close(*_a: object) -> bool:
@@ -2614,7 +2628,7 @@ def mode_progress(args: argparse.Namespace) -> int:
             cancel_btn.set_hexpand(True)
             cancel_btn.connect("clicked", on_cancel)
             actions.append(cancel_btn)
-            outer.append(actions)
+            outer.append(pin_page_footer(actions))
 
         wrap_shell(win, args.title, outer, "Checking…" if args.pulsate else "Working…")
 
@@ -2786,7 +2800,7 @@ def mode_runs(args: argparse.Namespace) -> int:
         back.set_hexpand(True)
         back.connect("clicked", lambda *_: win.close())
         actions.append(back)
-        outer.append(actions)
+        outer.append(pin_page_footer(actions))
         wrap_shell(win, args.title, outer, "Run logs")
 
         def on_close(*_a: object) -> bool:
@@ -4227,7 +4241,7 @@ def build_app_detail_content(
         uninstall_btn.connect("clicked", lambda *_: on_uninstall())
         actions.append(uninstall_btn)
     if actions.get_first_child() is not None:
-        main.append(actions)
+        main.append(pin_page_footer(actions))
     return main
 
 
@@ -5323,7 +5337,7 @@ def build_catalog_content(
     install_btn.connect("clicked", do_install_selected)
     install_btn_ref["btn"] = install_btn
     actions.append(install_btn)
-    main.append(actions)
+    main.append(pin_page_footer(actions))
 
     rebuild_list()
     return main
@@ -6023,7 +6037,7 @@ def build_health_content(
     apply_btn.connect("clicked", do_apply)
     apply_btn_ref["btn"] = apply_btn
     footer.append(apply_btn)
-    root.append(footer)
+    root.append(pin_page_footer(footer))
 
     rebuild_list()
     return root
@@ -6914,7 +6928,7 @@ def build_backup_restore_content(
     start_btn.set_sensitive(False)
     start_btn.set_hexpand(True)
     actions.append(start_btn)
-    outer.append(actions)
+    outer.append(pin_page_footer(actions))
 
     def current_opts() -> dict[str, bool]:
         return {key: sw.get_active() for key, sw in switches.items()}
@@ -7271,7 +7285,7 @@ def build_settings_content(
     rescan_btn.connect("clicked", do_rescan)
     row.append(rescan_btn)
     actions.append(row)
-    outer.append(actions)
+    outer.append(pin_page_footer(actions))
     return outer
 
 
