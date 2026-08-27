@@ -532,7 +532,7 @@ class TestStyleSheet(unittest.TestCase):
         stack = [page]
         while stack:
             w = stack.pop()
-            if w.has_css_class("fu-page-hero"):
+            if w.has_css_class("fu-theme-detail-hero"):
                 found["hero"] = True
             if w.has_css_class("fu-actions"):
                 found["actions"] = True

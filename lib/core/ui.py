@@ -3545,47 +3545,36 @@ def build_theme_detail_content(
     main.set_margin_start(PAGE_SIDE_PAD)
     main.set_margin_end(PAGE_SIDE_PAD)
 
-    hero = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=16)
+    hero = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
     hero.add_css_class("fu-page-hero")
+    hero.add_css_class("fu-theme-detail-hero")
     hero.set_hexpand(True)
+    hero.set_vexpand(False)
 
-    pic = Gtk.Picture()
-    pic.set_size_request(120, 72)
-    pic.set_valign(Gtk.Align.START)
-    try:
-        pic.set_content_fit(Gtk.ContentFit.CONTAIN)
-    except Exception:  # noqa: BLE001
-        pass
-    preview = str(info.get("preview") or "").strip()
-    if preview:
-        _look_preview_async(pic, preview)
-        hero.append(pic)
-    else:
-        icon = Gtk.Image.new_from_icon_name(page_icon("look"))
-        icon.set_pixel_size(48)
-        icon.set_valign(Gtk.Align.START)
-        hero.append(icon)
+    icon = Gtk.Image.new_from_icon_name(page_icon("look"))
+    icon.set_pixel_size(32)
+    icon.set_valign(Gtk.Align.CENTER)
+    hero.append(icon)
 
-    texts = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+    texts = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
     texts.set_hexpand(True)
-    title = Gtk.Label(label=name, xalign=0.0, wrap=True)
+    texts.set_valign(Gtk.Align.CENTER)
+    title = Gtk.Label(label=name, xalign=0.0)
     title.add_css_class("fu-hero-title")
+    title.set_ellipsize(Pango.EllipsizeMode.END)
+    title.set_single_line_mode(True)
     texts.append(title)
-    summary = str(info.get("summary") or "").strip()
-    sub = Gtk.Label(label=summary, xalign=0.0, wrap=True)
-    sub.add_css_class("fu-hero-sub")
-    sub.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
-    sub.set_visible(bool(summary))
-    texts.append(sub)
-    byline = Gtk.Label(label=_theme_detail_byline(info), xalign=0.0, wrap=True)
+    byline = Gtk.Label(label=_theme_detail_byline(info), xalign=0.0)
     byline.add_css_class("fu-app-byline")
+    byline.set_ellipsize(Pango.EllipsizeMode.END)
+    byline.set_single_line_mode(True)
     byline.set_visible(bool(byline.get_text()))
     texts.append(byline)
     hero.append(texts)
 
     status = Gtk.Label(label=str(info.get("source") or "Theme"))
     status.add_css_class("fu-badge")
-    status.set_valign(Gtk.Align.START)
+    status.set_valign(Gtk.Align.CENTER)
     hero.append(status)
     main.append(hero)
 
@@ -3722,9 +3711,6 @@ def build_theme_detail_content(
         if not isinstance(current, dict):
             return False
         info.update(current)
-        next_summary = str(info.get("summary") or "").strip()
-        sub.set_label(next_summary)
-        sub.set_visible(bool(next_summary))
         byline.set_label(_theme_detail_byline(info))
         byline.set_visible(bool(byline.get_text()))
         status.set_label(str(info.get("source") or "Theme"))

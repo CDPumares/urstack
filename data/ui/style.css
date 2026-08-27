@@ -401,6 +401,16 @@ window.urstack scrollbar:not(.overlay-indicator) > range > trough > slider {
   padding-left: 20px;
 }
 
+.fu-theme-detail-hero {
+  margin: 8px 0 8px 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+}
+
+.fu-theme-detail-hero .fu-hero-title {
+  font-size: 16px;
+}
+
 /* Status stays on badges and the score; heroes keep one uniform radius. */
 .fu-page-hero-ok,
 .fu-health-hero-ok,
