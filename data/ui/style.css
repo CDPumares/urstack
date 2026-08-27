@@ -81,13 +81,13 @@ window.urstack headerbar windowcontrols.start > image {
 }
 
 .fu-badge-ok {
-  background-color: alpha(#51b8f2, 0.20);
-  color: #1e6aa8;
+  background-color: alpha(@success_color, 0.20);
+  color: @success_color;
 }
 
 .fu-badge-warn {
-  background-color: alpha(#b43ce4, 0.18);
-  color: #b43ce4;
+  background-color: alpha(@error_color, 0.20);
+  color: @error_color;
 }
 
 .fu-method {
@@ -326,16 +326,28 @@ button.fu-cat-pill:checked .fu-cat-count {
   background-color: alpha(#ffffff, 0.35);
 }
 
-.fu-page-hero-warn,
-.fu-health-hero-warn {
-  background-color: #4a3060;
+.fu-page-hero-ok,
+.fu-health-hero-ok {
+  background-color: #16382c;
   background-image: linear-gradient(
     125deg,
-    #e0a020 0%,
-    #b43ce4 55%,
-    #3c90e4 100%
+    #26a269 0%,
+    #1c7a52 52%,
+    #1a4a38 100%
   );
-  border: 1px solid alpha(#ffffff, 0.22);
+  border: 1px solid alpha(#33d17e, 0.38);
+}
+
+.fu-page-hero-warn,
+.fu-health-hero-warn {
+  background-color: #4a1820;
+  background-image: linear-gradient(
+    125deg,
+    #e01b24 0%,
+    #a51d2d 52%,
+    #6b2030 100%
+  );
+  border: 1px solid alpha(#ff7b63, 0.42);
 }
 
 .fu-page-score,
@@ -419,12 +431,12 @@ button.fu-health-item-btn:hover {
 
 .fu-overview-card-warn {
   background-image: none;
-  border: 1px solid alpha(#b43ce4, 0.42);
+  border: 1px solid alpha(@error_color, 0.55);
 }
 
 .fu-overview-card-ok {
   background-image: none;
-  border: 1px solid alpha(#51b8f2, 0.42);
+  border: 1px solid alpha(@success_color, 0.55);
 }
 
 .fu-overview-card-title {
@@ -757,16 +769,28 @@ window.urstack.fu-light .fu-health-hero {
   border: 1px solid alpha(#243c6c, 0.18);
 }
 
-window.urstack.fu-light .fu-page-hero-warn,
-window.urstack.fu-light .fu-health-hero-warn {
-  background-color: #8a4a20;
+window.urstack.fu-light .fu-page-hero-ok,
+window.urstack.fu-light .fu-health-hero-ok {
+  background-color: #1a7f4a;
   background-image: linear-gradient(
     125deg,
-    #e0a020 0%,
-    #b43ce4 55%,
-    #3c90e4 100%
+    #26a269 0%,
+    #2ec27e 52%,
+    #1a7f4a 100%
   );
-  border: 1px solid alpha(#243c6c, 0.18);
+  border: 1px solid alpha(#1a7f4a, 0.28);
+}
+
+window.urstack.fu-light .fu-page-hero-warn,
+window.urstack.fu-light .fu-health-hero-warn {
+  background-color: #c01c28;
+  background-image: linear-gradient(
+    125deg,
+    #e01b24 0%,
+    #c01c28 52%,
+    #a51d2d 100%
+  );
+  border: 1px solid alpha(#a51d2d, 0.28);
 }
 
 window.urstack.fu-light .fu-page-callout,
@@ -780,14 +804,22 @@ window.urstack.fu-light button.fu-cat-pill {
   border: 1px solid alpha(#3c90e4, 0.32);
 }
 
+window.urstack.fu-light .fu-overview-card-ok {
+  border-color: alpha(@success_color, 0.55);
+}
+
+window.urstack.fu-light .fu-overview-card-warn {
+  border-color: alpha(@error_color, 0.55);
+}
+
 window.urstack.fu-light .fu-badge-ok {
-  background-color: alpha(#3c90e4, 0.16);
-  color: #1e6aa8;
+  background-color: alpha(@success_color, 0.16);
+  color: @success_color;
 }
 
 window.urstack.fu-light .fu-badge-warn {
-  background-color: alpha(#b43ce4, 0.14);
-  color: #8a20c0;
+  background-color: alpha(@error_color, 0.16);
+  color: @error_color;
 }
 
 /* Dark: navy workspace, same logo gradients on sidebar + heroes. */
@@ -821,12 +853,42 @@ window.urstack.fu-dark .fu-health-hero {
   );
 }
 
+window.urstack.fu-dark .fu-page-hero-ok,
+window.urstack.fu-dark .fu-health-hero-ok {
+  background-color: #16382c;
+  background-image: linear-gradient(
+    125deg,
+    #26a269 0%,
+    #1c7a52 52%,
+    #16382c 100%
+  );
+}
+
+window.urstack.fu-dark .fu-page-hero-warn,
+window.urstack.fu-dark .fu-health-hero-warn {
+  background-color: #4a1820;
+  background-image: linear-gradient(
+    125deg,
+    #c01c28 0%,
+    #8a1a24 52%,
+    #4a1820 100%
+  );
+}
+
 window.urstack.fu-dark .fu-overview-card,
 window.urstack.fu-dark .fu-page-card,
 window.urstack.fu-dark .fu-health-card,
 window.urstack.fu-dark .fu-app-mini {
   background-color: #243352;
   border-color: alpha(#3c90e4, 0.32);
+}
+
+window.urstack.fu-dark .fu-overview-card-ok {
+  border-color: alpha(@success_color, 0.55);
+}
+
+window.urstack.fu-dark .fu-overview-card-warn {
+  border-color: alpha(@error_color, 0.55);
 }
 
 .fu-storage {

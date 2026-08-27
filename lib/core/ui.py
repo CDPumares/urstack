@@ -508,6 +508,7 @@ def page_hero(
     subtitle: str,
     *,
     warn: bool = False,
+    ok: bool = False,
     trailing: Gtk.Widget | None = None,
     heading: str = "",
     heading_sub: str = "",
@@ -519,6 +520,8 @@ def page_hero(
     hero_box.add_css_class("fu-page-hero")
     if warn:
         hero_box.add_css_class("fu-page-hero-warn")
+    elif ok:
+        hero_box.add_css_class("fu-page-hero-ok")
 
     if heading or icon_name:
         head = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
@@ -1452,6 +1455,7 @@ def build_overview_content(
             "Looking sharp" if not health_warn else "Mostly clear",
             hero_sub,
             warn=health_warn,
+            ok=not health_warn,
             trailing=badge,
             **hero_head,
         )
@@ -1737,6 +1741,7 @@ def build_hub_content(
             "Looking sharp",
             "Every enabled source is current. Refresh anytime to check again.",
             warn=False,
+            ok=True,
             trailing=badge,
             **hero_head,
         )
@@ -5813,6 +5818,7 @@ def build_health_content(
                 hero_title,
                 hero_sub,
                 warn=hero_warn,
+                ok=bool(rows) and not scanning and not hero_warn,
                 heading="System Health",
                 heading_sub="Curated fixes for this Fedora workstation — with a restore point safety net.",
                 icon_name=page_icon("health"),
@@ -6641,7 +6647,7 @@ def build_backup_restore_content(
                 if is_backup
                 else "Pick a backup folder and choose what to bring back. Matching files may be overwritten."
             ),
-            warn=not is_backup,
+            warn=False,
             heading="Backup" if is_backup else "Restore",
             heading_sub=(
                 "Capture this workstation so you can rebuild it later."

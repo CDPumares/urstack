@@ -415,6 +415,17 @@ class TestStyleSheet(unittest.TestCase):
         self.assertIn("#b43ce4", css)
         self.assertIn("@define-color accent_bg_color #3c90e4", css)
 
+    def test_stylesheet_keeps_status_green_and_red(self) -> None:
+        css = self.ui.STYLE_SHEET.read_text(encoding="utf-8")
+        self.assertIn(".fu-badge-ok", css)
+        self.assertIn("@success_color", css)
+        self.assertIn(".fu-badge-warn", css)
+        self.assertIn("@error_color", css)
+        self.assertIn(".fu-page-hero-ok", css)
+        self.assertIn("#26a269", css)
+        self.assertIn(".fu-page-hero-warn", css)
+        self.assertIn("#e01b24", css)
+
     def test_load_css_survives_a_missing_stylesheet(self) -> None:
         """An unstyled window is still usable; a crash at startup is not."""
         original = self.ui.STYLE_SHEET
