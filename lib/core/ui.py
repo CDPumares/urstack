@@ -798,7 +798,13 @@ def build_checking_content(
     return outer, set_status, stop
 
 
-def mk_btn(label: str, css: str | None = None, icon: str | None = None) -> Gtk.Button:
+def mk_btn(
+    label: str,
+    css: str | None = None,
+    icon: str | None = None,
+    *,
+    icon_size: int = 22,
+) -> Gtk.Button:
     btn = Gtk.Button()
     if icon:
         box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
@@ -808,6 +814,7 @@ def mk_btn(label: str, css: str | None = None, icon: str | None = None) -> Gtk.B
             lab = Gtk.Label(label=label)
             box.append(lab)
         img = Gtk.Image.new_from_icon_name(icon)
+        img.set_pixel_size(icon_size)
         img.set_valign(Gtk.Align.CENTER)
         box.append(img)
         btn.set_child(box)
@@ -1067,7 +1074,11 @@ def _overview_stat_card(
     foot.set_margin_top(12)
     foot.set_hexpand(True)
     css = "suggested-action pill fu-primary" if badge_warn else "pill fu-secondary"
-    go = mk_btn("Open", css, icon_name)
+    go = mk_btn(
+        "Open",
+        css,
+        pick_icon("document-open-symbolic", "folder-open-symbolic", "go-next-symbolic"),
+    )
     go.set_hexpand(True)
     go.connect("clicked", lambda *_: on_action(action))
     foot.append(go)
@@ -1699,7 +1710,11 @@ def build_overview_content(
         apply_btn = mk_btn(
             "Review updates",
             "suggested-action pill fu-primary",
-            "emblem-ok-symbolic",
+            pick_icon(
+                "software-update-available-symbolic",
+                "document-open-symbolic",
+                "go-next-symbolic",
+            ),
         )
         apply_btn.connect("clicked", lambda *_: on_action("home"))
         actions.append(apply_btn)
@@ -1707,12 +1722,16 @@ def build_overview_content(
         health_pri = mk_btn(
             "Review health",
             "suggested-action pill fu-primary",
-            page_icon("health"),
+            pick_icon("document-open-symbolic", "folder-open-symbolic", page_icon("health")),
         )
         health_pri.connect("clicked", lambda *_: on_action("health"))
         actions.append(health_pri)
     else:
-        apps_btn = mk_btn("Browse apps", "suggested-action pill fu-primary", page_icon("apps"))
+        apps_btn = mk_btn(
+            "Browse apps",
+            "suggested-action pill fu-primary",
+            pick_icon("view-grid-symbolic", "view-app-grid-symbolic", page_icon("apps")),
+        )
         apps_btn.connect("clicked", lambda *_: on_action("apps"))
         actions.append(apps_btn)
     if not (health_warn and not checking_health and not (has_updates and update_secs)):
@@ -1911,9 +1930,13 @@ def build_shell_sidebar(
     brand.append(brand_text)
     sidebar.append(brand)
 
+    sec_host = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+    sec_host.add_css_class("fu-shell-nav-section-host")
+    sec_host.set_size_request(-1, 32)
     sec = Gtk.Label(label="Navigate", xalign=0.0)
     sec.add_css_class("fu-shell-nav-section")
-    sidebar.append(sec)
+    sec_host.append(sec)
+    sidebar.append(sec_host)
 
     scroll = Gtk.ScrolledWindow()
     scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
@@ -1947,10 +1970,12 @@ def build_shell_sidebar(
         row.set_name(item_id)
         row.set_activatable(True)
         row.add_css_class("fu-shell-nav-row")
+        row.set_size_request(-1, 48)
         inner = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         inner.add_css_class("fu-shell-nav-inner")
+        inner.set_valign(Gtk.Align.CENTER)
         icon = Gtk.Image.new_from_icon_name(icon_name)
-        icon.set_pixel_size(18)
+        icon.set_pixel_size(20)
         icon.set_valign(Gtk.Align.CENTER)
         inner.append(icon)
         lab = Gtk.Label(label=label, xalign=0.0)
@@ -3736,8 +3761,10 @@ def _app_primary_action(row: dict[str, str]) -> tuple[str, str]:
         return "", ""
     method = (row.get("method") or "").strip()
     if method in {"browser", "link"}:
-        return "Open download page", "web-browser-symbolic"
-    return f"Install {row.get('name') or 'app'}", "emblem-ok-symbolic"
+        return "Open download page", pick_icon("document-open-symbolic", "web-browser-symbolic")
+    return f"Install {row.get('name') or 'app'}", pick_icon(
+        "software-install-symbolic", "emblem-ok-symbolic"
+    )
 
 
 def _detail_fact_row(title: str, value: str) -> Adw.ActionRow:
@@ -5393,7 +5420,7 @@ def build_catalog_content(
     install_btn = mk_btn(
         "Install selected",
         "suggested-action pill fu-primary",
-        "emblem-ok-symbolic",
+        pick_icon("software-install-symbolic", "folder-download-symbolic", "list-add-symbolic"),
     )
     install_btn.set_hexpand(True)
     install_btn.set_sensitive(False)

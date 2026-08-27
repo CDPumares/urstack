@@ -213,18 +213,39 @@ button.fu-cat-pill:checked label {
 
 .fu-shell-sidebar-brand {
   padding: 12px 14px 10px 14px;
+  min-height: 60px;
 }
 
 .fu-shell-sidebar-collapsed .fu-shell-sidebar-brand {
-  padding: 12px 8px 8px 8px;
+  padding: 12px 8px 10px 8px;
+}
+
+.fu-shell-nav-section-host {
+  min-height: 32px;
+}
+
+.fu-shell-nav-row {
+  margin: 3px 8px;
+  border-radius: 10px;
+  min-height: 48px;
+}
+
+.fu-shell-sidebar-collapsed .fu-shell-nav-row {
+  margin: 3px 4px;
 }
 
 .fu-shell-nav-inner {
-  padding: 8px 12px;
+  padding: 12px 12px;
+  min-height: 48px;
 }
 
 .fu-shell-sidebar-collapsed .fu-shell-nav-inner {
-  padding: 10px 0;
+  padding: 12px 0;
+}
+
+.fu-shell-sidebar listbox.navigation-sidebar > row {
+  min-height: 48px;
+  padding: 0;
 }
 
 .fu-shell-sidebar-toggle {
@@ -235,10 +256,6 @@ button.fu-cat-pill:checked label {
 
 .fu-shell-sidebar-collapsed .fu-shell-sidebar-toggle {
   margin: 8px 4px 4px 4px;
-}
-
-.fu-shell-sidebar-brand {
-  padding: 12px 14px 10px 14px;
 }
 
 .fu-shell-sidebar-title {
