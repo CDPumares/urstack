@@ -3507,15 +3507,16 @@ def _look_store_section(
     desktop: str,
     on_store_install: Callable[[str, str], None],
 ) -> Gtk.Widget:
-    """Browse community GTK / Plasma / icon packs from GitHub."""
+    """Browse community themes: GitHub picks plus GNOME Look / KDE Look."""
     kinds = theme_store_mod.categories_for(desktop)
     if not kinds:
-        kinds = ["looks", "gtk", "icons", "cursors"]
+        kinds = ["all", "looks", "gtk", "icons", "cursors"]
     state = {"kind": theme_store_mod.default_kind(desktop), "q": "", "gen": 0}
     if state["kind"] not in kinds:
         state["kind"] = kinds[0]
 
     kind_icons = {
+        "all": pick_icon("view-grid-symbolic", "view-app-grid-symbolic", page_icon("look")),
         "looks": page_icon("look"),
         "gtk": pick_icon(
             "urstack-look-symbolic",
@@ -3534,12 +3535,11 @@ def _look_store_section(
     wrap = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
     wrap.append(
         page_callout(
-            "Community packs from GitHub",
-            "Not the GNOME or KDE theme store — those already live in Discover "
-            "and System Settings. This list is hand-picked like Apps: Dracula, "
-            "Nord, Catppuccin, Sweet, Bibata, and other FOSS palettes. "
-            "Install copies the pack into your home directory and switches this "
-            "desktop to it (GTK apps, icons, cursors, Plasma colours).",
+            "Community catalog",
+            "GitHub picks (Dracula, Nord, Catppuccin, Sweet, Bibata) sit at the top. "
+            "The rest is the GNOME Look / KDE Look catalog — the same open-source "
+            "store as Discover, with screenshots. Install unpacks a free archive "
+            "into your home directory and switches this desktop to it.",
         )
     )
 
@@ -3559,7 +3559,7 @@ def _look_store_section(
     wrap.append(cat_scroll)
 
     search = Gtk.SearchEntry()
-    search.set_placeholder_text("Search Dracula, Nord, Catppuccin…")
+    search.set_placeholder_text("Search themes…")
     search.add_css_class("fu-apps-search")
     search.set_hexpand(True)
     wrap.append(search)
@@ -3591,8 +3591,10 @@ def _look_store_section(
         except Exception:  # noqa: BLE001
             pass
         preview = (row.get("preview") or "").strip()
+        if not preview and row.get("github"):
+            preview = theme_store_mod.github_opengraph_url(row["github"])
+        card.append(pic)
         if preview:
-            card.append(pic)
             _look_preview_async(pic, preview)
 
         body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
@@ -3605,9 +3607,18 @@ def _look_store_section(
         bits: list[str] = []
         if row.get("author"):
             bits.append(row["author"])
-        if row.get("license"):
-            bits.append(row["license"])
-        bits.append("GitHub")
+        if row.get("host") == "catalog":
+            if row.get("license"):
+                bits.append(row["license"])
+            bits.append("GitHub")
+        else:
+            downloads = theme_store_mod.format_count(row.get("downloads") or "")
+            if downloads:
+                bits.append(f"{downloads} downloads")
+            bits.append(
+                theme_store_mod.HOSTS.get(row.get("host") or "", {}).get("label")
+                or "GNOME Look"
+            )
         sub = Gtk.Label(label=" · ".join(bits), xalign=0.0)
         sub.add_css_class("fu-app-mini-sub")
         sub.set_ellipsize(Pango.EllipsizeMode.END)
@@ -3638,7 +3649,9 @@ def _look_store_section(
                 pick_icon("adw-external-link-symbolic", "web-browser-symbolic")
             )
             openb.add_css_class("flat")
-            openb.set_tooltip_text("Open on GitHub")
+            openb.set_tooltip_text(
+                "Open on GitHub" if row.get("host") == "catalog" else "Open listing"
+            )
             openb.connect("clicked", lambda *_a, u=detail: _open_uri(u, parent_win))
             foot.append(openb)
         body.append(foot)
@@ -3675,7 +3688,7 @@ def _look_store_section(
             show_status_only("Nothing matched. Try another search or category.")
             return False
         status.set_label(
-            f"{len(rows)} {kind_lab.lower()} from {origin} · GitHub, user-local install"
+            f"{len(rows)} {kind_lab.lower()} from {origin} · user-local install"
         )
         _clear_box(host)
         flow = Gtk.FlowBox()

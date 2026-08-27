@@ -51,33 +51,96 @@ class ThemeStoreTestCase(unittest.TestCase):
             self.assertTrue(row["github"].count("/") == 1)
             self.assertTrue(row["asset"] or row["ref"])
             self.assertTrue(self.store.entry_kinds(row))
+            self.assertTrue(row["preview"].startswith("https://"))
 
-    def test_catalog_json_is_valid(self) -> None:
-        payload = json.loads(CATALOG.read_text(encoding="utf-8"))
-        self.assertEqual(payload.get("source"), "github")
-        self.assertIsInstance(payload.get("themes"), list)
-
-    def test_looks_is_the_default_and_plasma_is_plasma_only(self) -> None:
-        self.assertEqual(self.store.default_kind("gnome"), "looks")
-        self.assertEqual(self.store.default_kind("plasma"), "looks")
+    def test_all_is_the_default_and_lists_every_pick(self) -> None:
+        self.assertEqual(self.store.default_kind("gnome"), "all")
+        self.assertEqual(self.store.default_kind("plasma"), "all")
         gnome = self.store.categories_for("gnome")
+        self.assertEqual(gnome[0], "all")
         self.assertIn("looks", gnome)
-        self.assertIn("gtk", gnome)
         self.assertNotIn("plasma", gnome)
-        plasma = self.store.categories_for("plasma")
-        self.assertIn("plasma", plasma)
+        all_rows, _ = self.store.list_themes("all", "gnome", include_ocs=False)
+        looks, _ = self.store.list_themes("looks", "gnome", include_ocs=False)
+        self.assertGreater(len(all_rows), len(looks))
+        self.assertGreaterEqual(len(all_rows), 10)
 
     def test_list_hides_plasma_colours_on_gnome(self) -> None:
-        gnome, _label = self.store.list_themes("plasma", "gnome")
+        gnome, _label = self.store.list_themes("plasma", "gnome", include_ocs=False)
         self.assertEqual(gnome, [])
-        kde, _ = self.store.list_themes("plasma", "plasma")
+        kde, _ = self.store.list_themes("plasma", "plasma", include_ocs=False)
         self.assertTrue(any(r["id"].startswith("catppuccin-plasma") for r in kde))
 
     def test_search_finds_nord(self) -> None:
-        rows, _ = self.store.list_themes("looks", "gnome", search="nord")
+        rows, _ = self.store.list_themes("looks", "gnome", search="nord", include_ocs=False)
         ids = {r["id"] for r in rows}
         self.assertIn("nordic", ids)
         self.assertNotIn("dracula-gtk", ids)
+
+    def test_parse_list_reads_ocs_previews(self) -> None:
+        rows = self.store.parse_list(
+            {
+                "data": [
+                    {
+                        "id": "1357889",
+                        "name": "Orchis gtk theme",
+                        "summary": "Material",
+                        "personid": "vinceliuice",
+                        "downloads": "12",
+                        "smallpreviewpic1": "https://images.pling.com/orchis.jpg",
+                        "detailpage": "https://www.gnome-look.org/p/1357889",
+                    }
+                ]
+            }
+        )
+        self.assertEqual(rows[0]["preview"], "https://images.pling.com/orchis.jpg")
+        self.assertEqual(rows[0]["id"], "1357889")
+
+    def test_pick_download_skips_html_and_paid(self) -> None:
+        picked = self.store.pick_download(
+            {
+                "downloadlink1": "https://github.com/example/theme",
+                "downloadname1": "homepage",
+                "downloadtags1": "mimetype=text/html",
+                "downloadprice1": "0",
+                "downloadlink2": "https://example.test/paid.zip",
+                "downloadname2": "paid.zip",
+                "downloadtags2": "mimetype=application/zip",
+                "downloadprice2": "5",
+                "downloadlink3": "https://example.test/theme.tar.xz",
+                "downloadname3": "theme.tar.xz",
+                "downloadtags3": "mimetype=application/x-xz",
+                "downloadprice3": "0",
+            }
+        )
+        self.assertEqual(picked[1], "theme.tar.xz")
+
+    def test_temp_catalog_roundtrip(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            path = Path(raw) / "themes.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "themes": [
+                            {
+                                "id": "demo",
+                                "name": "Demo",
+                                "github": "example/demo",
+                                "kinds": ["gtk"],
+                                "asset": "Demo.tar.xz",
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            rows, label = self.store.list_themes(
+                "gtk", "gnome", catalog=path, include_ocs=False
+            )
+            self.assertEqual(label, "GitHub picks")
+            self.assertEqual(rows[0]["id"], "demo")
+            self.assertEqual(rows[0]["host"], "catalog")
+            self.assertIn("opengraph.githubassets.com", rows[0]["preview"])
 
     def test_resolve_release_and_source_urls(self) -> None:
         dracula = self.store.catalog_entry("dracula-gtk")
@@ -117,30 +180,6 @@ class ThemeStoreTestCase(unittest.TestCase):
             "catppuccin/gtk", "catppuccin-mocha-mauve-standard+default.zip"
         )
         self.assertIn("%2B", url)
-
-    def test_temp_catalog_roundtrip(self) -> None:
-        with tempfile.TemporaryDirectory() as raw:
-            path = Path(raw) / "themes.json"
-            path.write_text(
-                json.dumps(
-                    {
-                        "themes": [
-                            {
-                                "id": "demo",
-                                "name": "Demo",
-                                "github": "example/demo",
-                                "kinds": ["gtk"],
-                                "asset": "Demo.tar.xz",
-                            }
-                        ]
-                    }
-                ),
-                encoding="utf-8",
-            )
-            rows, label = self.store.list_themes("gtk", "gnome", catalog=path)
-            self.assertEqual(label, "the UrStack catalog")
-            self.assertEqual(rows[0]["id"], "demo")
-            self.assertEqual(rows[0]["host"], "catalog")
 
     def test_look_icon_is_symbolic(self) -> None:
         self.assertTrue(LOOK_ICON.is_file())

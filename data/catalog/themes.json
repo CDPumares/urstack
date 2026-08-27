@@ -11,7 +11,8 @@
       "kinds": ["looks", "gtk"],
       "github": "dracula/gtk",
       "asset": "Dracula.tar.xz",
-      "homepage": "https://github.com/dracula/gtk"
+      "homepage": "https://github.com/dracula/gtk",
+      "preview": "https://raw.githubusercontent.com/dracula/gtk/master/screenshot.png"
     },
     {
       "id": "nordic",
@@ -22,7 +23,8 @@
       "kinds": ["looks", "gtk"],
       "github": "EliverLara/Nordic",
       "asset": "Nordic.tar.xz",
-      "homepage": "https://github.com/EliverLara/Nordic"
+      "homepage": "https://github.com/EliverLara/Nordic",
+      "preview": "https://images.pling.com/cache/770x540-4/img/00/00/36/61/48/1267246/12a03a74831e9483e0a5a2db51ade447b1d4.png"
     },
     {
       "id": "nordic-polar",
