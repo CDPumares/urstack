@@ -225,26 +225,26 @@ button.fu-cat-pill:checked label {
 }
 
 .fu-shell-nav-row {
-  margin: 3px 8px;
-  border-radius: 10px;
-  min-height: 48px;
+  margin: 1px 8px;
+  border-radius: 8px;
+  min-height: 36px;
 }
 
 .fu-shell-sidebar-collapsed .fu-shell-nav-row {
-  margin: 3px 4px;
+  margin: 1px 4px;
 }
 
 .fu-shell-nav-inner {
-  padding: 12px 12px;
-  min-height: 48px;
+  padding: 6px 12px;
+  min-height: 36px;
 }
 
 .fu-shell-sidebar-collapsed .fu-shell-nav-inner {
-  padding: 12px 0;
+  padding: 6px 0;
 }
 
 .fu-shell-sidebar listbox.navigation-sidebar > row {
-  min-height: 48px;
+  min-height: 36px;
   padding: 0;
 }
 

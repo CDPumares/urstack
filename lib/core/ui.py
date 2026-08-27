@@ -1077,7 +1077,7 @@ def _overview_stat_card(
     go = mk_btn(
         "Open",
         css,
-        pick_icon("document-open-symbolic", "folder-open-symbolic", "go-next-symbolic"),
+        pick_icon("go-next-symbolic", "pan-end-symbolic", "document-open-symbolic"),
     )
     go.set_hexpand(True)
     go.connect("clicked", lambda *_: on_action(action))
@@ -1970,12 +1970,12 @@ def build_shell_sidebar(
         row.set_name(item_id)
         row.set_activatable(True)
         row.add_css_class("fu-shell-nav-row")
-        row.set_size_request(-1, 48)
+        row.set_size_request(-1, 36)
         inner = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
         inner.add_css_class("fu-shell-nav-inner")
         inner.set_valign(Gtk.Align.CENTER)
         icon = Gtk.Image.new_from_icon_name(icon_name)
-        icon.set_pixel_size(20)
+        icon.set_pixel_size(18)
         icon.set_valign(Gtk.Align.CENTER)
         inner.append(icon)
         lab = Gtk.Label(label=label, xalign=0.0)
