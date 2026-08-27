@@ -35,7 +35,7 @@ import gi
 
 gi.require_version("Gtk", "4.0")
 gi.require_version("Adw", "1")
-from gi.repository import Adw, Gdk, GdkPixbuf, Gio, GLib, Gtk, Pango  # noqa: E402
+from gi.repository import Adw, Gdk, GdkPixbuf, Gio, GLib, GObject, Gtk, Pango  # noqa: E402
 from datetime import UTC
 
 _CORE_DIR = str(Path(__file__).resolve().parent)
@@ -3371,48 +3371,101 @@ def _load_catalog_rows(path: Path) -> list[dict[str, str]]:
     return rows
 
 
-def _catalog_app_icon(row: dict[str, str], pixel_size: int = 32) -> Gtk.Image:
-    """Real app logo from bundled catalog icons, with a download fallback."""
-    img = Gtk.Image.new_from_icon_name(
-        pick_icon("application-x-executable-symbolic", "applications-other-symbolic")
-    )
+_CATALOG_ICON_PLACEHOLDER = ""
+_ICON_TEXTURE_CACHE: dict[tuple[str, int], object] = {}
+
+
+class _CatalogItem(GObject.Object):
+    """One Apps-grid row. GridView virtualizes these so off-screen cards are not built."""
+
+    __gtype_name__ = "UrstackCatalogItem"
+
+    def __init__(self, row: dict[str, str]) -> None:
+        super().__init__()
+        self.row = row
+
+
+def _catalog_icon_placeholder() -> str:
+    global _CATALOG_ICON_PLACEHOLDER
+    if not _CATALOG_ICON_PLACEHOLDER:
+        _CATALOG_ICON_PLACEHOLDER = pick_icon(
+            "application-x-executable-symbolic", "applications-other-symbolic"
+        )
+    return _CATALOG_ICON_PLACEHOLDER
+
+
+def _icon_texture_for_path(path: Path, pixel_size: int) -> object | None:
+    key = (str(path), pixel_size)
+    cached = _ICON_TEXTURE_CACHE.get(key)
+    if cached is not None:
+        return cached
+    try:
+        pix = GdkPixbuf.Pixbuf.new_from_file_at_scale(
+            str(path), pixel_size, pixel_size, True
+        )
+    except Exception:  # noqa: BLE001
+        return None
+    if pix is None:
+        return None
+    try:
+        tex = Gdk.Texture.new_for_pixbuf(pix)
+    except Exception:  # noqa: BLE001
+        tex = pix
+    if len(_ICON_TEXTURE_CACHE) > 512:
+        _ICON_TEXTURE_CACHE.clear()
+    _ICON_TEXTURE_CACHE[key] = tex
+    return tex
+
+
+def _catalog_set_app_icon(img: Gtk.Image, row: dict[str, str], pixel_size: int) -> None:
+    """Load a catalog logo into an existing image; ignore stale async results."""
     img.set_pixel_size(pixel_size)
-    img.set_valign(Gtk.Align.CENTER)
+    img.set_from_icon_name(_catalog_icon_placeholder())
+    gen = int(getattr(img, "_icon_gen", 0)) + 1
+    img._icon_gen = gen  # type: ignore[attr-defined]
     try:
         import app_icons as _app_icons
     except ImportError:
-        return img
+        return
 
-    def apply_path(path: Path | None) -> None:
+    def apply_path(path: Path | None) -> bool:
+        if int(getattr(img, "_icon_gen", 0)) != gen:
+            return False
         if path is None or not path.is_file():
-            return
+            return False
+        tex = _icon_texture_for_path(path, pixel_size)
+        if tex is None:
+            return False
         try:
-            pix = GdkPixbuf.Pixbuf.new_from_file_at_scale(
-                str(path), pixel_size, pixel_size, True
-            )
-            if pix is None:
-                return
-            try:
-                tex = Gdk.Texture.new_for_pixbuf(pix)
-                img.set_from_paintable(tex)
-            except Exception:  # noqa: BLE001
-                img.set_from_pixbuf(pix)
+            img.set_from_paintable(tex)
         except Exception:  # noqa: BLE001
-            return
+            try:
+                img.set_from_pixbuf(tex)
+            except Exception:  # noqa: BLE001
+                return False
+        return False
 
     local = _app_icons.icon_path_for_row(row)
     if local is not None:
         apply_path(local)
-        return img
+        return
 
     url = _app_icons.icon_url_for_row(row)
     if not url:
-        return img
+        return
 
     def on_done(path: Path | None) -> None:
         GLib.idle_add(apply_path, path)
 
     _app_icons.fetch_icon_async(url, on_done)
+
+
+def _catalog_app_icon(row: dict[str, str], pixel_size: int = 32) -> Gtk.Image:
+    """Real app logo from bundled catalog icons, with a download fallback."""
+    img = Gtk.Image.new_from_icon_name(_catalog_icon_placeholder())
+    img.set_pixel_size(pixel_size)
+    img.set_valign(Gtk.Align.CENTER)
+    _catalog_set_app_icon(img, row, pixel_size)
     return img
 
 
@@ -4798,9 +4851,6 @@ def build_catalog_content(
             list_host.remove(list_host.get_first_child())
         visible_checks.clear()
 
-        scrolled, _clamp, box = page_scroll_body(spacing=14)
-        box.set_margin_bottom(8)
-
         visible = filtered_rows()
         filtered = filters_active()
         sync_filter_chrome(len(visible))
@@ -4821,6 +4871,8 @@ def build_catalog_content(
                 section_order.append(name)
 
         if not grouped:
+            scrolled, _clamp, box = page_scroll_body(spacing=14)
+            box.set_margin_bottom(8)
             q = filter_query["q"].strip()
             if q:
                 empty_title = f"No matches for “{q}”"
@@ -4862,175 +4914,246 @@ def build_catalog_content(
                 reset.connect("clicked", lambda *_: clear_filters())
                 empty.set_child(reset)
             box.append(empty)
-        else:
-            box.append(page_section_label("Catalog"))
-            for cat_name in section_order:
-                apps = sorted(grouped[cat_name], key=lambda r: r["name"].lower())
-                section_checks: list[tuple[dict[str, str], Gtk.CheckButton]] = []
+            list_host.append(scrolled)
+            update_install_btn()
+            return
 
-                head = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-                head.add_css_class("fu-section-head")
-                head.set_margin_start(16)
-                head.set_margin_end(16)
-                head.set_hexpand(True)
-                title = Gtk.Label(label=f"{cat_name} · {len(apps)}", xalign=0.0)
-                title.add_css_class("fu-section-title")
-                title.set_opacity(0.85)
-                title.set_hexpand(True)
-                title.set_halign(Gtk.Align.START)
-                head.append(title)
+        ordered: list[dict[str, str]] = []
+        for cat_name in section_order:
+            ordered.extend(sorted(grouped[cat_name], key=lambda r: r["name"].lower()))
+        selectable = [r for r in ordered if r.get("installed") != "1"]
 
-                sel_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
-                sel_box.set_halign(Gtk.Align.END)
-                sel_box.set_valign(Gtk.Align.CENTER)
-                btn_sel = Gtk.Button(label="Select all")
-                btn_sel.add_css_class("flat")
-                btn_sel.add_css_class("fu-section-select")
-                btn_unsel = Gtk.Button(label="Unselect all")
-                btn_unsel.add_css_class("flat")
-                btn_unsel.add_css_class("fu-section-select")
+        head = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+        head.add_css_class("fu-section-head")
+        head.set_margin_start(16)
+        head.set_margin_end(16)
+        title = Gtk.Label(label=f"Catalog · {len(ordered)}", xalign=0.0)
+        title.add_css_class("fu-section-title")
+        title.set_opacity(0.85)
+        title.set_hexpand(True)
+        head.append(title)
+        sel_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
+        sel_box.set_halign(Gtk.Align.END)
+        btn_sel = Gtk.Button(label="Select all")
+        btn_sel.add_css_class("flat")
+        btn_sel.add_css_class("fu-section-select")
+        btn_unsel = Gtk.Button(label="Unselect all")
+        btn_unsel.add_css_class("flat")
+        btn_unsel.add_css_class("fu-section-select")
+        sel_box.append(btn_sel)
+        sel_box.append(btn_unsel)
+        head.append(sel_box)
+        sel_box.set_visible(bool(selectable))
+        list_host.append(head)
 
-                def on_cat_select(
-                    *_a: object,
-                    checks: list[tuple[dict[str, str], Gtk.CheckButton]] = section_checks,
-                    on: bool = True,
-                ) -> None:
-                    for _ar, cb in checks:
-                        cb.set_active(on)
+        store = Gio.ListStore.new(_CatalogItem)
+        for row in ordered:
+            store.append(_CatalogItem(row))
+        bound_checks: dict[str, Gtk.CheckButton] = {}
 
-                btn_sel.connect(
-                    "clicked", lambda *a, c=section_checks: on_cat_select(*a, checks=c, on=True)
-                )
-                btn_unsel.connect(
-                    "clicked", lambda *a, c=section_checks: on_cat_select(*a, checks=c, on=False)
-                )
-                sel_box.append(btn_sel)
-                sel_box.append(btn_unsel)
-                head.append(sel_box)
-                box.append(head)
+        def on_setup(_factory: Gtk.SignalListItemFactory, list_item: Gtk.ListItem) -> None:
+            card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+            card.add_css_class("fu-app-mini")
+            card.set_hexpand(True)
+            card.set_size_request(210, -1)
+            try:
+                card.set_cursor_from_name("pointer")
+            except Exception:  # noqa: BLE001
+                pass
 
-                flow = Gtk.FlowBox()
-                flow.add_css_class("fu-app-flow")
-                flow.set_selection_mode(Gtk.SelectionMode.NONE)
-                flow.set_activate_on_single_click(False)
-                flow.set_homogeneous(True)
-                flow.set_column_spacing(8)
-                flow.set_row_spacing(8)
-                flow.set_max_children_per_line(4)
-                flow.set_min_children_per_line(1)
-                # ~mini card width; FlowBox wraps as the clamp widens
-                flow.set_valign(Gtk.Align.START)
+            top = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+            logo = Gtk.Image.new_from_icon_name(_catalog_icon_placeholder())
+            logo.set_pixel_size(28)
+            logo.set_valign(Gtk.Align.START)
+            top.append(logo)
 
-                for app_row in apps:
-                    card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-                    card.add_css_class("fu-app-mini")
-                    card.set_hexpand(True)
-                    try:
-                        card.set_cursor_from_name("pointer")
-                    except Exception:  # noqa: BLE001
-                        pass
+            text = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+            text.set_hexpand(True)
+            name_lab = Gtk.Label(label="", xalign=0.0)
+            name_lab.add_css_class("fu-app-mini-title")
+            name_lab.set_ellipsize(Pango.EllipsizeMode.END)
+            name_lab.set_single_line_mode(True)
+            text.append(name_lab)
+            sub_lab = Gtk.Label(label="", xalign=0.0)
+            sub_lab.add_css_class("fu-app-mini-sub")
+            sub_lab.set_ellipsize(Pango.EllipsizeMode.END)
+            sub_lab.set_lines(2)
+            sub_lab.set_wrap(True)
+            sub_lab.set_max_width_chars(28)
+            text.append(sub_lab)
+            top.append(text)
 
-                    top = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-                    logo = _catalog_app_icon(app_row, 28)
-                    logo.set_valign(Gtk.Align.START)
-                    top.append(logo)
+            trail = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+            trail.set_valign(Gtk.Align.START)
+            top.append(trail)
+            card.append(top)
 
-                    text = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-                    text.set_hexpand(True)
-                    t = Gtk.Label(label=app_row["name"], xalign=0.0)
-                    t.add_css_class("fu-app-mini-title")
-                    t.set_ellipsize(Pango.EllipsizeMode.END)
-                    t.set_single_line_mode(True)
-                    text.append(t)
-                    summary = (app_row.get("summary") or "").strip()
-                    if summary:
-                        w = Gtk.Label(label=summary, xalign=0.0)
-                        w.add_css_class("fu-app-mini-sub")
-                        w.set_ellipsize(Pango.EllipsizeMode.END)
-                        w.set_lines(2)
-                        w.set_wrap(True)
-                        w.set_max_width_chars(28)
-                        text.append(w)
-                    top.append(text)
+            foot = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+            meta = Gtk.Label(label="")
+            meta.add_css_class("fu-method")
+            meta.set_halign(Gtk.Align.START)
+            meta.set_hexpand(True)
+            foot.append(meta)
+            chev = Gtk.Image.new_from_icon_name("go-next-symbolic")
+            chev.add_css_class("fu-app-mini-chevron")
+            chev.set_pixel_size(12)
+            chev.set_valign(Gtk.Align.CENTER)
+            chev.set_halign(Gtk.Align.END)
+            foot.append(chev)
+            card.append(foot)
 
-                    if app_row["installed"] == "1":
-                        badge = Gtk.Label(label="Installed")
-                        badge.add_css_class("fu-badge")
-                        badge.add_css_class("fu-badge-ok")
-                        badge.set_valign(Gtk.Align.START)
-                        top.append(badge)
-                    else:
-                        cb = Gtk.CheckButton()
-                        cb.set_active(app_row["id"] in selected)
-                        cb.set_valign(Gtk.Align.START)
-                        cb.set_halign(Gtk.Align.END)
-                        cb.set_tooltip_text("Select for batch install")
+            cb = Gtk.CheckButton()
+            cb.set_valign(Gtk.Align.START)
+            cb.set_halign(Gtk.Align.END)
+            cb.set_tooltip_text("Select for batch install")
+            badge = Gtk.Label(label="Installed")
+            badge.add_css_class("fu-badge")
+            badge.add_css_class("fu-badge-ok")
+            badge.set_valign(Gtk.Align.START)
 
-                        def on_toggled(
-                            button: Gtk.CheckButton,
-                            ar: dict[str, str] = app_row,
-                        ) -> None:
-                            set_selected(ar, button.get_active())
+            card._logo = logo  # type: ignore[attr-defined]
+            card._name = name_lab  # type: ignore[attr-defined]
+            card._sub = sub_lab  # type: ignore[attr-defined]
+            card._trail = trail  # type: ignore[attr-defined]
+            card._meta = meta  # type: ignore[attr-defined]
+            card._cb = cb  # type: ignore[attr-defined]
+            card._badge = badge  # type: ignore[attr-defined]
+            card._row = None  # type: ignore[attr-defined]
+            card._ignore_toggle = False  # type: ignore[attr-defined]
+            card._meta_mod = ""  # type: ignore[attr-defined]
 
-                        cb.connect("toggled", on_toggled)
-                        top.append(cb)
-                        visible_checks.append((app_row, cb))
-                        section_checks.append((app_row, cb))
-                    card.append(top)
+            def on_toggled(button: Gtk.CheckButton) -> None:
+                if card._ignore_toggle:  # type: ignore[attr-defined]
+                    return
+                ar = card._row  # type: ignore[attr-defined]
+                if isinstance(ar, dict):
+                    set_selected(ar, button.get_active())
 
-                    foot = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-                    label, css_mod = method_badge_label(
-                        app_row.get("badge", ""), app_row.get("method", "")
-                    )
-                    meta = Gtk.Label(label=label)
-                    meta.add_css_class("fu-method")
-                    meta.add_css_class(f"fu-method-{css_mod}")
-                    meta.set_halign(Gtk.Align.START)
-                    meta.set_hexpand(True)
-                    foot.append(meta)
-                    chev = Gtk.Image.new_from_icon_name("go-next-symbolic")
-                    chev.add_css_class("fu-app-mini-chevron")
-                    chev.set_pixel_size(12)
-                    chev.set_valign(Gtk.Align.CENTER)
-                    chev.set_halign(Gtk.Align.END)
-                    foot.append(chev)
-                    card.append(foot)
+            cb.connect("toggled", on_toggled)
 
-                    click = Gtk.GestureClick()
-                    click.set_button(1)
-                    click.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
+            click = Gtk.GestureClick()
+            click.set_button(1)
 
-                    def on_card_pressed(
-                        gesture: Gtk.GestureClick,
-                        n_press: int,
-                        x: float,
-                        y: float,
-                        ar: dict[str, str] = app_row,
-                        host: Gtk.Widget = card,
-                    ) -> None:
-                        if n_press != 1:
-                            return
-                        target = host.pick(x, y, Gtk.PickFlags.DEFAULT)
-                        wdg = target
-                        while wdg is not None and wdg is not host:
-                            if isinstance(wdg, Gtk.CheckButton):
-                                return
-                            wdg = wdg.get_parent()
-                        try:
-                            gesture.set_state(Gtk.EventSequenceState.CLAIMED)
-                        except Exception:  # noqa: BLE001
-                            pass
-                        _show_app_details(host, ar, on_install)
+            def on_card_pressed(
+                gesture: Gtk.GestureClick,
+                n_press: int,
+                x: float,
+                y: float,
+            ) -> None:
+                if n_press != 1:
+                    return
+                ar = card._row  # type: ignore[attr-defined]
+                if not isinstance(ar, dict):
+                    return
+                target = card.pick(x, y, Gtk.PickFlags.DEFAULT)
+                wdg = target
+                while wdg is not None and wdg is not card:
+                    if isinstance(wdg, Gtk.CheckButton):
+                        return
+                    wdg = wdg.get_parent()
+                try:
+                    gesture.set_state(Gtk.EventSequenceState.CLAIMED)
+                except Exception:  # noqa: BLE001
+                    pass
+                _show_app_details(card, ar, on_install)
 
-                    click.connect("pressed", on_card_pressed)
-                    card.add_controller(click)
-                    card.set_tooltip_text(f"Details for {app_row['name']}")
-                    flow.append(card)
+            click.connect("pressed", on_card_pressed)
+            card.add_controller(click)
+            list_item.set_child(card)
 
-                if not section_checks:
-                    sel_box.set_visible(False)
-                box.append(flow)
+        def on_bind(_factory: Gtk.SignalListItemFactory, list_item: Gtk.ListItem) -> None:
+            item = list_item.get_item()
+            card = list_item.get_child()
+            if not isinstance(item, _CatalogItem) or card is None:
+                return
+            app_row = item.row
+            card._row = app_row  # type: ignore[attr-defined]
+            card._name.set_label(app_row.get("name") or "")  # type: ignore[attr-defined]
+            summary = (app_row.get("summary") or "").strip()
+            card._sub.set_label(summary)  # type: ignore[attr-defined]
+            card._sub.set_visible(bool(summary))  # type: ignore[attr-defined]
+            card.set_tooltip_text(f"Details for {app_row.get('name') or 'app'}")
+            _catalog_set_app_icon(card._logo, app_row, 28)  # type: ignore[attr-defined]
 
+            label, css_mod = method_badge_label(
+                app_row.get("badge", ""), app_row.get("method", "")
+            )
+            meta = card._meta  # type: ignore[attr-defined]
+            prev = card._meta_mod  # type: ignore[attr-defined]
+            if prev:
+                meta.remove_css_class(f"fu-method-{prev}")
+            meta.set_label(label)
+            meta.add_css_class(f"fu-method-{css_mod}")
+            card._meta_mod = css_mod  # type: ignore[attr-defined]
+
+            trail = card._trail  # type: ignore[attr-defined]
+            child = trail.get_first_child()
+            while child is not None:
+                nxt = child.get_next_sibling()
+                trail.remove(child)
+                child = nxt
+            if app_row.get("installed") == "1":
+                trail.append(card._badge)  # type: ignore[attr-defined]
+            else:
+                cb = card._cb  # type: ignore[attr-defined]
+                card._ignore_toggle = True  # type: ignore[attr-defined]
+                cb.set_active(app_row["id"] in selected)
+                card._ignore_toggle = False  # type: ignore[attr-defined]
+                trail.append(cb)
+                bound_checks[app_row["id"]] = cb
+
+        def on_unbind(_factory: Gtk.SignalListItemFactory, list_item: Gtk.ListItem) -> None:
+            card = list_item.get_child()
+            if card is None:
+                return
+            ar = card._row  # type: ignore[attr-defined]
+            if isinstance(ar, dict):
+                bound_checks.pop(ar.get("id") or "", None)
+            logo = card._logo  # type: ignore[attr-defined]
+            logo._icon_gen = int(getattr(logo, "_icon_gen", 0)) + 1
+            logo.set_from_icon_name(_catalog_icon_placeholder())
+            card._row = None  # type: ignore[attr-defined]
+
+        factory = Gtk.SignalListItemFactory()
+        factory.connect("setup", on_setup)
+        factory.connect("bind", on_bind)
+        factory.connect("unbind", on_unbind)
+
+        grid = Gtk.GridView(model=Gtk.NoSelection(model=store), factory=factory)
+        grid.add_css_class("fu-app-grid")
+        grid.set_min_columns(1)
+        grid.set_max_columns(4)
+        grid.set_single_click_activate(False)
+        try:
+            grid.set_tab_behavior(Gtk.ListTabBehavior.ITEM)
+        except (AttributeError, TypeError):
+            pass
+        grid.set_hexpand(True)
+        grid.set_vexpand(True)
+
+        def on_cat_select(on: bool) -> None:
+            for ar in selectable:
+                set_selected(ar, on)
+                cb = bound_checks.get(ar["id"])
+                if cb is None:
+                    continue
+                card = cb.get_parent()
+                while card is not None and not hasattr(card, "_ignore_toggle"):
+                    card = card.get_parent()
+                if card is not None:
+                    card._ignore_toggle = True  # type: ignore[attr-defined]
+                cb.set_active(on)
+                if card is not None:
+                    card._ignore_toggle = False  # type: ignore[attr-defined]
+
+        btn_sel.connect("clicked", lambda *_: on_cat_select(True))
+        btn_unsel.connect("clicked", lambda *_: on_cat_select(False))
+
+        scrolled = Gtk.ScrolledWindow()
+        scrolled.set_vexpand(True)
+        scrolled.set_hexpand(True)
+        scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scrolled.set_child(grid)
         list_host.append(scrolled)
         update_install_btn()
 

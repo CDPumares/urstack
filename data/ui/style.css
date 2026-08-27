@@ -431,7 +431,7 @@ button.fu-health-item-btn:hover {
   margin: 0;
   padding: 10px 12px;
   border-radius: 12px;
-  background-color: alpha(@card_bg_color, 0.92);
+  background-color: @card_bg_color;
   border: 1px solid alpha(@borders, 0.5);
   min-width: 210px;
 }
@@ -501,6 +501,10 @@ button.fu-shot-btn {
 
 .fu-app-flow {
   margin: 0 12px 4px 12px;
+}
+
+.fu-app-grid {
+  padding: 4px 12px 12px 12px;
 }
 
 .fu-page-card-title,

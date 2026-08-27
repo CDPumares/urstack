@@ -17,6 +17,9 @@ CORE = ROOT / "lib" / "core"
 
 
 def load_ui_module():
+    existing = sys.modules.get("fedora_ui")
+    if existing is not None and getattr(existing, "parse_sections", None):
+        return existing
     path = CORE / "ui.py"
     spec = importlib.util.spec_from_file_location("fedora_ui", path)
     assert spec and spec.loader
