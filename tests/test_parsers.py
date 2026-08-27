@@ -481,6 +481,32 @@ class TestStyleSheet(unittest.TestCase):
         self.assertEqual(updates.get_margin_end(), pad)
         first_hero(updates)
 
+    def test_look_hero_shares_apps_page_inset(self) -> None:
+        """Look chrome must not add a second side pad on top of page_frame."""
+        try:
+            import gi
+
+            gi.require_version("Gtk", "4.0")
+            from gi.repository import Gtk
+        except (ImportError, ValueError) as exc:
+            raise unittest.SkipTest(f"GTK unavailable: {exc}") from exc
+
+        pad = self.ui.PAGE_SIDE_PAD
+        look = self.ui.build_look_content(
+            parent_win=Gtk.Window(),
+            on_export=lambda *_: None,
+            on_install=lambda *_: None,
+        )
+        self.assertTrue(look.has_css_class("fu-padded-page"))
+        self.assertEqual(look.get_margin_start(), pad)
+        self.assertEqual(look.get_margin_end(), pad)
+        chrome = look.get_first_child()
+        self.assertIsNotNone(chrome)
+        self.assertEqual(chrome.get_margin_start(), 0)
+        self.assertEqual(chrome.get_margin_end(), 0)
+        hero = chrome.get_first_child()
+        self.assertTrue(hero.has_css_class("fu-page-hero"))
+
     def test_page_hero_centers_the_midline_rule(self) -> None:
         """Left and right panes share width so the rule sits in the middle."""
         hero = self.ui.page_hero(

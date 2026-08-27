@@ -558,12 +558,16 @@ def page_hero(
                 texts = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
                 texts.set_hexpand(True)
                 if heading:
-                    hl = Gtk.Label(label=heading, xalign=0.0, wrap=True)
+                    hl = Gtk.Label(label=heading, xalign=0.0)
                     hl.add_css_class("fu-hero-title")
+                    hl.set_ellipsize(Pango.EllipsizeMode.END)
+                    hl.set_single_line_mode(True)
                     texts.append(hl)
                 if heading_sub:
                     hs = Gtk.Label(label=heading_sub, xalign=0.0, wrap=True)
                     hs.add_css_class("fu-hero-sub")
+                    hs.set_lines(2)
+                    hs.set_ellipsize(Pango.EllipsizeMode.END)
                     texts.append(hs)
                 head.append(texts)
         if heading_trailing is not None:
@@ -594,10 +598,14 @@ def page_hero(
         if title:
             ht = Gtk.Label(label=title, xalign=0.0, wrap=True)
             ht.add_css_class("fu-hero-title")
+            ht.set_lines(2)
+            ht.set_ellipsize(Pango.EllipsizeMode.END)
             text_col.append(ht)
         if subtitle:
             hs = Gtk.Label(label=subtitle, xalign=0.0, wrap=True)
             hs.add_css_class("fu-hero-sub")
+            hs.set_lines(2)
+            hs.set_ellipsize(Pango.EllipsizeMode.END)
             text_col.append(hs)
         body.append(text_col)
 
@@ -4238,7 +4246,7 @@ def build_look_content(
             "items": [],
         }
 
-    chrome = page_chrome_box()
+    chrome = page_chrome_box(side_pad=0)
     chrome.append(
         page_hero(
             (str(snap_d.get("desktop") or "desktop")).capitalize(),
@@ -4255,29 +4263,6 @@ def build_look_content(
     outer.append(chrome)
 
     scrolled, _clamp, col = page_scroll_body(spacing=14, side_pad=0)
-
-    preview = str(snap_d.get("preview") or "")
-    if preview and Path(preview).is_file():
-        pic_wrap = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-        pic_wrap.add_css_class("fu-page-card")
-        cap = Gtk.Label(label="Current wallpaper", xalign=0.0)
-        cap.add_css_class("fu-page-card-title")
-        pic_wrap.append(cap)
-        try:
-            pix = GdkPixbuf.Pixbuf.new_from_file_at_scale(preview, 960, 200, True)
-            picture = Gtk.Picture.new_for_paintable(Gdk.Texture.new_for_pixbuf(pix))
-            picture.set_size_request(-1, 180)
-            try:
-                picture.set_content_fit(Gtk.ContentFit.COVER)
-            except Exception:  # noqa: BLE001
-                pass
-            picture.set_hexpand(True)
-            pic_wrap.append(picture)
-        except Exception:  # noqa: BLE001
-            pic_wrap.append(
-                Gtk.Label(label=Path(preview).name, xalign=0.0, wrap=True)
-            )
-        col.append(pic_wrap)
 
     col.append(
         page_callout(
