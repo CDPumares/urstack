@@ -316,6 +316,41 @@ button.fu-cat-pill:checked label {
   background-color: @window_bg_color;
 }
 
+/* Adwaita sliders are currentColor at ~20% opacity. Paint them with the
+   logo accents and keep overlay indicators thick enough to read. */
+window.urstack scrollbar > range > trough > slider,
+window.urstack scrollbar.overlay-indicator > range > trough > slider,
+window.urstack scrollbar.overlay-indicator:not(.hovering) > range > trough > slider,
+window.urstack scrollbar.overlay-indicator.hovering > range > trough > slider,
+window.urstack scrollbar.overlay-indicator.dragging > range > trough > slider {
+  background-color: #3c90e4;
+  background-image: linear-gradient(180deg, #3c90e4 0%, #b43ce4 100%);
+  opacity: 1;
+  outline-color: alpha(#ffffff, 0.40);
+}
+
+window.urstack scrollbar.horizontal > range > trough > slider,
+window.urstack scrollbar.overlay-indicator.horizontal > range > trough > slider {
+  background-image: linear-gradient(90deg, #3c90e4 0%, #b43ce4 100%);
+}
+
+window.urstack scrollbar > range > trough > slider:hover,
+window.urstack scrollbar > range > trough > slider:active {
+  background-color: #51b8f2;
+}
+
+window.urstack scrollbar.overlay-indicator:not(.hovering) > range > trough > slider {
+  min-width: 6px;
+  min-height: 6px;
+}
+
+window.urstack scrollbar.overlay-indicator.hovering > range > trough > slider,
+window.urstack scrollbar.overlay-indicator.dragging > range > trough > slider,
+window.urstack scrollbar:not(.overlay-indicator) > range > trough > slider {
+  min-width: 8px;
+  min-height: 8px;
+}
+
 .fu-page-chrome {
   padding-top: 0;
 }
@@ -349,20 +384,21 @@ button.fu-cat-pill:checked label {
   opacity: 0.88;
 }
 
+.fu-page-hero-panes {
+  min-width: 0;
+}
+
 .fu-page-hero-head {
   min-width: 0;
-  padding-right: 16px;
+  padding-right: 20px;
+  border-right-width: 1px;
+  border-right-style: solid;
+  border-right-color: alpha(#ffffff, 0.35);
 }
 
 .fu-page-hero-body {
   min-width: 0;
-  padding-left: 16px;
-}
-
-.fu-page-hero-sep {
-  margin-top: 2px;
-  margin-bottom: 2px;
-  background-color: alpha(#ffffff, 0.35);
+  padding-left: 20px;
 }
 
 /* Status stays on badges and the score; heroes keep one uniform radius. */
@@ -557,9 +593,13 @@ button.fu-health-item-btn:hover {
   border: 1px solid alpha(#3c90e4, 0.22);
 }
 
-.fu-look-card-preview {
-  min-height: 108px;
+.fu-look-card-preview-frame {
+  min-height: 96px;
   background-color: alpha(#3c90e4, 0.10);
+}
+
+.fu-look-card-preview {
+  background-color: transparent;
 }
 
 .fu-look-card-body {

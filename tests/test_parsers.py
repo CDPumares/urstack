@@ -433,6 +433,8 @@ class TestStyleSheet(unittest.TestCase):
         self.assertIn("#b43ce4", css)
         self.assertIn("@define-color accent_bg_color #3c90e4", css)
         self.assertIn(".fu-shell-sidebar-collapsed", css)
+        self.assertIn("window.urstack scrollbar > range > trough > slider", css)
+        self.assertIn("linear-gradient(180deg, #3c90e4 0%, #b43ce4 100%)", css)
 
     def test_stylesheet_keeps_status_green_and_red(self) -> None:
         css = self.ui.STYLE_SHEET.read_text(encoding="utf-8")
@@ -478,6 +480,36 @@ class TestStyleSheet(unittest.TestCase):
         self.assertEqual(updates.get_margin_start(), pad)
         self.assertEqual(updates.get_margin_end(), pad)
         first_hero(updates)
+
+    def test_page_hero_centers_the_midline_rule(self) -> None:
+        """Left and right panes share width so the rule sits in the middle."""
+        hero = self.ui.page_hero(
+            "100",
+            "score",
+            "Looking sharp",
+            "All clear.",
+            heading="Look",
+            heading_sub="Themes and packs.",
+            icon_name="image-x-generic",
+        )
+        panes = hero.get_first_child()
+        self.assertIsNotNone(panes)
+        self.assertTrue(panes.has_css_class("fu-page-hero-panes"))
+        self.assertTrue(panes.get_homogeneous())
+        head = panes.get_first_child()
+        body = head.get_next_sibling()
+        self.assertTrue(head.has_css_class("fu-page-hero-head"))
+        self.assertTrue(body.has_css_class("fu-page-hero-body"))
+        self.assertIsNone(body.get_next_sibling())
+
+    def test_look_catalog_is_four_across_with_full_previews(self) -> None:
+        src = (ROOT / "lib" / "core" / "ui.py").read_text(encoding="utf-8")
+        self.assertIn("flow.set_min_children_per_line(4)", src)
+        self.assertIn("flow.set_max_children_per_line(4)", src)
+        self.assertIn("Gtk.ContentFit.CONTAIN", src)
+        css = self.ui.STYLE_SHEET.read_text(encoding="utf-8")
+        self.assertIn(".fu-page-hero-panes", css)
+        self.assertNotIn(".fu-page-hero-sep", css)
 
     def test_overview_section_grid_is_three_rows_of_three(self) -> None:
         page = self.ui.build_overview_content(

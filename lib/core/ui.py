@@ -536,13 +536,14 @@ def page_hero(
     heading_trailing: Gtk.Widget | None = None,
 ) -> Gtk.Widget:
     """Page hero: section header + icon on the left, status content on the right."""
-    hero_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=20)
+    hero_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
     hero_box.add_css_class("fu-page-hero")
     if warn:
         hero_box.add_css_class("fu-page-hero-warn")
     elif ok:
         hero_box.add_css_class("fu-page-hero-ok")
 
+    head = None
     if heading or icon_name:
         head = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
         head.add_css_class("fu-page-hero-head")
@@ -569,11 +570,6 @@ def page_hero(
             head.append(heading_trailing)
         head.set_hexpand(True)
         head.set_halign(Gtk.Align.FILL)
-        hero_box.append(head)
-        sep = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
-        sep.add_css_class("fu-page-hero-sep")
-        sep.set_valign(Gtk.Align.FILL)
-        hero_box.append(sep)
 
     body = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=16)
     body.add_css_class("fu-page-hero-body")
@@ -608,7 +604,18 @@ def page_hero(
         trailing.set_valign(Gtk.Align.CENTER)
         body.append(trailing)
 
-    hero_box.append(body)
+    if head is not None:
+        # Equal panes so the vertical rule sits on the hero midline on every page.
+        panes = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+        panes.add_css_class("fu-page-hero-panes")
+        panes.set_homogeneous(True)
+        panes.set_hexpand(True)
+        panes.set_halign(Gtk.Align.FILL)
+        panes.append(head)
+        panes.append(body)
+        hero_box.append(panes)
+    else:
+        hero_box.append(body)
     return hero_box
 
 
@@ -3580,20 +3587,38 @@ def _look_store_section(
         card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         card.add_css_class("fu-look-card")
         card.set_hexpand(True)
-        card.set_size_request(200, -1)
+        card.set_halign(Gtk.Align.FILL)
+        try:
+            card.set_overflow(Gtk.Overflow.HIDDEN)
+        except Exception:  # noqa: BLE001
+            pass
 
         pic = Gtk.Picture()
         pic.add_css_class("fu-look-card-preview")
-        pic.set_size_request(-1, 108)
         pic.set_hexpand(True)
+        pic.set_vexpand(True)
         try:
-            pic.set_content_fit(Gtk.ContentFit.COVER)
+            pic.set_can_shrink(True)
         except Exception:  # noqa: BLE001
             pass
+        try:
+            # GitHub OpenGraph cards are 2:1; COVER in a short strip cropped them
+            # to a middle slice. CONTAIN keeps the whole screenshot visible.
+            pic.set_content_fit(Gtk.ContentFit.CONTAIN)
+        except Exception:  # noqa: BLE001
+            try:
+                pic.set_keep_aspect_ratio(True)
+            except Exception:  # noqa: BLE001
+                pass
+        frame = Gtk.AspectFrame(obey_child=False, ratio=16 / 9, xalign=0.5, yalign=0.5)
+        frame.add_css_class("fu-look-card-preview-frame")
+        frame.set_hexpand(True)
+        frame.set_halign(Gtk.Align.FILL)
+        frame.set_child(pic)
         preview = (row.get("preview") or "").strip()
         if not preview and row.get("github"):
             preview = theme_store_mod.github_opengraph_url(row["github"])
-        card.append(pic)
+        card.append(frame)
         if preview:
             _look_preview_async(pic, preview)
 
@@ -3695,10 +3720,11 @@ def _look_store_section(
         flow.set_selection_mode(Gtk.SelectionMode.NONE)
         flow.set_homogeneous(True)
         flow.set_max_children_per_line(4)
-        flow.set_min_children_per_line(2)
+        flow.set_min_children_per_line(4)
         flow.set_row_spacing(10)
         flow.set_column_spacing(10)
         flow.set_hexpand(True)
+        flow.set_halign(Gtk.Align.FILL)
         for row in rows:
             flow.append(make_card(row))
         host.append(flow)
