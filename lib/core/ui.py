@@ -532,19 +532,20 @@ def page_hero(
             icon.set_pixel_size(40)
             icon.set_valign(Gtk.Align.START)
             head.append(icon)
-        if heading or heading_sub:
-            texts = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-            if heading:
-                hl = Gtk.Label(label=heading, xalign=0.0, wrap=True)
-                hl.add_css_class("fu-hero-title")
-                texts.append(hl)
-            if heading_sub:
-                hs = Gtk.Label(label=heading_sub, xalign=0.0, wrap=True)
-                hs.add_css_class("fu-hero-sub")
-                texts.append(hs)
-            head.append(texts)
+            if heading or heading_sub:
+                texts = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+                texts.set_hexpand(True)
+                if heading:
+                    hl = Gtk.Label(label=heading, xalign=0.0, wrap=True)
+                    hl.add_css_class("fu-hero-title")
+                    texts.append(hl)
+                if heading_sub:
+                    hs = Gtk.Label(label=heading_sub, xalign=0.0, wrap=True)
+                    hs.add_css_class("fu-hero-sub")
+                    texts.append(hs)
+                head.append(texts)
         if heading_trailing is not None:
-            heading_trailing.set_valign(Gtk.Align.CENTER)
+            heading_trailing.set_valign(Gtk.Align.START)
             head.append(heading_trailing)
         head.set_hexpand(True)
         head.set_halign(Gtk.Align.FILL)
@@ -635,12 +636,13 @@ def page_section_label(text: str) -> Gtk.Widget:
     return lab
 
 
-def wide_clamp(maximum_size: int = CONTENT_MAX) -> Adw.Clamp:
+def wide_clamp(maximum_size: int = CONTENT_MAX, *, side_pad: int = PAGE_SIDE_PAD) -> Adw.Clamp:
     """Full-width clamp — no mid-size tightening, so pages match the Apps layout."""
     clamp = Adw.Clamp(maximum_size=maximum_size)
     clamp.set_hexpand(True)
-    clamp.set_margin_start(PAGE_SIDE_PAD)
-    clamp.set_margin_end(PAGE_SIDE_PAD)
+    if side_pad:
+        clamp.set_margin_start(side_pad)
+        clamp.set_margin_end(side_pad)
     try:
         clamp.set_tightening_threshold(maximum_size)
     except Exception:  # noqa: BLE001
@@ -648,7 +650,9 @@ def wide_clamp(maximum_size: int = CONTENT_MAX) -> Adw.Clamp:
     return clamp
 
 
-def page_scroll_body(*, spacing: int = 14) -> tuple[Gtk.ScrolledWindow, Adw.Clamp, Gtk.Box]:
+def page_scroll_body(
+    *, spacing: int = 14, side_pad: int = PAGE_SIDE_PAD
+) -> tuple[Gtk.ScrolledWindow, Adw.Clamp, Gtk.Box]:
     """Standard wide scroll + clamp + vertical column for shell pages."""
     scrolled = Gtk.ScrolledWindow()
     scrolled.add_css_class("fu-page-scroll")
@@ -660,14 +664,18 @@ def page_scroll_body(*, spacing: int = 14) -> tuple[Gtk.ScrolledWindow, Adw.Clam
         scrolled.set_overlay_scrolling(True)
     except Exception:  # noqa: BLE001
         pass
-    clamp = wide_clamp()
-    clamp.set_margin_top(4)
-    clamp.set_margin_bottom(8)
     col = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=spacing)
     col.set_hexpand(True)
-    clamp.set_child(col)
-    scrolled.set_child(clamp)
-    return scrolled, clamp, col
+    col.set_margin_top(4)
+    col.set_margin_bottom(8)
+    if side_pad:
+        clamp = wide_clamp(side_pad=side_pad)
+        clamp.set_child(col)
+        scrolled.set_child(clamp)
+        return scrolled, clamp, col
+    # Same as Apps: no Clamp, so the body shares the page-frame inset with the hero.
+    scrolled.set_child(col)
+    return scrolled, col, col
 
 
 def page_card_grid(cards: list[Gtk.Widget], columns: int = 3) -> Gtk.Widget:
@@ -688,13 +696,25 @@ def page_card_grid(cards: list[Gtk.Widget], columns: int = 3) -> Gtk.Widget:
     return grid
 
 
-def page_chrome_box() -> Gtk.Box:
+def page_frame() -> Gtk.Box:
+    """Same outer inset as Apps: one pad for the hero and the page body."""
+    box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+    box.set_hexpand(True)
+    box.set_vexpand(True)
+    box.add_css_class("fu-padded-page")
+    box.set_margin_start(PAGE_SIDE_PAD)
+    box.set_margin_end(PAGE_SIDE_PAD)
+    return box
+
+
+def page_chrome_box(*, side_pad: int = PAGE_SIDE_PAD) -> Gtk.Box:
     """Hero/callout band pinned above the scroller so gradients don't recompose on every frame."""
     chrome = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
     chrome.add_css_class("fu-page-chrome")
     chrome.set_hexpand(True)
-    chrome.set_margin_start(PAGE_SIDE_PAD)
-    chrome.set_margin_end(PAGE_SIDE_PAD)
+    if side_pad:
+        chrome.set_margin_start(side_pad)
+        chrome.set_margin_end(side_pad)
     return chrome
 
 
@@ -1383,9 +1403,7 @@ def build_overview_content(
     on_refresh: Callable[[], None] | None = None,
 ) -> Gtk.Widget:
     """Landing page: workstation snapshot + shortcuts into the rest of the shell."""
-    outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-    outer.set_hexpand(True)
-    outer.set_vexpand(True)
+    outer = page_frame()
 
     scanning_now = bool(checking or checking_updates or checking_health)
     refresh_top = None
@@ -1398,11 +1416,10 @@ def build_overview_content(
         heading="Overview",
         heading_sub="Your Fedora workstation at a glance — jump into updates, apps, or health.",
         icon_name=page_icon("overview"),
+        heading_trailing=refresh_top,
     )
-    if refresh_top is not None:
-        outer.append(page_hero_actions(refresh_top))
 
-    scrolled, _clamp, col = page_scroll_body(spacing=14)
+    scrolled, _clamp, col = page_scroll_body(spacing=14, side_pad=0)
 
     sections = parse_sections(raw)
     update_secs = [s for s in sections if s.kind == "update" and s.title != "Overview"]
@@ -1476,9 +1493,7 @@ def build_overview_content(
             **hero_head,
         )
 
-    chrome = page_chrome_box()
-    chrome.append(hero)
-    outer.append(chrome)
+    outer.append(hero)
 
     if not checking:
         col.append(
@@ -1689,9 +1704,7 @@ def build_hub_content(
     update_count = len(update_secs)
     show_updates = bool(has_updates and update_secs)
 
-    outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-    outer.set_hexpand(True)
-    outer.set_vexpand(True)
+    outer = page_frame()
 
     refresh_top = None
     if on_refresh is not None:
@@ -1703,11 +1716,10 @@ def build_hub_content(
         heading="Updates",
         heading_sub="Check every enabled source, review what changed, then apply in one pass.",
         icon_name=page_icon("home"),
+        heading_trailing=refresh_top,
     )
-    if refresh_top is not None:
-        outer.append(page_hero_actions(refresh_top))
 
-    scrolled, _clamp, col = page_scroll_body(spacing=12)
+    scrolled, _clamp, col = page_scroll_body(spacing=14, side_pad=0)
 
     if show_updates:
         badge = Gtk.Label(label="Action needed")
@@ -1776,9 +1788,7 @@ def build_hub_content(
         ok_card.append(os_)
         col.append(ok_card)
 
-    chrome = page_chrome_box()
-    chrome.append(hero)
-    outer.append(chrome)
+    outer.append(hero)
     outer.append(scrolled)
 
     actions = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
@@ -4598,12 +4608,7 @@ def build_catalog_content(
             return "All apps"
         return (cat_names.get(cid) or "").strip() or cat_chip_label(cid)
 
-    main = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-    main.set_hexpand(True)
-    main.set_vexpand(True)
-    main.add_css_class("fu-padded-page")
-    main.set_margin_start(PAGE_SIDE_PAD)
-    main.set_margin_end(PAGE_SIDE_PAD)
+    main = page_frame()
 
     main.append(
         page_hero(
@@ -5718,9 +5723,7 @@ def build_health_content(
         "sysctl": "Sensible swappiness + higher inotify limits for IDEs and file watchers.",
     }
 
-    root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-    root.set_hexpand(True)
-    root.set_vexpand(True)
+    root = page_frame()
 
     refresh_btn = mk_btn("Refresh", "flat", "view-refresh-symbolic")
     refresh_btn.set_valign(Gtk.Align.CENTER)
@@ -5728,7 +5731,6 @@ def build_health_content(
         refresh_btn.connect("clicked", lambda *_: on_refresh())
     else:
         refresh_btn.set_sensitive(False)
-    root.append(page_hero_actions(refresh_btn))
 
     hero_host = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
     hero_host.set_hexpand(True)
@@ -5769,7 +5771,7 @@ def build_health_content(
         visible_checks.clear()
         selected.clear()
 
-        scrolled, _clamp, box = page_scroll_body(spacing=14)
+        scrolled, _clamp, box = page_scroll_body(spacing=14, side_pad=0)
         box.set_margin_bottom(8)
         refresh_btn.set_sensitive(not scanning)
 
@@ -5803,8 +5805,10 @@ def build_health_content(
             hero_title = f"{len(recs)} recommendation{'s' if len(recs) != 1 else ''}"
             hero_sub = f"{attention_n} need attention · {actionable_n} optional fixes"
             hero_warn = True
-        chrome = page_chrome_box()
-        chrome.append(
+        prev = refresh_btn.get_parent()
+        if prev is not None:
+            prev.remove(refresh_btn)
+        hero_host.append(
             page_hero(
                 score_txt,
                 score_sub,
@@ -5815,9 +5819,9 @@ def build_health_content(
                 heading="System Health",
                 heading_sub="Curated fixes for this Fedora workstation — with a restore point safety net.",
                 icon_name=page_icon("health"),
+                heading_trailing=refresh_btn,
             )
         )
-        hero_host.append(chrome)
 
         # ── Restore point strip ───────────────────────────────────────────
         rp_id, rp_created = _health_latest_restore_point()

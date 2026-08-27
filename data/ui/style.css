@@ -278,13 +278,13 @@ button.fu-cat-pill:checked .fu-cat-count {
 }
 
 .fu-page-chrome {
-  padding-top: 4px;
+  padding-top: 0;
 }
 
 /* Shared page chrome (Health-style; used across Updates / Backup / Settings / …) */
 .fu-page-hero,
 .fu-health-hero {
-  margin: 4px 0 8px 0;
+  margin: 8px 0 10px 0;
   padding: 22px 22px 18px 22px;
   border-radius: 18px;
   background-color: #243c6c;

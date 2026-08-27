@@ -426,6 +426,38 @@ class TestStyleSheet(unittest.TestCase):
         self.assertIn(".fu-page-hero-warn", css)
         self.assertIn("#e01b24", css)
 
+    def test_overview_and_updates_share_apps_page_inset(self) -> None:
+        """Hero sits in the same padded frame as Apps — not a tighter chrome band."""
+        pad = self.ui.PAGE_SIDE_PAD
+
+        def first_hero(widget):
+            child = widget.get_first_child()
+            self.assertIsNotNone(child)
+            self.assertTrue(child.has_css_class("fu-page-hero"))
+            return child
+
+        overview = self.ui.build_overview_content(
+            raw="",
+            has_updates=False,
+            on_action=lambda *_: None,
+        )
+        self.assertTrue(overview.has_css_class("fu-padded-page"))
+        self.assertEqual(overview.get_margin_start(), pad)
+        self.assertEqual(overview.get_margin_end(), pad)
+        first_hero(overview)
+
+        updates, _rebuild = self.ui.build_hub_content(
+            raw="",
+            has_updates=False,
+            enable_backup=True,
+            on_action=lambda *_: None,
+            show_nav_buttons=False,
+        )
+        self.assertTrue(updates.has_css_class("fu-padded-page"))
+        self.assertEqual(updates.get_margin_start(), pad)
+        self.assertEqual(updates.get_margin_end(), pad)
+        first_hero(updates)
+
     def test_load_css_survives_a_missing_stylesheet(self) -> None:
         """An unstyled window is still usable; a crash at startup is not."""
         original = self.ui.STYLE_SHEET
