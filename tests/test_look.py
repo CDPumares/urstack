@@ -202,6 +202,38 @@ class LookTestCase(unittest.TestCase):
         )
         self.assertIn("icons/PrettyIcons", result["installed"])
 
+    def test_category_layout_icon_theme(self) -> None:
+        """Candy Icons-style: index.theme plus apps/places, no 16x16 dirs."""
+        zpath = self.out / "Candy.zip"
+        with zipfile.ZipFile(zpath, "w") as zf:
+            zf.writestr("Candy/index.theme", "[Icon Theme]\nName=Candy\n")
+            zf.writestr("Candy/apps/foo.svg", "<svg/>")
+            zf.writestr("Candy/places/folder.svg", "<svg/>")
+            zf.writestr("Candy/preview.png", b"\x89PNG\r\n\x1a\n" + b"\x00" * 16)
+        info = self.look.inspect_archive(zpath)
+        self.assertEqual(info.kind, "icons")
+        result = self.look.install_archive(zpath, home=self.home, apply=False)
+        self.assertTrue((self.home / ".local/share/icons/Candy/index.theme").is_file())
+        self.assertIn("icons/Candy", result["installed"])
+        self.assertFalse(
+            (self.home / ".local/share/wallpapers/urstack/preview.png").is_file()
+        )
+
+    def test_plasma_color_scheme_tarball(self) -> None:
+        tarball = self.out / "mocha-colors.tar.gz"
+        staging = Path(self._td.name) / "colors"
+        pack = staging / "Mocha-color-schemes"
+        pack.mkdir(parents=True)
+        (pack / "CatppuccinMochaBlue.colors").write_text(
+            "[General]\nName=Catppuccin Mocha Blue\n", encoding="utf-8"
+        )
+        with tarfile.open(tarball, "w:gz") as tf:
+            tf.add(pack, arcname="Mocha-color-schemes")
+        result = self.look.install_archive(tarball, home=self.home, apply=False)
+        dest = self.home / ".local/share/color-schemes/CatppuccinMochaBlue.colors"
+        self.assertTrue(dest.is_file())
+        self.assertIn("colors/CatppuccinMochaBlue.colors", result["installed"])
+
     def test_third_party_gtk_theme(self) -> None:
         tarball = self.out / "Nordic.tar.gz"
         staging = Path(self._td.name) / "nordic"

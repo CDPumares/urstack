@@ -1,0 +1,184 @@
+{
+  "version": 1,
+  "source": "github",
+  "themes": [
+    {
+      "id": "dracula-gtk",
+      "name": "Dracula",
+      "summary": "The Dracula dark palette for GTK, GNOME Shell, and Cinnamon — a full desktop look, not a stock Adwaita variant.",
+      "author": "Dracula",
+      "license": "MIT",
+      "kinds": ["looks", "gtk"],
+      "github": "dracula/gtk",
+      "asset": "Dracula.tar.xz",
+      "homepage": "https://github.com/dracula/gtk"
+    },
+    {
+      "id": "nordic",
+      "name": "Nordic",
+      "summary": "EliverLara's Nord-inspired GTK and GNOME Shell theme. Arctic blues instead of Adwaita grey.",
+      "author": "EliverLara",
+      "license": "GPL-3.0",
+      "kinds": ["looks", "gtk"],
+      "github": "EliverLara/Nordic",
+      "asset": "Nordic.tar.xz",
+      "homepage": "https://github.com/EliverLara/Nordic"
+    },
+    {
+      "id": "nordic-polar",
+      "name": "Nordic Polar",
+      "summary": "Light Nord GTK theme — Polar day counterpart to Nordic.",
+      "author": "EliverLara",
+      "license": "GPL-3.0",
+      "kinds": ["gtk"],
+      "github": "EliverLara/Nordic",
+      "asset": "Nordic-Polar.tar.xz",
+      "homepage": "https://github.com/EliverLara/Nordic"
+    },
+    {
+      "id": "sweet",
+      "name": "Sweet",
+      "summary": "Candy-coloured dark GTK theme with matching GNOME Shell. A community rice staple.",
+      "author": "EliverLara",
+      "license": "GPL-3.0",
+      "kinds": ["looks", "gtk"],
+      "github": "EliverLara/Sweet",
+      "asset": "Sweet.tar.xz",
+      "homepage": "https://github.com/EliverLara/Sweet"
+    },
+    {
+      "id": "sweet-dark",
+      "name": "Sweet Dark",
+      "summary": "Darker Sweet GTK variant without the pastel chrome.",
+      "author": "EliverLara",
+      "license": "GPL-3.0",
+      "kinds": ["gtk"],
+      "github": "EliverLara/Sweet",
+      "asset": "Sweet-Dark.tar.xz",
+      "homepage": "https://github.com/EliverLara/Sweet"
+    },
+    {
+      "id": "catppuccin-mocha",
+      "name": "Catppuccin Mocha",
+      "summary": "Mocha (dark) Catppuccin GTK with the Mauve accent. Pastel community palette used across editors, terminals, and desktops.",
+      "author": "Catppuccin",
+      "license": "GPL-3.0",
+      "kinds": ["looks", "gtk"],
+      "github": "catppuccin/gtk",
+      "asset": "catppuccin-mocha-mauve-standard+default.zip",
+      "homepage": "https://github.com/catppuccin/gtk"
+    },
+    {
+      "id": "catppuccin-latte",
+      "name": "Catppuccin Latte",
+      "summary": "Latte (light) Catppuccin GTK with the Mauve accent.",
+      "author": "Catppuccin",
+      "license": "GPL-3.0",
+      "kinds": ["gtk"],
+      "github": "catppuccin/gtk",
+      "asset": "catppuccin-latte-mauve-standard+default.zip",
+      "homepage": "https://github.com/catppuccin/gtk"
+    },
+    {
+      "id": "catppuccin-plasma-mocha",
+      "name": "Catppuccin Mocha colours",
+      "summary": "Plasma colour schemes for Catppuccin Mocha. Pick the accent in System Settings after install.",
+      "author": "Catppuccin",
+      "license": "MIT",
+      "kinds": ["plasma"],
+      "desktops": ["plasma"],
+      "github": "catppuccin/kde",
+      "asset": "Mocha-color-schemes.tar.gz",
+      "homepage": "https://github.com/catppuccin/kde"
+    },
+    {
+      "id": "catppuccin-plasma-latte",
+      "name": "Catppuccin Latte colours",
+      "summary": "Plasma colour schemes for Catppuccin Latte (light).",
+      "author": "Catppuccin",
+      "license": "MIT",
+      "kinds": ["plasma"],
+      "desktops": ["plasma"],
+      "github": "catppuccin/kde",
+      "asset": "Latte-color-schemes.tar.gz",
+      "homepage": "https://github.com/catppuccin/kde"
+    },
+    {
+      "id": "candy-icons",
+      "name": "Candy icons",
+      "summary": "EliverLara's colourful community icon set, designed to sit with Sweet.",
+      "author": "EliverLara",
+      "license": "GPL-3.0",
+      "kinds": ["icons"],
+      "github": "EliverLara/candy-icons",
+      "ref": "master",
+      "homepage": "https://github.com/EliverLara/candy-icons"
+    },
+    {
+      "id": "kora",
+      "name": "Kora",
+      "summary": "Flat, colourful icon theme with a dark-panel companion. Community-made, not Breeze/Adwaita.",
+      "author": "bikass",
+      "license": "GPL-3.0",
+      "kinds": ["icons"],
+      "github": "bikass/kora",
+      "ref": "master",
+      "homepage": "https://github.com/bikass/kora"
+    },
+    {
+      "id": "bibata-modern-classic",
+      "name": "Bibata Modern Classic",
+      "summary": "Material-style cursor theme with a dark fill. Replaces the stock Adwaita/Breeze pointer.",
+      "author": "ful1e5",
+      "license": "GPL-3.0",
+      "kinds": ["cursors"],
+      "github": "ful1e5/Bibata_Cursor",
+      "asset": "Bibata-Modern-Classic.tar.xz",
+      "homepage": "https://github.com/ful1e5/Bibata_Cursor"
+    },
+    {
+      "id": "bibata-modern-ice",
+      "name": "Bibata Modern Ice",
+      "summary": "Light/white Bibata cursor theme.",
+      "author": "ful1e5",
+      "license": "GPL-3.0",
+      "kinds": ["cursors"],
+      "github": "ful1e5/Bibata_Cursor",
+      "asset": "Bibata-Modern-Ice.tar.xz",
+      "homepage": "https://github.com/ful1e5/Bibata_Cursor"
+    },
+    {
+      "id": "nordzy-cursors",
+      "name": "Nordzy cursors",
+      "summary": "Cursor theme in the Nord palette, from the Nordzy icon project.",
+      "author": "alvatip",
+      "license": "GPL-3.0",
+      "kinds": ["cursors"],
+      "github": "alvatip/Nordzy-cursors",
+      "asset": "Nordzy-cursors.tar.gz",
+      "homepage": "https://github.com/alvatip/Nordzy-cursors"
+    },
+    {
+      "id": "catppuccin-cursors-mocha",
+      "name": "Catppuccin Mocha cursors",
+      "summary": "Dark Catppuccin Mocha cursor set.",
+      "author": "Catppuccin",
+      "license": "GPL-3.0",
+      "kinds": ["cursors"],
+      "github": "catppuccin/cursors",
+      "asset": "catppuccin-mocha-dark-cursors.zip",
+      "homepage": "https://github.com/catppuccin/cursors"
+    },
+    {
+      "id": "dracula-cursors",
+      "name": "Dracula cursors",
+      "summary": "Cursor theme from the Dracula GTK pack.",
+      "author": "Dracula",
+      "license": "MIT",
+      "kinds": ["cursors"],
+      "github": "dracula/gtk",
+      "asset": "Dracula-cursors.tar.xz",
+      "homepage": "https://github.com/dracula/gtk"
+    }
+  ]
+}

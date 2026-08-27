@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-"""Theme listings from GNOME Look / KDE Look (openDesktop OCS).
+"""Curated community themes from GitHub — not the GNOME/KDE store.
 
-Install stays user-local: this module only lists and downloads a free archive.
-look.py inspects and extracts it the same way as a file the user opened.
+Discover and GNOME Software already list Pling / openDesktop. This catalog is
+the Apps-page equivalent: hand-picked FOSS palettes and icon sets (Dracula,
+Nord, Catppuccin, Sweet, Bibata) downloaded as real archives and installed
+user-local by look.py. Installer scripts are never run.
 """
 
 from __future__ import annotations
 
+import fnmatch
 import hashlib
 import json
 import os
@@ -23,28 +26,12 @@ from pathlib import Path
 _CTX = ssl.create_default_context()
 _UA = "UrStack/1.0 (https://github.com/CDPumares/urstack; theme-store)"
 _CACHE = Path(os.environ.get("XDG_CACHE_HOME", Path.home() / ".cache")) / "urstack" / "theme-store"
+_APP_ROOT = Path(__file__).resolve().parents[2]
+_CATALOG = _APP_ROOT / "data" / "catalog" / "themes.json"
 
 MAX_BYTES = 400 * 1024 * 1024
-PAGESIZE = 12
-HOSTS: dict[str, dict[str, str]] = {
-    "gnome-look": {
-        "api": "https://api.gnome-look.org/ocs/v1",
-        "label": "GNOME Look",
-        "site": "https://www.gnome-look.org",
-    },
-    "kde-look": {
-        "api": "https://api.kde-look.org/ocs/v1",
-        "label": "KDE Look",
-        "site": "https://www.kde-look.org",
-    },
-    "xfce-look": {
-        "api": "https://api.xfce-look.org/ocs/v1",
-        "label": "XFCE Look",
-        "site": "https://www.xfce-look.org",
-    },
-}
+_GITHUB_REPO_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 
-# Longest archive suffixes first so .tar.xz is not treated as .tar.
 ARCHIVE_SUFFIXES = (
     ".tar.xz",
     ".txz",
@@ -57,6 +44,11 @@ ARCHIVE_SUFFIXES = (
 )
 
 
+def _valid_github_repo(repo: str) -> bool:
+    text = (repo or "").strip()
+    return bool(_GITHUB_REPO_RE.fullmatch(text)) and ".." not in text
+
+
 class ThemeStoreError(Exception):
     """Listing or download failed; safe to show in the UI."""
 
@@ -65,20 +57,19 @@ class ThemeStoreError(Exception):
 class Category:
     id: str
     label: str
-    desktops: tuple[str, ...]  # empty = every desktop
-    sources: tuple[tuple[str, int], ...]  # (host, OCS category id)
+    desktops: tuple[str, ...] = ()  # empty = every desktop
 
 
 CATEGORIES: tuple[Category, ...] = (
-    Category("gtk", "GTK themes", (), (("gnome-look", 135), ("kde-look", 135), ("xfce-look", 135))),
-    Category("plasma", "Plasma", ("plasma",), (("kde-look", 722),)),
-    Category("shell", "GNOME Shell", ("gnome", "budgie"), (("gnome-look", 134),)),
-    Category("icons", "Icons", (), (("gnome-look", 132), ("kde-look", 132), ("xfce-look", 132))),
-    Category("cursors", "Cursors", (), (("gnome-look", 107), ("kde-look", 107))),
-    Category("wallpapers", "Wallpapers", (), (("gnome-look", 300), ("kde-look", 299))),
+    Category("looks", "Desktop looks"),
+    Category("gtk", "GTK themes"),
+    Category("plasma", "Plasma", ("plasma",)),
+    Category("icons", "Icons"),
+    Category("cursors", "Cursors"),
 )
 
 _CATEGORY_BY_ID = {c.id: c for c in CATEGORIES}
+_CATALOG_CACHE: dict[str, object] = {"mtime": None, "themes": []}
 
 
 def cache_dir() -> Path:
@@ -86,11 +77,12 @@ def cache_dir() -> Path:
     return _CACHE
 
 
+def catalog_path() -> Path:
+    return _CATALOG
+
+
 def categories_for(desktop: str) -> list[str]:
-    """Category ids that make sense on this desktop."""
     desk = (desktop or "unknown").strip().lower() or "unknown"
-    if desk == "unknown":
-        return [c.id for c in CATEGORIES if not c.desktops]
     out: list[str] = []
     for cat in CATEGORIES:
         if cat.desktops and desk not in cat.desktops:
@@ -101,33 +93,14 @@ def categories_for(desktop: str) -> list[str]:
 
 def default_kind(desktop: str) -> str:
     cats = categories_for(desktop)
-    desk = (desktop or "").strip().lower()
-    if desk == "plasma" and "plasma" in cats:
-        return "plasma"
-    if "gtk" in cats:
-        return "gtk"
-    return cats[0] if cats else "icons"
+    if "looks" in cats:
+        return "looks"
+    return cats[0] if cats else "gtk"
 
 
 def category_label(kind: str) -> str:
     cat = _CATEGORY_BY_ID.get(kind)
     return cat.label if cat else kind.replace("-", " ").title()
-
-
-def source_for(kind: str, desktop: str) -> tuple[str, int] | None:
-    """Pick one OCS host + category for this chip and desktop."""
-    cat = _CATEGORY_BY_ID.get(kind)
-    if cat is None or not cat.sources:
-        return None
-    desk = (desktop or "unknown").strip().lower()
-    if desk == "plasma":
-        preferred = "kde-look"
-    else:
-        preferred = "gnome-look"
-    for host, cid in cat.sources:
-        if host == preferred:
-            return host, cid
-    return cat.sources[0]
 
 
 def format_count(raw: str) -> str:
@@ -152,61 +125,7 @@ def _progress(msg: str, pct: int | None = None) -> None:
         print(str(max(0, min(100, int(pct)))), flush=True)
 
 
-def _ocs_data(payload: dict | list | None) -> list:
-    if payload is None:
-        return []
-    if isinstance(payload, list):
-        return [item for item in payload if isinstance(item, dict)]
-    if not isinstance(payload, dict):
-        return []
-    data = payload.get("data")
-    ocs = payload.get("ocs")
-    if data is None and isinstance(ocs, dict):
-        data = ocs.get("data")
-    if isinstance(data, dict):
-        inner = data.get("content")
-        data = inner if isinstance(inner, list) else [data]
-    if not isinstance(data, list):
-        return []
-    return [item for item in data if isinstance(item, dict)]
-
-
-def parse_list(payload: dict | list | None) -> list[dict[str, str]]:
-    items: list[dict[str, str]] = []
-    for raw in _ocs_data(payload):
-        cid = str(raw.get("id") or "").strip()
-        name = str(raw.get("name") or "").strip()
-        if not cid or not name:
-            continue
-        items.append(
-            {
-                "id": cid,
-                "name": name,
-                "summary": str(raw.get("summary") or "").strip(),
-                "author": str(raw.get("personid") or raw.get("username") or "").strip(),
-                "downloads": str(raw.get("downloads") or "0"),
-                "score": str(raw.get("score") or "0"),
-                "typename": str(raw.get("typename") or "").strip(),
-                "preview": str(
-                    raw.get("smallpreviewpic1") or raw.get("previewpic1") or ""
-                ).strip(),
-                "detailpage": str(raw.get("detailpage") or "").strip(),
-            }
-        )
-    return items
-
-
-def _price_paid(raw: str) -> bool:
-    text = (raw or "0").strip()
-    if not text or text in {"0", "0.0", "0.00"}:
-        return False
-    try:
-        return float(text) > 0
-    except ValueError:
-        return False
-
-
-def _archive_rank(name: str, tags: str) -> int:
+def _archive_rank(name: str, tags: str = "") -> int:
     lower = (name or "").lower()
     for score, suffix in (
         (5, ".tar.xz"),
@@ -232,36 +151,6 @@ def _archive_rank(name: str, tags: str) -> int:
     return 0
 
 
-def pick_download(item: dict) -> tuple[str, str] | None:
-    """First free archive file on an OCS detail payload, or None.
-
-    HTML / GitHub homepage slots and paid files are skipped.
-    """
-    ranked: list[tuple[int, int, str, str]] = []
-    for index in range(1, 16):
-        link = str(item.get(f"downloadlink{index}") or "").strip()
-        if not link:
-            continue
-        if _price_paid(str(item.get(f"downloadprice{index}") or "0")):
-            continue
-        name = str(item.get(f"downloadname{index}") or "").strip()
-        tags = str(item.get(f"downloadtags{index}") or "")
-        tags_l = tags.lower()
-        if "text/html" in tags_l or "text/plain" in tags_l:
-            continue
-        rank = _archive_rank(name, tags)
-        if rank <= 0:
-            link_l = link.lower()
-            if "github.com" in link_l and "/archive/" not in link_l and "/releases/" not in link_l:
-                continue
-            continue
-        ranked.append((rank, index, link, name or f"theme-{index}.tar.xz"))
-    if not ranked:
-        return None
-    ranked.sort(key=lambda row: (-row[0], row[1]))
-    return ranked[0][2], ranked[0][3]
-
-
 def safe_filename(name: str) -> str:
     base = Path((name or "").replace("\\", "/")).name
     base = re.sub(r"[^A-Za-z0-9._+-]+", "_", base).strip("._") or "theme"
@@ -269,6 +158,190 @@ def safe_filename(name: str) -> str:
     if not any(lower.endswith(suffix) for suffix in ARCHIVE_SUFFIXES):
         base += ".tar.xz"
     return base[:180]
+
+
+def github_release_asset_url(repo: str, asset: str) -> str:
+    if not _valid_github_repo(repo or ""):
+        raise ThemeStoreError("Invalid GitHub repository")
+    name = Path((asset or "").replace("\\", "/")).name
+    if not name:
+        raise ThemeStoreError("Missing release asset name")
+    return (
+        f"https://github.com/{repo}/releases/latest/download/"
+        f"{urllib.parse.quote(name)}"
+    )
+
+
+def github_archive_url(repo: str, ref: str = "master", *, tagged: bool = False) -> str:
+    if not _valid_github_repo(repo or ""):
+        raise ThemeStoreError("Invalid GitHub repository")
+    branch = (ref or "master").strip() or "master"
+    if "/" in branch or "\\" in branch or branch.startswith("."):
+        raise ThemeStoreError("Invalid git ref")
+    kind = "tags" if tagged else "heads"
+    return f"https://github.com/{repo}/archive/refs/{kind}/{urllib.parse.quote(branch)}.tar.gz"
+
+
+def pick_github_asset(assets: list[dict], pattern: str = "") -> tuple[str, str] | None:
+    """Pick a Linux theme archive from a GitHub release assets list."""
+    skip = ("windows", "macos", "win32", "darwin", "_win.", "-win.", "_windows")
+    ranked: list[tuple[int, str, str]] = []
+    for raw in assets:
+        if not isinstance(raw, dict):
+            continue
+        name = str(raw.get("name") or "").strip()
+        url = str(raw.get("browser_download_url") or "").strip()
+        if not name or not url:
+            continue
+        lower = name.lower()
+        if any(token in lower for token in skip):
+            continue
+        rank = _archive_rank(name)
+        if rank <= 0:
+            continue
+        if pattern:
+            if any(ch in pattern for ch in "*?["):
+                if not fnmatch.fnmatch(name, pattern) and not fnmatch.fnmatch(
+                    name.lower(), pattern.lower()
+                ):
+                    continue
+            elif name != pattern:
+                continue
+        ranked.append((rank, name, url))
+    if not ranked:
+        return None
+    ranked.sort(key=lambda row: (-row[0], row[1]))
+    return ranked[0][2], ranked[0][1]
+
+
+def load_catalog(path: Path | None = None) -> list[dict[str, str]]:
+    catalog = Path(path) if path is not None else _CATALOG
+    try:
+        mtime = catalog.stat().st_mtime
+    except OSError:
+        return []
+    if _CATALOG_CACHE.get("path") == str(catalog) and _CATALOG_CACHE.get("mtime") == mtime:
+        return list(_CATALOG_CACHE["themes"])  # type: ignore[arg-type]
+    try:
+        payload = json.loads(catalog.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return []
+    raw_list = payload.get("themes") if isinstance(payload, dict) else payload
+    if not isinstance(raw_list, list):
+        return []
+    themes: list[dict[str, str]] = []
+    for raw in raw_list:
+        if not isinstance(raw, dict):
+            continue
+        cid = str(raw.get("id") or "").strip()
+        name = str(raw.get("name") or "").strip()
+        repo = str(raw.get("github") or "").strip()
+        if not cid or not name or not _valid_github_repo(repo):
+            continue
+        kinds = raw.get("kinds") or raw.get("kind") or "gtk"
+        if isinstance(kinds, str):
+            kinds_s = kinds
+        else:
+            kinds_s = ",".join(str(k).strip() for k in kinds if str(k).strip())
+        desktops = raw.get("desktops") or []
+        if isinstance(desktops, str):
+            desks_s = desktops
+        else:
+            desks_s = ",".join(str(d).strip() for d in desktops if str(d).strip())
+        themes.append(
+            {
+                "id": cid,
+                "name": name,
+                "summary": str(raw.get("summary") or "").strip(),
+                "author": str(raw.get("author") or repo.split("/")[0]),
+                "license": str(raw.get("license") or "").strip(),
+                "kinds": kinds_s,
+                "desktops": desks_s,
+                "github": repo,
+                "asset": str(raw.get("asset") or "").strip(),
+                "ref": str(raw.get("ref") or "").strip(),
+                "ref_kind": str(raw.get("ref_kind") or "").strip(),
+                "homepage": str(raw.get("homepage") or f"https://github.com/{repo}").strip(),
+                "preview": str(raw.get("preview") or "").strip(),
+                "host": "catalog",
+                "detailpage": str(raw.get("homepage") or f"https://github.com/{repo}").strip(),
+            }
+        )
+    _CATALOG_CACHE["path"] = str(catalog)
+    _CATALOG_CACHE["mtime"] = mtime
+    _CATALOG_CACHE["themes"] = themes
+    return list(themes)
+
+
+def catalog_entry(content_id: str, path: Path | None = None) -> dict[str, str] | None:
+    want = (content_id or "").strip()
+    if not want:
+        return None
+    for row in load_catalog(path):
+        if row["id"] == want:
+            return row
+    return None
+
+
+def entry_kinds(row: dict[str, str]) -> list[str]:
+    return [part for part in (row.get("kinds") or "").split(",") if part]
+
+
+def entry_desktops(row: dict[str, str]) -> list[str]:
+    return [part for part in (row.get("desktops") or "").split(",") if part]
+
+
+def row_visible(row: dict[str, str], kind: str, desktop: str, search: str = "") -> bool:
+    kinds = entry_kinds(row)
+    if kind and kind not in kinds:
+        return False
+    desks = entry_desktops(row)
+    desk = (desktop or "unknown").strip().lower()
+    if desks and desk not in desks and desk != "unknown":
+        return False
+    q = (search or "").strip().lower()
+    if not q:
+        return True
+    blob = " ".join(
+        [
+            row.get("id") or "",
+            row.get("name") or "",
+            row.get("summary") or "",
+            row.get("author") or "",
+            row.get("github") or "",
+            row.get("license") or "",
+        ]
+    ).lower()
+    return q in blob
+
+
+def list_themes(
+    kind: str,
+    desktop: str,
+    *,
+    search: str = "",
+    catalog: Path | None = None,
+) -> tuple[list[dict[str, str]], str]:
+    rows = [
+        dict(row)
+        for row in load_catalog(catalog)
+        if row_visible(row, kind, desktop, search)
+    ]
+    for row in rows:
+        row["kind"] = kind
+        row["typename"] = category_label(kind)
+    return rows, "the UrStack catalog"
+
+
+def resolve_download(entry: dict[str, str]) -> tuple[str, str]:
+    repo = (entry.get("github") or "").strip()
+    asset = (entry.get("asset") or "").strip()
+    if asset:
+        return github_release_asset_url(repo, asset), asset
+    ref = (entry.get("ref") or "master").strip() or "master"
+    tagged = (entry.get("ref_kind") or "").strip().lower() == "tag"
+    url = github_archive_url(repo, ref, tagged=tagged)
+    return url, f"{repo.split('/')[-1]}-{ref}.tar.gz"
 
 
 def fetch_json(url: str, timeout: int = 25) -> dict | list | None:
@@ -296,54 +369,6 @@ def fetch_bytes(url: str, timeout: int = 25) -> bytes | None:
     except (urllib.error.URLError, TimeoutError, OSError, ValueError):
         return None
     return data or None
-
-
-def list_url(host: str, category_id: int, *, search: str = "", page: int = 0) -> str:
-    info = HOSTS.get(host)
-    if info is None:
-        raise ThemeStoreError(f"Unknown theme store {host}")
-    query = {
-        "categories": str(category_id),
-        "sortmode": "high",
-        "pagesize": str(PAGESIZE),
-        "page": str(max(0, int(page))),
-        "format": "json",
-    }
-    if search.strip():
-        query["search"] = search.strip()
-    return f"{info['api']}/content/data?{urllib.parse.urlencode(query)}"
-
-
-def list_themes(kind: str, desktop: str, *, search: str = "") -> tuple[list[dict[str, str]], str]:
-    """Return (rows, store label). Each row includes host and kind."""
-    src = source_for(kind, desktop)
-    if src is None:
-        return [], ""
-    host, category_id = src
-    label = HOSTS[host]["label"]
-    payload = fetch_json(list_url(host, category_id, search=search))
-    if payload is None:
-        raise ThemeStoreError(f"Could not reach {label}")
-    rows = parse_list(payload)
-    for row in rows:
-        row["host"] = host
-        row["kind"] = kind
-    return rows, label
-
-
-def fetch_item(host: str, content_id: str) -> dict:
-    info = HOSTS.get(host)
-    if info is None:
-        raise ThemeStoreError(f"Unknown theme store {host}")
-    cid = (content_id or "").strip()
-    if not cid or not re.fullmatch(r"[0-9]+", cid):
-        raise ThemeStoreError("Invalid listing id")
-    url = f"{info['api']}/content/data/{urllib.parse.quote(cid)}?format=json"
-    payload = fetch_json(url, timeout=30)
-    items = _ocs_data(payload)
-    if not items:
-        raise ThemeStoreError(f"Could not load this listing from {info['label']}")
-    return items[0]
 
 
 def cached_preview(url: str) -> Path | None:
@@ -407,17 +432,20 @@ def download_to(url: str, dest: Path, *, max_bytes: int = MAX_BYTES) -> None:
 
 
 def install_from_store(host: str, content_id: str, *, home: Path | None = None) -> None:
-    """Fetch a free archive from OCS and install it with look.install_archive."""
+    """Download a catalogued GitHub theme archive and install it user-local."""
     import look as look_engine
 
-    _progress("Fetching listing…", 4)
-    item = fetch_item(host, content_id)
-    picked = pick_download(item)
-    if picked is None:
-        raise ThemeStoreError("No free theme archive on this listing")
-    url, name = picked
+    if (host or "catalog").strip() not in {"catalog", "github"}:
+        raise ThemeStoreError(
+            "Browse themes is the GitHub catalog, not the GNOME/KDE store"
+        )
+    _progress("Looking up the pack…", 4)
+    entry = catalog_entry(content_id)
+    if entry is None:
+        raise ThemeStoreError("Unknown theme in the catalog")
+    url, name = resolve_download(entry)
     filename = safe_filename(name)
-    _progress(f"Downloading {filename}…", 12)
+    _progress(f"Downloading {entry['name']} from GitHub…", 12)
     staging = Path(tempfile.mkdtemp(prefix="urstack-theme-dl-"))
     dest = staging / filename
     try:

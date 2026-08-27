@@ -84,7 +84,7 @@ I also wanted a **unified updater**. Fedora does not have one: DNF, Flatpak, Sna
 | Not knowing what to clean or tune after months of use | Health scan with a score, optional actions, and undo via restore points |
 | Disk clones for “move me to a fresh OS” | Backup / restore as a blueprint, not an image |
 | Blind system tweaks with no undo | Health actions with restore points |
-| Rebuilding a theme from screenshots and a pile of tars | Look page packs the live wallpaper, icons, and widgets; installs a theme archive or a free pack from GNOME Look / KDE Look |
+| Rebuilding a theme from screenshots and a pile of tars | Look page packs the live wallpaper, icons, and widgets; installs a theme archive or a community GitHub pack (Dracula, Nord, Catppuccin) |
 | Pasting `sudo` into a terminal for every privileged step | PolicyKit prompts for DNF, firmware, and similar jobs |
 
 ### What it offers
@@ -94,7 +94,7 @@ I also wanted a **unified updater**. Fedora does not have one: DNF, Flatpak, Sna
 - **Apps with real listings** — a category catalog where each app has a description, screenshots, and the install path that actually works on Fedora (not a raw Flathub dump).
 - **Health page** — a scan of cleanup, codecs, memory, and power; you pick the fixes, UrStack takes a restore point before aggressive ones.
 - **Native desktop app** — GTK4 / libadwaita, plus a CLI for scripts and a daily check timer.
-- **Look packs** — save the live wallpaper, custom icons, widgets, and theme, install a theme archive, or download a free pack from GNOME Look / KDE Look (user-local only).
+- **Look packs** — save the live wallpaper, custom icons, widgets, and theme, install a theme archive, or download a community palette from GitHub (Dracula, Nord, Catppuccin, Sweet, Bibata; user-local only).
 
 The sections below are the detail. If you only need a reinstall kit and one updater, start at [Quick Start](#quick-start), then enable Backup in Settings.
 
@@ -165,7 +165,7 @@ The Look page is a **theme kit**, not the full Backup blueprint. It reads the de
 - GTK / Plasma look-and-feel, colour schemes, and user-installed widgets
 - Desktop settings that select those pieces (`kdeglobals`, appletsrc, GTK, dconf / xfconf)
 
-**Save look pack** writes a `.tar.xz` you can keep or move to another Fedora machine. **Browse themes** lists free GTK, Plasma, icon, cursor, and wallpaper packs from [GNOME Look](https://www.gnome-look.org) and [KDE Look](https://www.kde-look.org) (openDesktop / OCS) — the chips follow the desktop you are on. **Install** downloads a real archive (HTML homepages and paid files are skipped) and copies it into your home directory the same way as **Open** + **Install archive**. Third-party icon, GTK, and Plasma tars/zips are accepted when UrStack can tell what they are. Archives never run scripts, cannot write outside the extract dir, and do not install into `/usr`.
+**Save look pack** writes a `.tar.xz` you can keep or move to another Fedora machine. **Browse themes** is a curated catalog (same idea as Apps), not the GNOME Look / KDE Look feed that Discover already shows. Packs come from GitHub — Dracula, Nordic, Sweet, Catppuccin, Candy icons, Kora, Bibata, Nordzy — and **Install** copies a real archive into your home directory the same way as **Open** + **Install archive**. Installer scripts are never run. Third-party icon, GTK, and Plasma tars/zips are accepted when UrStack can tell what they are. Archives cannot write outside the extract dir and do not install into `/usr`.
 
 Icons, colours, and wallpaper apply immediately when the desktop has a helper (`gsettings`, `plasma-apply-*`). Panels and widgets usually need a log out.
 
@@ -402,7 +402,7 @@ bin/stackup              Compatibility wrapper
 bin/fedora-updates       Compatibility wrapper
 install.sh               User / system installer
 config/                  default.conf, developer.conf
-data/catalog/            apps.json, winutil.json, icon-map.json, metadata.json, icons/
+data/catalog/            apps.json, themes.json, winutil.json, icon-map.json, metadata.json, icons/
 data/icons/              Application icons (hicolor)
 data/polkit/             PolicyKit policy (system install)
 lib/core/                checks, apply, catalog, detect, priv, look packs, GTK UI

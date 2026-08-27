@@ -1120,7 +1120,8 @@ def inspect_archive(path: Path) -> ArchiveInfo:
 
     joined = "\n".join(posix)
     if re.search(r"(^|/)index\.theme$", joined, re.M) and re.search(
-        r"(scalable|16x16|22x22|24x24|32x32|48x48|cursors)/", joined
+        r"(scalable|16x16|22x22|24x24|32x32|48x48|cursors|apps|places|mimetypes|actions)/",
+        joined,
     ):
         kind = "icons"
         items.append("icons")
@@ -1409,10 +1410,15 @@ def _install_urstack_pack(root: Path, home: Path, manifest: dict[str, Any]) -> l
 
 
 def _dir_looks_like_icons(path: Path) -> bool:
-    return (path / "index.theme").is_file() and (
-        (path / "cursors").is_dir()
-        or any((path / d).is_dir() for d in ("scalable", "16x16", "22x22", "24x24", "48x48"))
-    )
+    if not (path / "index.theme").is_file():
+        return False
+    if (path / "cursors").is_dir():
+        return True
+    size_dirs = ("scalable", "16x16", "22x22", "24x24", "32x32", "48x48", "64x64")
+    if any((path / d).is_dir() for d in size_dirs):
+        return True
+    cats = ("apps", "places", "mimetypes", "devices", "actions", "status", "categories")
+    return any((path / d).is_dir() for d in cats)
 
 
 def _dir_looks_like_gtk(path: Path) -> bool:
@@ -1421,10 +1427,33 @@ def _dir_looks_like_gtk(path: Path) -> bool:
     ).is_dir()
 
 
+def _theme_roots(root: Path) -> list[Path]:
+    """Root plus one or two directory levels (GitHub tag wrappers)."""
+    out: list[Path] = [root]
+    try:
+        kids = [p for p in root.iterdir() if p.is_dir()]
+    except OSError:
+        return out
+    out.extend(kids)
+    for kid in kids:
+        try:
+            out.extend(p for p in kid.iterdir() if p.is_dir())
+        except OSError:
+            continue
+    seen: set[str] = set()
+    unique: list[Path] = []
+    for path in out:
+        key = str(path)
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(path)
+    return unique
+
+
 def _install_third_party(root: Path, home: Path, info: ArchiveInfo) -> list[str]:
     installed: list[str] = []
-    candidates = [root, *([p for p in root.iterdir() if p.is_dir()])]
-    for path in candidates:
+    for path in _theme_roots(root):
         if _dir_looks_like_icons(path):
             dest = home / ".local/share/icons" / path.name
             _copy_tree(path, dest)
@@ -1447,6 +1476,16 @@ def _install_third_party(root: Path, home: Path, info: ArchiveInfo) -> list[str]
                 dest = home / ".local/share/wallpapers" / path.name
                 _copy_tree(path, dest)
                 installed.append(f"wallpapers/{path.name}")
+        elif path.is_dir():
+            try:
+                children = list(path.iterdir())
+            except OSError:
+                children = []
+            for child in children:
+                if child.is_file() and child.suffix == ".colors":
+                    dest = home / ".local/share/color-schemes" / child.name
+                    if _copy_file(child, dest):
+                        installed.append(f"colors/{child.name}")
         elif path.suffix == ".colors" and path.is_file():
             dest = home / ".local/share/color-schemes" / path.name
             if _copy_file(path, dest):
@@ -1455,6 +1494,12 @@ def _install_third_party(root: Path, home: Path, info: ArchiveInfo) -> list[str]
             dest = home / ".local/share/wallpapers/urstack" / path.name
             if _copy_file(path, dest):
                 installed.append(f"wallpaper/{path.name}")
+    if not installed:
+        for path in root.rglob("*.colors"):
+            if path.is_file():
+                dest = home / ".local/share/color-schemes" / path.name
+                if _copy_file(path, dest):
+                    installed.append(f"colors/{path.name}")
     if not installed:
         # Flatten: copy images as wallpaper.
         for path in root.rglob("*"):
@@ -1596,8 +1641,8 @@ def main(argv: list[str] | None = None) -> int:
     inst.add_argument("archive")
     inst.add_argument("--no-apply", action="store_true")
 
-    dl = sub.add_parser("download-install", help="Download a GNOME/KDE Look listing and install it")
-    dl.add_argument("--host", required=True, choices=("gnome-look", "kde-look", "xfce-look"))
+    dl = sub.add_parser("download-install", help="Download a catalogued GitHub theme and install it")
+    dl.add_argument("--host", default="catalog")
     dl.add_argument("--id", required=True)
 
     args = p.parse_args(argv)

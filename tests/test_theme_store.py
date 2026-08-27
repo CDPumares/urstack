@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
-"""OCS theme listings: parse, skip HTML/paid files, pick a real archive."""
+"""Curated GitHub theme catalog: filter, resolve URLs, skip Windows assets."""
 
 from __future__ import annotations
 
 import importlib.util
+import json
+import tempfile
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 STORE_PY = ROOT / "lib" / "core" / "theme_store.py"
+CATALOG = ROOT / "data" / "catalog" / "themes.json"
 LOOK_ICON = ROOT / "data" / "icons" / "hicolor" / "scalable" / "apps" / "urstack-look-symbolic.svg"
 
 
@@ -26,114 +29,118 @@ def load_store():
     return mod
 
 
-LIST_PAYLOAD = {
-    "data": [
-        {
-            "id": "1357889",
-            "name": "Orchis theme",
-            "summary": "A Material Design theme",
-            "personid": "vinceliuice",
-            "downloads": "1234567",
-            "score": "92",
-            "typename": "GTK 3.x",
-            "smallpreviewpic1": "https://example.test/orchis.png",
-            "detailpage": "https://www.gnome-look.org/p/1357889",
-        },
-        {"id": "", "name": "skip me"},
-        {"id": "1", "name": ""},
-    ]
-}
-
-ITEM_ORCHIS = {
-    "id": "1357889",
-    "name": "Orchis theme",
-    "downloadlink1": "https://github.com/vinceliuice/Orchis-theme",
-    "downloadname1": "Orchis-theme",
-    "downloadtags1": "mimetype=text/html",
-    "downloadprice1": "0",
-    "downloadlink2": "https://example.test/paid.zip",
-    "downloadname2": "Orchis-paid.zip",
-    "downloadtags2": "mimetype=application/zip",
-    "downloadprice2": "4.99",
-    "downloadlink3": "https://example.test/Orchis.tar.xz",
-    "downloadname3": "Orchis.tar.xz",
-    "downloadtags3": "mimetype=application/x-xz",
-    "downloadprice3": "0",
-    "downloadlink4": "https://example.test/Orchis.zip",
-    "downloadname4": "Orchis.zip",
-    "downloadtags4": "mimetype=application/zip",
-    "downloadprice4": "0",
-}
-
-
 class ThemeStoreTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.store = load_store()
+        cls.themes = cls.store.load_catalog()
 
-    def test_parse_list_skips_empty_and_keeps_fields(self) -> None:
-        rows = self.store.parse_list(LIST_PAYLOAD)
-        self.assertEqual(len(rows), 1)
-        row = rows[0]
-        self.assertEqual(row["id"], "1357889")
-        self.assertEqual(row["name"], "Orchis theme")
-        self.assertEqual(row["author"], "vinceliuice")
-        self.assertEqual(row["preview"], "https://example.test/orchis.png")
+    def test_shipped_catalog_has_community_palettes(self) -> None:
+        ids = {row["id"] for row in self.themes}
+        for want in (
+            "dracula-gtk",
+            "nordic",
+            "sweet",
+            "catppuccin-mocha",
+            "candy-icons",
+            "bibata-modern-classic",
+        ):
+            self.assertIn(want, ids)
+        self.assertGreaterEqual(len(self.themes), 10)
+        for row in self.themes:
+            self.assertTrue(row["github"].count("/") == 1)
+            self.assertTrue(row["asset"] or row["ref"])
+            self.assertTrue(self.store.entry_kinds(row))
 
-    def test_parse_list_ocs_wrapper(self) -> None:
-        rows = self.store.parse_list({"ocs": {"data": LIST_PAYLOAD["data"]}})
-        self.assertEqual(rows[0]["id"], "1357889")
+    def test_catalog_json_is_valid(self) -> None:
+        payload = json.loads(CATALOG.read_text(encoding="utf-8"))
+        self.assertEqual(payload.get("source"), "github")
+        self.assertIsInstance(payload.get("themes"), list)
 
-    def test_pick_download_skips_html_and_paid(self) -> None:
-        picked = self.store.pick_download(ITEM_ORCHIS)
-        self.assertIsNotNone(picked)
-        url, name = picked
-        self.assertEqual(name, "Orchis.tar.xz")
-        self.assertTrue(url.endswith("Orchis.tar.xz"))
-
-    def test_pick_download_none_when_only_homepage(self) -> None:
-        item = {
-            "downloadlink1": "https://github.com/vinceliuice/Orchis-theme",
-            "downloadname1": "Orchis-theme",
-            "downloadtags1": "mimetype=text/html",
-            "downloadprice1": "0",
-        }
-        self.assertIsNone(self.store.pick_download(item))
-
-    def test_categories_follow_desktop(self) -> None:
+    def test_looks_is_the_default_and_plasma_is_plasma_only(self) -> None:
+        self.assertEqual(self.store.default_kind("gnome"), "looks")
+        self.assertEqual(self.store.default_kind("plasma"), "looks")
         gnome = self.store.categories_for("gnome")
+        self.assertIn("looks", gnome)
         self.assertIn("gtk", gnome)
-        self.assertIn("shell", gnome)
         self.assertNotIn("plasma", gnome)
         plasma = self.store.categories_for("plasma")
         self.assertIn("plasma", plasma)
-        self.assertNotIn("shell", plasma)
-        xfce = self.store.categories_for("xfce")
-        self.assertIn("gtk", xfce)
-        self.assertNotIn("plasma", xfce)
-        self.assertNotIn("shell", xfce)
 
-    def test_default_kind(self) -> None:
-        self.assertEqual(self.store.default_kind("plasma"), "plasma")
-        self.assertEqual(self.store.default_kind("gnome"), "gtk")
-        self.assertEqual(self.store.default_kind("xfce"), "gtk")
+    def test_list_hides_plasma_colours_on_gnome(self) -> None:
+        gnome, _label = self.store.list_themes("plasma", "gnome")
+        self.assertEqual(gnome, [])
+        kde, _ = self.store.list_themes("plasma", "plasma")
+        self.assertTrue(any(r["id"].startswith("catppuccin-plasma") for r in kde))
 
-    def test_source_prefers_matching_store(self) -> None:
-        self.assertEqual(self.store.source_for("gtk", "gnome")[0], "gnome-look")
-        self.assertEqual(self.store.source_for("gtk", "plasma")[0], "kde-look")
-        self.assertEqual(self.store.source_for("gtk", "xfce")[0], "gnome-look")
-        self.assertEqual(self.store.source_for("plasma", "plasma"), ("kde-look", 722))
+    def test_search_finds_nord(self) -> None:
+        rows, _ = self.store.list_themes("looks", "gnome", search="nord")
+        ids = {r["id"] for r in rows}
+        self.assertIn("nordic", ids)
+        self.assertNotIn("dracula-gtk", ids)
 
-    def test_format_count(self) -> None:
-        self.assertEqual(self.store.format_count("1234567"), "1.2M")
-        self.assertEqual(self.store.format_count("12000"), "12k")
-        self.assertEqual(self.store.format_count("12"), "12")
+    def test_resolve_release_and_source_urls(self) -> None:
+        dracula = self.store.catalog_entry("dracula-gtk")
+        assert dracula is not None
+        url, name = self.store.resolve_download(dracula)
+        self.assertIn("/releases/latest/download/", url)
+        self.assertIn("Dracula.tar.xz", url)
+        self.assertEqual(name, "Dracula.tar.xz")
+        candy = self.store.catalog_entry("candy-icons")
+        assert candy is not None
+        url, name = self.store.resolve_download(candy)
+        self.assertIn("/archive/refs/heads/master.tar.gz", url)
+        self.assertTrue(name.endswith(".tar.gz"))
 
-    def test_safe_filename_strips_paths(self) -> None:
-        name = self.store.safe_filename("../evil/Orchis Theme.tar.xz")
-        self.assertEqual(name, "Orchis_Theme.tar.xz")
-        self.assertNotIn("..", name)
-        self.assertNotIn("/", name)
+    def test_github_url_rejects_odd_repos(self) -> None:
+        with self.assertRaises(self.store.ThemeStoreError):
+            self.store.github_release_asset_url("../evil", "x.tar.xz")
+        with self.assertRaises(self.store.ThemeStoreError):
+            self.store.github_archive_url("dracula/gtk", "refs/heads/master")
+
+    def test_pick_github_asset_skips_windows(self) -> None:
+        assets = [
+            {
+                "name": "Bibata-Modern-Classic-Windows.zip",
+                "browser_download_url": "https://example.test/win.zip",
+            },
+            {
+                "name": "Bibata-Modern-Classic.tar.xz",
+                "browser_download_url": "https://example.test/classic.tar.xz",
+            },
+        ]
+        picked = self.store.pick_github_asset(assets, "Bibata-Modern-Classic.tar.xz")
+        self.assertEqual(picked[1], "Bibata-Modern-Classic.tar.xz")
+
+    def test_plus_in_asset_is_quoted(self) -> None:
+        url = self.store.github_release_asset_url(
+            "catppuccin/gtk", "catppuccin-mocha-mauve-standard+default.zip"
+        )
+        self.assertIn("%2B", url)
+
+    def test_temp_catalog_roundtrip(self) -> None:
+        with tempfile.TemporaryDirectory() as raw:
+            path = Path(raw) / "themes.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "themes": [
+                            {
+                                "id": "demo",
+                                "name": "Demo",
+                                "github": "example/demo",
+                                "kinds": ["gtk"],
+                                "asset": "Demo.tar.xz",
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+            rows, label = self.store.list_themes("gtk", "gnome", catalog=path)
+            self.assertEqual(label, "the UrStack catalog")
+            self.assertEqual(rows[0]["id"], "demo")
+            self.assertEqual(rows[0]["host"], "catalog")
 
     def test_look_icon_is_symbolic(self) -> None:
         self.assertTrue(LOOK_ICON.is_file())

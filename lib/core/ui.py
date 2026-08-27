@@ -3507,15 +3507,16 @@ def _look_store_section(
     desktop: str,
     on_store_install: Callable[[str, str], None],
 ) -> Gtk.Widget:
-    """Browse free GTK / Plasma / icon packs from GNOME Look and KDE Look."""
+    """Browse community GTK / Plasma / icon packs from GitHub."""
     kinds = theme_store_mod.categories_for(desktop)
     if not kinds:
-        kinds = ["gtk", "icons", "cursors", "wallpapers"]
+        kinds = ["looks", "gtk", "icons", "cursors"]
     state = {"kind": theme_store_mod.default_kind(desktop), "q": "", "gen": 0}
     if state["kind"] not in kinds:
         state["kind"] = kinds[0]
 
     kind_icons = {
+        "looks": page_icon("look"),
         "gtk": pick_icon(
             "urstack-look-symbolic",
             "color-select-symbolic",
@@ -3526,21 +3527,18 @@ def _look_store_section(
             "urstack-look-symbolic",
             page_icon("look"),
         ),
-        "shell": pick_icon("desktop-symbolic", "computer-symbolic"),
         "icons": pick_icon("folder-pictures-symbolic", "emblem-photos-symbolic"),
         "cursors": pick_icon("input-mouse-symbolic", "input-tablet-symbolic"),
-        "wallpapers": pick_icon(
-            "preferences-desktop-wallpaper-symbolic", "folder-pictures-symbolic"
-        ),
     }
 
     wrap = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
     wrap.append(
         page_callout(
-            "From GNOME Look and KDE Look",
-            "Free GTK, Plasma, icon, cursor, and wallpaper packs. Paid files and "
-            "web-page links are skipped. Install stays in your home directory — "
-            "the same rules as a theme archive.",
+            "Community packs from GitHub",
+            "Not the GNOME or KDE theme store — those already live in Discover "
+            "and System Settings. This list is hand-picked like Apps: Dracula, "
+            "Nord, Catppuccin, Sweet, Bibata, and other FOSS palettes. Install "
+            "stays in your home directory and never runs theme installer scripts.",
         )
     )
 
@@ -3560,7 +3558,7 @@ def _look_store_section(
     wrap.append(cat_scroll)
 
     search = Gtk.SearchEntry()
-    search.set_placeholder_text("Search themes…")
+    search.set_placeholder_text("Search Dracula, Nord, Catppuccin…")
     search.add_css_class("fu-apps-search")
     search.set_hexpand(True)
     wrap.append(search)
@@ -3591,9 +3589,9 @@ def _look_store_section(
             pic.set_content_fit(Gtk.ContentFit.COVER)
         except Exception:  # noqa: BLE001
             pass
-        card.append(pic)
         preview = (row.get("preview") or "").strip()
         if preview:
+            card.append(pic)
             _look_preview_async(pic, preview)
 
         body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
@@ -3606,10 +3604,10 @@ def _look_store_section(
         bits: list[str] = []
         if row.get("author"):
             bits.append(row["author"])
-        downloads = theme_store_mod.format_count(row.get("downloads") or "")
-        if downloads:
-            bits.append(f"{downloads} downloads")
-        sub = Gtk.Label(label=" · ".join(bits) or (row.get("typename") or ""), xalign=0.0)
+        if row.get("license"):
+            bits.append(row["license"])
+        bits.append("GitHub")
+        sub = Gtk.Label(label=" · ".join(bits), xalign=0.0)
         sub.add_css_class("fu-app-mini-sub")
         sub.set_ellipsize(Pango.EllipsizeMode.END)
         body.append(sub)
@@ -3639,7 +3637,7 @@ def _look_store_section(
                 pick_icon("adw-external-link-symbolic", "web-browser-symbolic")
             )
             openb.add_css_class("flat")
-            openb.set_tooltip_text("Open listing")
+            openb.set_tooltip_text("Open on GitHub")
             openb.connect("clicked", lambda *_a, u=detail: _open_uri(u, parent_win))
             foot.append(openb)
         body.append(foot)
@@ -3675,7 +3673,9 @@ def _look_store_section(
             status.set_label(f"No {kind_lab.lower()} on {origin}")
             show_status_only("Nothing matched. Try another search or category.")
             return False
-        status.set_label(f"{len(rows)} {kind_lab.lower()} from {origin} · free archives only")
+        status.set_label(
+            f"{len(rows)} {kind_lab.lower()} from {origin} · GitHub, user-local install"
+        )
         _clear_box(host)
         flow = Gtk.FlowBox()
         flow.set_selection_mode(Gtk.SelectionMode.NONE)
@@ -3797,11 +3797,11 @@ def build_look_content(
             (str(snap_d.get("desktop") or "desktop")).capitalize(),
             "desktop",
             snap_d.get("summary") or "Current look",
-            "Pack what is on screen, install a theme archive, or download a free GTK, Plasma, icon, or wallpaper pack.",
+            "Pack what is on screen, install a theme archive, or download a community palette from GitHub.",
             warn=False,
             ok=True,
             heading="Look",
-            heading_sub="The theme this workstation is using, plus free packs from GNOME Look and KDE Look.",
+            heading_sub="The theme this workstation is using, plus community packs (Dracula, Nord, Catppuccin, Sweet).",
             icon_name=page_icon("look"),
         )
     )
