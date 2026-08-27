@@ -32,6 +32,32 @@
   <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
 </p>
 
+<table id="screenshots">
+  <tr>
+    <td align="center" width="33%">
+      <a href="assets/screenshots/overview.png">
+        <img src="assets/screenshots/overview.png" alt="UrStack Overview: health score, updates, and shortcuts into every page">
+      </a>
+      <br>
+      <sub>Overview</sub>
+    </td>
+    <td align="center" width="33%">
+      <a href="assets/screenshots/apps.png">
+        <img src="assets/screenshots/apps.png" alt="Apps catalog with Flatpak and vendor listings">
+      </a>
+      <br>
+      <sub>Apps</sub>
+    </td>
+    <td align="center" width="33%">
+      <a href="assets/screenshots/health.png">
+        <img src="assets/screenshots/health.png" alt="System Health score and restore point">
+      </a>
+      <br>
+      <sub>Health</sub>
+    </td>
+  </tr>
+</table>
+
 ---
 
 **UrStack** is a native GTK4 / libadwaita companion for daily-driver Fedora machines. It checks and applies updates across package managers and developer toolchains, installs popular software from a curated catalog, tunes workstation health, and backs up a machine so you can rebuild it later — from one dashboard, with PolicyKit for privileged steps instead of pasted `sudo` commands.
@@ -209,10 +235,6 @@ Config stays at `~/.config/urstack/config.conf`. Personal Apps listings stay in 
 
 ## The desktop app
 
-<p align="center">
-  <img src="assets/screenshots/overview.png" alt="UrStack Overview: health score, updates, and shortcuts into every page" width="880">
-</p>
-
 The main window is a sidebar shell:
 
 | Page | Role |
@@ -226,23 +248,6 @@ The main window is a sidebar shell:
 | **History** / **Runs** | Combined log and per-run folders. |
 
 Checks run in the background after launch. You can open Apps, Backup, Settings, and History while a scan is still finishing.
-
-### Screenshots
-
-<table>
-  <tr>
-    <td align="center" width="50%">
-      <img src="assets/screenshots/apps.png" alt="Apps catalog with Flatpak and vendor listings">
-      <br>
-      <sub>Apps — catalog, filters, and batch install</sub>
-    </td>
-    <td align="center" width="50%">
-      <img src="assets/screenshots/health.png" alt="System Health score and restore point">
-      <br>
-      <sub>Health — score, checks, and restore points</sub>
-    </td>
-  </tr>
-</table>
 
 <p align="center">
   <img src="assets/screenshots/backup.png" alt="Backup page with secrets off by default" width="880">
