@@ -434,7 +434,7 @@ class TestStyleSheet(unittest.TestCase):
         self.assertIn("@define-color accent_bg_color #3c90e4", css)
         self.assertIn(".fu-shell-sidebar-collapsed", css)
         self.assertIn("window.urstack scrollbar > range > trough > slider", css)
-        self.assertIn("linear-gradient(180deg, #3c90e4 0%, #b43ce4 100%)", css)
+        self.assertIn("background-image: none", css)
 
     def test_stylesheet_keeps_status_green_and_red(self) -> None:
         css = self.ui.STYLE_SHEET.read_text(encoding="utf-8")

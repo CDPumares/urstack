@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import queue
 import re
 import signal
 import subprocess
@@ -3482,30 +3483,61 @@ def _clear_box(box: Gtk.Widget) -> None:
         child = nxt
 
 
-def _look_preview_async(pic: Gtk.Picture, url: str) -> None:
-    gen = int(getattr(pic, "_prev_gen", 0)) + 1
-    pic._prev_gen = gen  # type: ignore[attr-defined]
+_LOOK_PREVIEW_Q: queue.SimpleQueue[tuple[Gtk.Picture, str, int]] | None = None
+_LOOK_PREVIEW_LOCK = threading.Lock()
+_LOOK_PREVIEW_MAX = 420
 
-    def work() -> None:
+
+def _look_preview_worker() -> None:
+    q = _LOOK_PREVIEW_Q
+    if q is None:
+        return
+    while True:
+        pic, url, gen = q.get()
+        pix = None
         try:
-            path = theme_store_mod.cached_preview(url)
-        except Exception:  # noqa: BLE001
-            path = None
-
-        def apply() -> bool:
             if int(getattr(pic, "_prev_gen", 0)) != gen:
-                return False
-            if path is None or not Path(path).is_file():
+                continue
+            path = theme_store_mod.cached_preview(url)
+            if path is not None and Path(path).is_file():
+                pix = GdkPixbuf.Pixbuf.new_from_file_at_scale(
+                    str(path), _LOOK_PREVIEW_MAX, int(_LOOK_PREVIEW_MAX * 9 / 16), True
+                )
+        except Exception:  # noqa: BLE001
+            pix = None
+
+        def apply(widget: Gtk.Picture = pic, g: int = gen, p: GdkPixbuf.Pixbuf | None = pix) -> bool:
+            if int(getattr(widget, "_prev_gen", 0)) != g or p is None:
                 return False
             try:
-                pic.set_file(Gio.File.new_for_path(str(path)))
+                widget.set_paintable(Gdk.Texture.new_for_pixbuf(p))
             except Exception:  # noqa: BLE001
                 return False
             return False
 
         GLib.idle_add(apply)
 
-    threading.Thread(target=work, daemon=True).start()
+
+def _ensure_look_preview_workers() -> None:
+    global _LOOK_PREVIEW_Q
+    with _LOOK_PREVIEW_LOCK:
+        if _LOOK_PREVIEW_Q is not None:
+            return
+        _LOOK_PREVIEW_Q = queue.SimpleQueue()
+        for _ in range(3):
+            threading.Thread(
+                target=_look_preview_worker,
+                daemon=True,
+                name="urstack-look-preview",
+            ).start()
+
+
+def _look_preview_async(pic: Gtk.Picture, url: str) -> None:
+    gen = int(getattr(pic, "_prev_gen", 0)) + 1
+    pic._prev_gen = gen  # type: ignore[attr-defined]
+    _ensure_look_preview_workers()
+    if _LOOK_PREVIEW_Q is not None:
+        _LOOK_PREVIEW_Q.put((pic, url, gen))
 
 
 def _theme_detail_byline(info: dict) -> str:
@@ -4087,9 +4119,21 @@ def _look_store_section(
         flow.set_column_spacing(10)
         flow.set_hexpand(True)
         flow.set_halign(Gtk.Align.FILL)
-        for row in rows:
-            flow.append(make_card(row))
         host.append(flow)
+        pending = {"rows": list(rows)}
+
+        def pump() -> bool:
+            if gen != state["gen"]:
+                pending["rows"] = []
+                return False
+            batch = pending["rows"][:6]
+            pending["rows"] = pending["rows"][6:]
+            for row in batch:
+                flow.append(make_card(row))
+            return bool(pending["rows"])
+
+        if pump():
+            GLib.idle_add(pump)
         return False
 
     def reload() -> None:
@@ -4111,7 +4155,8 @@ def _look_store_section(
                 err = str(exc)
             except Exception as exc:  # noqa: BLE001
                 err = f"Could not load themes ({exc})"
-            GLib.idle_add(apply_rows, gen, rows, err, label)
+            finally:
+                GLib.idle_add(apply_rows, gen, rows, err, label)
 
         threading.Thread(target=work, daemon=True).start()
 
@@ -4219,7 +4264,8 @@ def build_look_content(
         cap.add_css_class("fu-page-card-title")
         pic_wrap.append(cap)
         try:
-            picture = Gtk.Picture.new_for_filename(preview)
+            pix = GdkPixbuf.Pixbuf.new_from_file_at_scale(preview, 960, 200, True)
+            picture = Gtk.Picture.new_for_paintable(Gdk.Texture.new_for_pixbuf(pix))
             picture.set_size_request(-1, 180)
             try:
                 picture.set_content_fit(Gtk.ContentFit.COVER)

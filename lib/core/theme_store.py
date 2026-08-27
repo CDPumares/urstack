@@ -17,6 +17,7 @@ import shutil
 import ssl
 import tempfile
 import threading
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -99,6 +100,7 @@ OCS_CATEGORIES: dict[str, tuple[tuple[str, int], ...]] = {
 }
 
 OCS_PAGESIZE = 24
+OCS_LIST_TTL = 15 * 60
 
 _CATEGORY_BY_ID = {c.id: c for c in CATEGORIES}
 _CATALOG_CACHE: dict[str, object] = {"mtime": None, "themes": []}
@@ -550,7 +552,26 @@ def list_ocs(kind: str, desktop: str, *, search: str = "") -> tuple[list[dict[st
         return [], ""
     host, category_id = src
     label = HOSTS[host]["label"]
-    payload = fetch_json(list_url(host, category_id, search=search))
+    cache_key = hashlib.sha256(
+        f"{host}|{category_id}|{search.strip().lower()}".encode()
+    ).hexdigest()[:20]
+    cache_path = cache_dir() / f"ocs-list-{cache_key}.json"
+    payload: dict | list | None = None
+    try:
+        age = time.time() - cache_path.stat().st_mtime
+        if age < OCS_LIST_TTL and cache_path.stat().st_size > 40:
+            payload = json.loads(cache_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        payload = None
+    if payload is None:
+        payload = fetch_json(list_url(host, category_id, search=search))
+        if payload is not None:
+            try:
+                cache_path.write_text(
+                    json.dumps(payload, separators=(",", ":")), encoding="utf-8"
+                )
+            except OSError:
+                pass
     if payload is None:
         return [], label
     rows = parse_list(payload)
