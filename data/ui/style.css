@@ -207,14 +207,14 @@ button.fu-cat-pill:checked .fu-cat-count {
 }
 
 .fu-shell-sidebar {
-  background-color: #1c2c4c;
+  background-color: #0c0e14;
   background-image: linear-gradient(
     180deg,
-    alpha(#3c90e4, 0.32) 0%,
-    alpha(#243c6c, 0.0) 42%,
-    alpha(#b43ce4, 0.22) 100%
+    alpha(#3c90e4, 0.20) 0%,
+    transparent 42%,
+    alpha(#b43ce4, 0.14) 100%
   );
-  border-right: 1px solid alpha(#3c90e4, 0.32);
+  border-right: 1px solid alpha(#3c90e4, 0.28);
   min-width: 200px;
   padding: 8px 0 12px 0;
 }
@@ -326,28 +326,29 @@ button.fu-cat-pill:checked .fu-cat-count {
   background-color: alpha(#ffffff, 0.35);
 }
 
+/* Status stays on badges / a left bar — heroes keep the logo gradient. */
 .fu-page-hero-ok,
 .fu-health-hero-ok {
-  background-color: #16382c;
-  background-image: linear-gradient(
-    125deg,
-    #26a269 0%,
-    #1c7a52 52%,
-    #1a4a38 100%
-  );
-  border: 1px solid alpha(#33d17e, 0.38);
+  border-color: alpha(#33d17e, 0.55);
+  box-shadow: inset 5px 0 0 0 #26a269;
+}
+
+.fu-page-hero-ok .fu-page-score,
+.fu-health-hero-ok .fu-page-score,
+.fu-health-hero-ok .fu-health-score {
+  color: #33d17e;
 }
 
 .fu-page-hero-warn,
 .fu-health-hero-warn {
-  background-color: #4a1820;
-  background-image: linear-gradient(
-    125deg,
-    #e01b24 0%,
-    #a51d2d 52%,
-    #6b2030 100%
-  );
-  border: 1px solid alpha(#ff7b63, 0.42);
+  border-color: alpha(#ff7b63, 0.55);
+  box-shadow: inset 5px 0 0 0 #e01b24;
+}
+
+.fu-page-hero-warn .fu-page-score,
+.fu-health-hero-warn .fu-page-score,
+.fu-health-hero-warn .fu-health-score {
+  color: #ff8a80;
 }
 
 .fu-page-score,
@@ -772,26 +773,14 @@ window.urstack.fu-light .fu-health-hero {
 
 window.urstack.fu-light .fu-page-hero-ok,
 window.urstack.fu-light .fu-health-hero-ok {
-  background-color: #1a7f4a;
-  background-image: linear-gradient(
-    125deg,
-    #26a269 0%,
-    #2ec27e 52%,
-    #1a7f4a 100%
-  );
-  border: 1px solid alpha(#1a7f4a, 0.28);
+  border-color: alpha(#1a7f4a, 0.55);
+  box-shadow: inset 5px 0 0 0 #26a269;
 }
 
 window.urstack.fu-light .fu-page-hero-warn,
 window.urstack.fu-light .fu-health-hero-warn {
-  background-color: #c01c28;
-  background-image: linear-gradient(
-    125deg,
-    #e01b24 0%,
-    #c01c28 52%,
-    #a51d2d 100%
-  );
-  border: 1px solid alpha(#a51d2d, 0.28);
+  border-color: alpha(#c01c28, 0.50);
+  box-shadow: inset 5px 0 0 0 #e01b24;
 }
 
 window.urstack.fu-light .fu-page-callout,
@@ -823,65 +812,76 @@ window.urstack.fu-light .fu-badge-warn {
   color: @error_color;
 }
 
-/* Dark: navy workspace, same logo gradients on sidebar + heroes. */
+/* Dark: near-black workspace; blue / magenta only as accents. */
 window.urstack.fu-dark {
-  background-color: #17233f;
+  background-color: #0a0c10;
+  --window-bg-color: #0a0c10;
+  --headerbar-bg-color: #0a0c10;
+  --headerbar-backdrop-color: #0a0c10;
+  --view-bg-color: #0a0c10;
+  --sidebar-bg-color: #08090c;
+  --card-bg-color: #141820;
+  --popover-bg-color: #141820;
+  --dialog-bg-color: #141820;
 }
 
-window.urstack.fu-dark .fu-page-scroll {
-  background-color: #17233f;
+window.urstack.fu-dark .fu-page-scroll,
+window.urstack.fu-dark .fu-actions {
+  background-color: #0a0c10;
+}
+
+window.urstack.fu-dark headerbar {
+  background-color: #0a0c10;
+  background-image: none;
+  box-shadow: none;
 }
 
 window.urstack.fu-dark .fu-shell-sidebar {
-  background-color: #142038;
+  background-color: #08090c;
   background-image: linear-gradient(
     180deg,
-    alpha(#3c90e4, 0.34) 0%,
-    alpha(#243c6c, 0.0) 42%,
-    alpha(#b43ce4, 0.24) 100%
+    alpha(#3c90e4, 0.16) 0%,
+    transparent 44%,
+    alpha(#b43ce4, 0.12) 100%
   );
-  border-right: 1px solid alpha(#3c90e4, 0.36);
+  border-right: 1px solid alpha(#3c90e4, 0.24);
 }
 
 window.urstack.fu-dark .fu-page-hero,
 window.urstack.fu-dark .fu-health-hero {
-  background-color: #243c6c;
+  background-color: #1a2744;
   background-image: linear-gradient(
     125deg,
     #3c90e4 0%,
-    #3060a8 48%,
+    #243c6c 48%,
     #b43ce4 100%
   );
 }
 
 window.urstack.fu-dark .fu-page-hero-ok,
 window.urstack.fu-dark .fu-health-hero-ok {
-  background-color: #16382c;
-  background-image: linear-gradient(
-    125deg,
-    #26a269 0%,
-    #1c7a52 52%,
-    #16382c 100%
-  );
+  border-color: alpha(#33d17e, 0.50);
+  box-shadow: inset 5px 0 0 0 #26a269;
 }
 
 window.urstack.fu-dark .fu-page-hero-warn,
 window.urstack.fu-dark .fu-health-hero-warn {
-  background-color: #4a1820;
-  background-image: linear-gradient(
-    125deg,
-    #c01c28 0%,
-    #8a1a24 52%,
-    #4a1820 100%
-  );
+  border-color: alpha(#ff7b63, 0.50);
+  box-shadow: inset 5px 0 0 0 #e01b24;
 }
 
 window.urstack.fu-dark .fu-overview-card,
 window.urstack.fu-dark .fu-page-card,
 window.urstack.fu-dark .fu-health-card,
 window.urstack.fu-dark .fu-app-mini {
-  background-color: #243352;
-  border-color: alpha(#3c90e4, 0.32);
+  background-color: #141820;
+  border-color: alpha(#3c90e4, 0.28);
+}
+
+window.urstack.fu-dark .fu-page-callout,
+window.urstack.fu-dark .fu-health-rp {
+  background-color: #141820;
+  border-color: alpha(#3c90e4, 0.40);
 }
 
 window.urstack.fu-dark .fu-overview-card-ok {

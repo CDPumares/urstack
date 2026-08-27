@@ -425,6 +425,10 @@ class TestStyleSheet(unittest.TestCase):
         self.assertIn("#26a269", css)
         self.assertIn(".fu-page-hero-warn", css)
         self.assertIn("#e01b24", css)
+        # Heroes stay on the logo gradient; green/red are accent bars, not fills.
+        self.assertIn("box-shadow: inset 5px 0 0 0 #26a269", css)
+        self.assertIn("box-shadow: inset 5px 0 0 0 #e01b24", css)
+        self.assertIn("background-color: #0a0c10", css)
 
     def test_overview_and_updates_share_apps_page_inset(self) -> None:
         """Hero sits in the same padded frame as Apps — not a tighter chrome band."""
