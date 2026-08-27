@@ -16,9 +16,11 @@ import re
 import shutil
 import ssl
 import tempfile
+import threading
 import urllib.error
 import urllib.parse
 import urllib.request
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -283,6 +285,170 @@ def _ocs_data(payload: dict | list | None) -> list:
     return [item for item in data if isinstance(item, dict)]
 
 
+_HTML_TAG = re.compile(r"<[^>]+>")
+_HTML_BR = re.compile(r"<br\s*/?>", re.I)
+
+
+def strip_html(text: str) -> str:
+    raw = (text or "").strip()
+    if not raw:
+        return ""
+    raw = _HTML_BR.sub("\n", raw)
+    raw = re.sub(r"</p\s*>", "\n\n", raw, flags=re.I)
+    raw = _HTML_TAG.sub("", raw)
+    raw = (
+        raw.replace("&nbsp;", " ")
+        .replace("&amp;", "&")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", '"')
+        .replace("&#39;", "'")
+    )
+    return re.sub(r"[ \t]+\n", "\n", re.sub(r"\n{3,}", "\n\n", raw)).strip()
+
+
+def parse_screenshots(raw: dict) -> list[dict[str, str]]:
+    """OCS previewpic1..N plus smallpreviewpic1..N, de-duplicated."""
+    shots: list[dict[str, str]] = []
+    seen: set[str] = set()
+    for index in range(1, 9):
+        full = str(raw.get(f"previewpic{index}") or "").strip()
+        thumb = str(raw.get(f"smallpreviewpic{index}") or "").strip()
+        url = full or thumb
+        if not url or url in seen:
+            continue
+        seen.add(url)
+        if thumb and thumb not in seen and thumb != url:
+            seen.add(thumb)
+        shots.append({"thumb": thumb or url, "full": full or url})
+    return shots
+
+
+def parse_detail(raw: dict) -> dict:
+    """Normalize one OCS content/data/{id} payload for the theme detail page."""
+    shots = parse_screenshots(raw)
+    summary = str(raw.get("summary") or "").strip()
+    desc = strip_html(str(raw.get("description") or ""))
+    preview = ""
+    if shots:
+        preview = shots[0]["thumb"]
+    else:
+        preview = str(raw.get("smallpreviewpic1") or raw.get("previewpic1") or "").strip()
+    return {
+        "id": str(raw.get("id") or "").strip(),
+        "name": str(raw.get("name") or "").strip(),
+        "summary": summary,
+        "description": desc or summary,
+        "author": str(raw.get("personid") or raw.get("username") or "").strip(),
+        "license": str(raw.get("license") or "").strip(),
+        "version": str(raw.get("version") or "").strip(),
+        "downloads": str(raw.get("downloads") or "").strip(),
+        "score": str(raw.get("score") or "").strip(),
+        "typename": str(raw.get("typename") or "").strip(),
+        "detailpage": str(raw.get("detailpage") or "").strip(),
+        "preview": preview,
+        "screenshots": shots,
+    }
+
+
+def source_label(row: dict[str, str]) -> str:
+    host = (row.get("host") or "").strip()
+    if host == "catalog":
+        return "GitHub"
+    return HOSTS.get(host, {}).get("label") or "GNOME Look"
+
+
+def _shot_urls_from_row(row: dict[str, str]) -> list[str]:
+    urls: list[str] = []
+    seen: set[str] = set()
+    for blob in (row.get("shots") or "", row.get("preview") or ""):
+        for part in str(blob).split("\n"):
+            url = part.strip()
+            if url and url.startswith(("http://", "https://")) and url not in seen:
+                seen.add(url)
+                urls.append(url)
+    if not urls:
+        og = github_opengraph_url(row.get("github") or "")
+        if og:
+            urls.append(og)
+    return urls
+
+
+def details_from_row(row: dict[str, str]) -> dict:
+    """Details that are already on a catalog / list card — no network."""
+    urls = _shot_urls_from_row(row)
+    shots = [{"thumb": url, "full": url} for url in urls]
+    summary = str(row.get("summary") or "").strip()
+    desc = str(row.get("description") or "").strip() or summary
+    return {
+        "id": row.get("id") or "",
+        "name": row.get("name") or "",
+        "summary": summary,
+        "description": desc,
+        "author": row.get("author") or "",
+        "license": row.get("license") or "",
+        "version": row.get("version") or "",
+        "downloads": row.get("downloads") or "",
+        "score": row.get("score") or "",
+        "typename": row.get("typename") or "",
+        "detailpage": row.get("detailpage") or row.get("homepage") or "",
+        "homepage": row.get("homepage") or row.get("detailpage") or "",
+        "github": row.get("github") or "",
+        "host": row.get("host") or "",
+        "kind": row.get("kind") or "",
+        "source": source_label(row),
+        "featured": row.get("featured") or "",
+        "preview": urls[0] if urls else "",
+        "screenshots": shots,
+    }
+
+
+def fetch_details(row: dict[str, str]) -> dict:
+    """List-row details, plus OCS screenshots / description when this is a store listing."""
+    info = details_from_row(row)
+    host = (row.get("host") or "").strip()
+    cid = (row.get("id") or "").strip()
+    if host not in HOSTS:
+        return info
+    try:
+        parsed = parse_detail(fetch_item(host, cid))
+    except ThemeStoreError:
+        return info
+    for key in (
+        "description",
+        "summary",
+        "author",
+        "license",
+        "version",
+        "downloads",
+        "score",
+        "typename",
+        "detailpage",
+        "preview",
+    ):
+        value = parsed.get(key)
+        if isinstance(value, str) and value.strip():
+            info[key] = value.strip()
+    if parsed.get("screenshots"):
+        info["screenshots"] = parsed["screenshots"]
+    if parsed.get("detailpage"):
+        info["homepage"] = parsed["detailpage"]
+    return info
+
+
+def fetch_details_async(row: dict[str, str], on_done: Callable[[dict], None]) -> None:
+    snapshot = dict(row)
+
+    def work() -> None:
+        try:
+            info = fetch_details(snapshot)
+        except Exception:  # noqa: BLE001
+            info = details_from_row(snapshot)
+        on_done(info)
+
+    threading.Thread(target=work, daemon=True, name="urstack-theme-detail").start()
+
+
 def parse_list(payload: dict | list | None) -> list[dict[str, str]]:
     items: list[dict[str, str]] = []
     for raw in _ocs_data(payload):
@@ -290,17 +456,22 @@ def parse_list(payload: dict | list | None) -> list[dict[str, str]]:
         name = str(raw.get("name") or "").strip()
         if not cid or not name:
             continue
+        shots = parse_screenshots(raw)
         items.append(
             {
                 "id": cid,
                 "name": name,
                 "summary": str(raw.get("summary") or "").strip(),
+                "description": strip_html(str(raw.get("description") or "")),
                 "author": str(raw.get("personid") or raw.get("username") or "").strip(),
                 "downloads": str(raw.get("downloads") or "0"),
                 "score": str(raw.get("score") or "0"),
                 "typename": str(raw.get("typename") or "").strip(),
                 "preview": str(
                     raw.get("smallpreviewpic1") or raw.get("previewpic1") or ""
+                ).strip(),
+                "shots": "\n".join(
+                    str(s.get("full") or s.get("thumb") or "") for s in shots
                 ).strip(),
                 "detailpage": str(raw.get("detailpage") or "").strip(),
             }
@@ -429,11 +600,28 @@ def load_catalog(path: Path | None = None) -> list[dict[str, str]]:
             desks_s = desktops
         else:
             desks_s = ",".join(str(d).strip() for d in desktops if str(d).strip())
+        shot_urls: list[str] = []
+        extra_shots = raw.get("screenshots") or []
+        if isinstance(extra_shots, str):
+            extra_shots = extra_shots.split("\n")
+        if isinstance(extra_shots, list):
+            for item in extra_shots:
+                if isinstance(item, str):
+                    url = item.strip()
+                elif isinstance(item, dict):
+                    url = str(item.get("full") or item.get("thumb") or item.get("url") or "").strip()
+                else:
+                    url = ""
+                if url.startswith(("http://", "https://")):
+                    shot_urls.append(url)
+        preview = str(raw.get("preview") or "").strip() or github_opengraph_url(repo)
+        homepage = str(raw.get("homepage") or f"https://github.com/{repo}").strip()
         themes.append(
             {
                 "id": cid,
                 "name": name,
                 "summary": str(raw.get("summary") or "").strip(),
+                "description": str(raw.get("description") or "").strip(),
                 "author": str(raw.get("author") or repo.split("/")[0]),
                 "license": str(raw.get("license") or "").strip(),
                 "kinds": kinds_s,
@@ -442,10 +630,11 @@ def load_catalog(path: Path | None = None) -> list[dict[str, str]]:
                 "asset": str(raw.get("asset") or "").strip(),
                 "ref": str(raw.get("ref") or "").strip(),
                 "ref_kind": str(raw.get("ref_kind") or "").strip(),
-                "homepage": str(raw.get("homepage") or f"https://github.com/{repo}").strip(),
-                "preview": str(raw.get("preview") or "").strip() or github_opengraph_url(repo),
+                "homepage": homepage,
+                "preview": preview,
+                "shots": "\n".join(shot_urls),
                 "host": "catalog",
-                "detailpage": str(raw.get("homepage") or f"https://github.com/{repo}").strip(),
+                "detailpage": homepage,
             }
         )
     _CATALOG_CACHE["path"] = str(catalog)

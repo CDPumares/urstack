@@ -96,6 +96,40 @@ class ThemeStoreTestCase(unittest.TestCase):
         self.assertEqual(rows[0]["preview"], "https://images.pling.com/orchis.jpg")
         self.assertEqual(rows[0]["id"], "1357889")
 
+    def test_parse_detail_keeps_screenshots_and_plain_description(self) -> None:
+        parsed = self.store.parse_detail(
+            {
+                "id": "42",
+                "name": "Orchis",
+                "summary": "Material GTK",
+                "description": "<p>A <b>clean</b> theme.<br>Second line.</p>",
+                "personid": "vinceliuice",
+                "license": "GPL-3.0",
+                "version": "2024",
+                "downloads": "12000",
+                "smallpreviewpic1": "https://images.pling.com/orchis-sm.jpg",
+                "previewpic1": "https://images.pling.com/orchis.jpg",
+                "previewpic2": "https://images.pling.com/orchis-2.jpg",
+                "detailpage": "https://www.gnome-look.org/p/42",
+            }
+        )
+        self.assertEqual(parsed["description"], "A clean theme.\nSecond line.")
+        self.assertEqual(len(parsed["screenshots"]), 2)
+        self.assertEqual(parsed["screenshots"][0]["full"], "https://images.pling.com/orchis.jpg")
+        self.assertEqual(parsed["screenshots"][0]["thumb"], "https://images.pling.com/orchis-sm.jpg")
+        self.assertEqual(parsed["screenshots"][1]["full"], "https://images.pling.com/orchis-2.jpg")
+
+    def test_details_from_row_uses_catalog_preview(self) -> None:
+        nordic = self.store.catalog_entry("nordic")
+        assert nordic is not None
+        info = self.store.details_from_row(nordic)
+        self.assertEqual(info["source"], "GitHub")
+        self.assertTrue(info["screenshots"])
+        self.assertEqual(info["screenshots"][0]["full"], nordic["preview"])
+        self.assertIn("Nord", info["description"])
+        catalog_only = self.store.fetch_details(nordic)
+        self.assertEqual(catalog_only["screenshots"], info["screenshots"])
+
     def test_pick_download_skips_html_and_paid(self) -> None:
         picked = self.store.pick_download(
             {

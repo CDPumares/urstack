@@ -3508,6 +3508,351 @@ def _look_preview_async(pic: Gtk.Picture, url: str) -> None:
     threading.Thread(target=work, daemon=True).start()
 
 
+def _theme_detail_byline(info: dict) -> str:
+    bits: list[str] = []
+    author = str(info.get("author") or "").strip()
+    if author:
+        bits.append(author)
+    license_ = str(info.get("license") or "").strip()
+    if license_ and license_.lower() not in {"unknown", "none"}:
+        bits.append(license_)
+    version = str(info.get("version") or "").strip()
+    if version:
+        bits.append(version)
+    source = str(info.get("source") or "").strip()
+    if source:
+        bits.append(source)
+    downloads = theme_store_mod.format_count(str(info.get("downloads") or ""))
+    if downloads and downloads not in {"0", ""}:
+        bits.append(f"{downloads} downloads")
+    return " · ".join(bits)
+
+
+def build_theme_detail_content(
+    row: dict[str, str],
+    *,
+    on_install: Callable[[], None] | None = None,
+    on_open_url: Callable[[str], None] | None = None,
+    parent_win: Gtk.Window | None = None,
+) -> Gtk.Widget:
+    """Full-page / dialog body for one Look catalog theme — same shape as Apps."""
+    info = theme_store_mod.details_from_row(row)
+    name = (info.get("name") or row.get("name") or "Theme").strip() or "Theme"
+
+    main = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+    main.set_hexpand(True)
+    main.set_vexpand(True)
+    main.set_margin_start(PAGE_SIDE_PAD)
+    main.set_margin_end(PAGE_SIDE_PAD)
+
+    hero = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=16)
+    hero.add_css_class("fu-page-hero")
+    hero.set_hexpand(True)
+
+    pic = Gtk.Picture()
+    pic.set_size_request(120, 72)
+    pic.set_valign(Gtk.Align.START)
+    try:
+        pic.set_content_fit(Gtk.ContentFit.CONTAIN)
+    except Exception:  # noqa: BLE001
+        pass
+    preview = str(info.get("preview") or "").strip()
+    if preview:
+        _look_preview_async(pic, preview)
+        hero.append(pic)
+    else:
+        icon = Gtk.Image.new_from_icon_name(page_icon("look"))
+        icon.set_pixel_size(48)
+        icon.set_valign(Gtk.Align.START)
+        hero.append(icon)
+
+    texts = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+    texts.set_hexpand(True)
+    title = Gtk.Label(label=name, xalign=0.0, wrap=True)
+    title.add_css_class("fu-hero-title")
+    texts.append(title)
+    summary = str(info.get("summary") or "").strip()
+    sub = Gtk.Label(label=summary, xalign=0.0, wrap=True)
+    sub.add_css_class("fu-hero-sub")
+    sub.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+    sub.set_visible(bool(summary))
+    texts.append(sub)
+    byline = Gtk.Label(label=_theme_detail_byline(info), xalign=0.0, wrap=True)
+    byline.add_css_class("fu-app-byline")
+    byline.set_visible(bool(byline.get_text()))
+    texts.append(byline)
+    hero.append(texts)
+
+    status = Gtk.Label(label=str(info.get("source") or "Theme"))
+    status.add_css_class("fu-badge")
+    status.set_valign(Gtk.Align.START)
+    hero.append(status)
+    main.append(hero)
+
+    scrolled, _clamp, box = page_scroll_body(spacing=14)
+    box.set_margin_bottom(8)
+
+    shots_host = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+    shots_host.set_visible(False)
+    shot_strip: list[Gtk.Box] = []
+    box.append(shots_host)
+
+    about_host = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+    about_host.set_visible(False)
+    about_lab = Gtk.Label(label="", xalign=0.0, wrap=True, selectable=True)
+    about_lab.add_css_class("fu-app-desc")
+    about_lab.set_wrap_mode(Pango.WrapMode.WORD_CHAR)
+    about_lab.set_margin_start(16)
+    about_lab.set_margin_end(16)
+    about_host.append(page_section_label("About"))
+    about_host.append(about_lab)
+    box.append(about_host)
+
+    facts_host = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+    box.append(facts_host)
+
+    def link_handler(uri: str) -> None:
+        if on_open_url is not None:
+            on_open_url(uri)
+        else:
+            _open_uri(uri, parent_win)
+
+    def add_link_row(group: Adw.PreferencesGroup, title: str, uri: str) -> None:
+        if not uri:
+            return
+        fact = _detail_fact_row(title, uri)
+        try:
+            fact.set_activatable(True)
+        except Exception:  # noqa: BLE001
+            pass
+        fact.connect("activated", lambda *_a, u=uri: link_handler(u))
+        open_btn = Gtk.Button.new_from_icon_name(
+            pick_icon("adw-external-link-symbolic", "web-browser-symbolic")
+        )
+        open_btn.add_css_class("flat")
+        open_btn.set_valign(Gtk.Align.CENTER)
+        open_btn.set_tooltip_text("Open link")
+        open_btn.connect("clicked", lambda *_a, u=uri: link_handler(u))
+        fact.add_suffix(open_btn)
+        group.add(fact)
+
+    def fill_facts(current: dict) -> None:
+        while facts_host.get_first_child() is not None:
+            facts_host.remove(facts_host.get_first_child())
+        group = Adw.PreferencesGroup(title="Details")
+        group.add(_detail_fact_row("Source", str(current.get("source") or "—")))
+        kind = str(current.get("typename") or current.get("kind") or "").strip()
+        if kind:
+            group.add(_detail_fact_row("Type", kind.replace("-", " ").title()))
+        author = str(current.get("author") or "").strip()
+        if author:
+            group.add(_detail_fact_row("Author", author))
+        license_ = str(current.get("license") or "").strip()
+        if license_:
+            group.add(_detail_fact_row("License", license_))
+        version = str(current.get("version") or "").strip()
+        if version:
+            group.add(_detail_fact_row("Version", version))
+        downloads = theme_store_mod.format_count(str(current.get("downloads") or ""))
+        if downloads and downloads not in {"0", ""}:
+            group.add(_detail_fact_row("Downloads", downloads))
+        github = str(current.get("github") or "").strip()
+        if github:
+            group.add(_detail_fact_row("Repository", github))
+        homepage = str(current.get("homepage") or current.get("detailpage") or "").strip()
+        add_link_row(
+            group,
+            "GitHub" if current.get("host") == "catalog" else "Listing",
+            homepage,
+        )
+        facts_host.append(group)
+
+    loaded_shots: set[str] = set()
+
+    def fill_shots(current: dict) -> None:
+        shots = current.get("screenshots") or []
+        if not isinstance(shots, list) or not shots:
+            return
+        try:
+            import app_meta as _app_meta
+        except ImportError:
+            return
+        if not shot_strip:
+            shots_host.append(page_section_label("Screenshots"))
+            shot_scroll = Gtk.ScrolledWindow()
+            shot_scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
+            shot_scroll.set_hexpand(True)
+            strip = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+            strip.add_css_class("fu-shot-strip")
+            strip.set_margin_start(12)
+            strip.set_margin_end(12)
+            shot_scroll.set_child(strip)
+            shots_host.append(shot_scroll)
+            shot_strip.append(strip)
+        strip = shot_strip[0]
+        shots_host.set_visible(True)
+
+        gallery: list[dict[str, str]] = []
+        for shot in shots[:8]:
+            if not isinstance(shot, dict):
+                continue
+            thumb = str(shot.get("thumb") or shot.get("full") or "").strip()
+            full = str(shot.get("full") or thumb).strip()
+            if thumb:
+                gallery.append({"thumb": thumb, "full": full})
+        if not gallery:
+            return
+
+        def on_shot(path: Path | None, full: str, idx: int) -> bool:
+            if path is None or str(path) in loaded_shots:
+                return False
+            loaded_shots.add(str(path))
+            _append_detail_shot(
+                strip, path, full, parent_win, gallery=gallery, index=idx
+            )
+            return False
+
+        for idx, item in enumerate(gallery):
+            _app_meta.fetch_shot_async(
+                item["thumb"],
+                lambda p, u=item["full"], i=idx: GLib.idle_add(on_shot, p, u, i),
+            )
+
+    def apply_meta(current: dict | None) -> bool:
+        if not isinstance(current, dict):
+            return False
+        info.update(current)
+        next_summary = str(info.get("summary") or "").strip()
+        sub.set_label(next_summary)
+        sub.set_visible(bool(next_summary))
+        byline.set_label(_theme_detail_byline(info))
+        byline.set_visible(bool(byline.get_text()))
+        status.set_label(str(info.get("source") or "Theme"))
+        desc = str(info.get("description") or "").strip()
+        if desc:
+            about_lab.set_label(desc)
+            about_host.set_visible(True)
+        fill_facts(info)
+        fill_shots(info)
+        return False
+
+    fill_facts(info)
+    desc0 = str(info.get("description") or "").strip()
+    if desc0:
+        about_lab.set_label(desc0)
+        about_host.set_visible(True)
+    fill_shots(info)
+    if (row.get("host") or "") in theme_store_mod.HOSTS:
+        theme_store_mod.fetch_details_async(
+            row, lambda m: GLib.idle_add(apply_meta, m)
+        )
+
+    main.append(scrolled)
+
+    actions = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+    actions.add_css_class("fu-actions")
+    homepage = str(info.get("homepage") or info.get("detailpage") or "").strip()
+    if on_install is not None:
+        install_btn = mk_btn(
+            f"Install {name}",
+            "suggested-action pill fu-primary",
+            pick_icon("software-install-symbolic", "emblem-ok-symbolic"),
+        )
+        install_btn.set_hexpand(True)
+        install_btn.connect("clicked", lambda *_: on_install())
+        actions.append(install_btn)
+    if homepage and on_open_url is not None:
+        visit = mk_btn(
+            "Open listing" if (row.get("host") or "") != "catalog" else "Open on GitHub",
+            "pill fu-secondary",
+            pick_icon("adw-external-link-symbolic", "web-browser-symbolic"),
+        )
+        visit.set_hexpand(True)
+        visit.connect("clicked", lambda *_: on_open_url(homepage))
+        actions.append(visit)
+    if actions.get_first_child() is not None:
+        main.append(pin_page_footer(actions))
+    return main
+
+
+def _show_theme_details(
+    source: Gtk.Widget,
+    row: dict[str, str],
+    on_store_install: Callable[[str, str], None],
+) -> None:
+    """Push a theme details page in the shell, matching Apps."""
+    parent = _widget_window(source)
+    name = (row.get("name") or "Theme").strip() or "Theme"
+    host = (row.get("host") or "").strip() or "theme"
+    tid = (row.get("id") or name).strip() or "theme"
+    closer: dict[str, Callable[[], None] | None] = {"fn": None}
+    closed = {"v": False}
+
+    def close_detail() -> None:
+        if closed["v"]:
+            return
+        closed["v"] = True
+        fn = closer.get("fn")
+        if fn is not None:
+            fn()
+
+    def do_install() -> None:
+        close_detail()
+        on_store_install(host, tid)
+
+    def do_open_url(uri: str = "") -> None:
+        _open_uri(
+            uri or row.get("detailpage") or row.get("homepage") or "",
+            parent,
+        )
+
+    content = build_theme_detail_content(
+        row,
+        on_install=do_install,
+        on_open_url=do_open_url,
+        parent_win=parent,
+    )
+
+    nav = _find_navigation_view(source)
+    if nav is not None:
+        tag = f"theme-{host}-{tid}"
+        try:
+            existing = nav.find_page(tag)
+        except Exception:  # noqa: BLE001
+            existing = None
+        if existing is not None:
+            try:
+                nav.pop_to_page(existing)
+                return
+            except Exception:  # noqa: BLE001
+                pass
+        page = make_nav_page(name, content, tag=tag)
+        nav.push(page)
+        closer["fn"] = lambda n=nav: bool(n.pop())
+        return
+
+    try:
+        dialog = Adw.Dialog()
+        try:
+            dialog.set_title(name)
+        except Exception:  # noqa: BLE001
+            pass
+        try:
+            dialog.set_content_width(560)
+            dialog.set_content_height(640)
+        except Exception:  # noqa: BLE001
+            pass
+        toolbar = Adw.ToolbarView()
+        header = Adw.HeaderBar()
+        toolbar.add_top_bar(header)
+        toolbar.set_content(content)
+        dialog.set_child(toolbar)
+        closer["fn"] = dialog.close
+        dialog.present(parent)
+    except Exception:  # noqa: BLE001
+        pass
+
+
 def _look_store_section(
     *,
     parent_win: Gtk.Window,
@@ -3543,10 +3888,11 @@ def _look_store_section(
     wrap.append(
         page_callout(
             "Community catalog",
+            "Click a pack for screenshots and details, like Apps. "
             "GitHub picks (Dracula, Nord, Catppuccin, Sweet, Bibata) sit at the top. "
             "The rest is the GNOME Look / KDE Look catalog — the same open-source "
-            "store as Discover, with screenshots. Install unpacks a free archive "
-            "into your home directory and switches this desktop to it.",
+            "store as Discover. Install unpacks a free archive into your home "
+            "directory and switches this desktop to it.",
         )
     )
 
@@ -3584,6 +3930,7 @@ def _look_store_section(
     search_timeout = {"id": 0}
 
     def make_card(row: dict[str, str]) -> Gtk.Widget:
+        row = dict(row)
         card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
         card.add_css_class("fu-look-card")
         card.set_hexpand(True)
@@ -3635,15 +3982,12 @@ def _look_store_section(
         if row.get("host") == "catalog":
             if row.get("license"):
                 bits.append(row["license"])
-            bits.append("GitHub")
+            bits.append(theme_store_mod.source_label(row))
         else:
             downloads = theme_store_mod.format_count(row.get("downloads") or "")
             if downloads:
                 bits.append(f"{downloads} downloads")
-            bits.append(
-                theme_store_mod.HOSTS.get(row.get("host") or "", {}).get("label")
-                or "GNOME Look"
-            )
+            bits.append(theme_store_mod.source_label(row))
         sub = Gtk.Label(label=" · ".join(bits), xalign=0.0)
         sub.add_css_class("fu-app-mini-sub")
         sub.set_ellipsize(Pango.EllipsizeMode.END)
@@ -3681,6 +4025,38 @@ def _look_store_section(
             foot.append(openb)
         body.append(foot)
         card.append(body)
+        card.set_tooltip_text(f"Details for {row.get('name') or 'theme'}")
+        try:
+            card.set_cursor(Gdk.Cursor.new_from_name("pointer"))
+        except Exception:  # noqa: BLE001
+            pass
+        click = Gtk.GestureClick()
+        click.set_button(1)
+
+        def on_card_pressed(
+            gesture: Gtk.GestureClick,
+            n_press: int,
+            x: float,
+            y: float,
+            *,
+            ar: dict[str, str] = row,
+        ) -> None:
+            if n_press != 1:
+                return
+            target = card.pick(x, y, Gtk.PickFlags.DEFAULT)
+            wdg = target
+            while wdg is not None and wdg is not card:
+                if isinstance(wdg, Gtk.Button):
+                    return
+                wdg = wdg.get_parent()
+            try:
+                gesture.set_state(Gtk.EventSequenceState.CLAIMED)
+            except Exception:  # noqa: BLE001
+                pass
+            _show_theme_details(card, ar, on_store_install)
+
+        click.connect("pressed", on_card_pressed)
+        card.add_controller(click)
         return card
 
     def show_status_only(message: str, *, spin: bool = False) -> None:
@@ -3719,8 +4095,8 @@ def _look_store_section(
         flow = Gtk.FlowBox()
         flow.set_selection_mode(Gtk.SelectionMode.NONE)
         flow.set_homogeneous(True)
-        flow.set_max_children_per_line(4)
-        flow.set_min_children_per_line(4)
+        flow.set_max_children_per_line(5)
+        flow.set_min_children_per_line(5)
         flow.set_row_spacing(10)
         flow.set_column_spacing(10)
         flow.set_hexpand(True)

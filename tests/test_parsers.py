@@ -502,14 +502,53 @@ class TestStyleSheet(unittest.TestCase):
         self.assertTrue(body.has_css_class("fu-page-hero-body"))
         self.assertIsNone(body.get_next_sibling())
 
-    def test_look_catalog_is_four_across_with_full_previews(self) -> None:
+    def test_look_catalog_is_five_across_with_full_previews(self) -> None:
         src = (ROOT / "lib" / "core" / "ui.py").read_text(encoding="utf-8")
-        self.assertIn("flow.set_min_children_per_line(4)", src)
-        self.assertIn("flow.set_max_children_per_line(4)", src)
+        self.assertIn("flow.set_min_children_per_line(5)", src)
+        self.assertIn("flow.set_max_children_per_line(5)", src)
         self.assertIn("Gtk.ContentFit.CONTAIN", src)
         css = self.ui.STYLE_SHEET.read_text(encoding="utf-8")
         self.assertIn(".fu-page-hero-panes", css)
         self.assertNotIn(".fu-page-hero-sep", css)
+
+    def test_theme_detail_page_matches_app_catalog_shape(self) -> None:
+        page = self.ui.build_theme_detail_content(
+            {
+                "id": "nordic",
+                "name": "Nordic",
+                "summary": "Nord GTK theme",
+                "author": "EliverLara",
+                "license": "GPL-3.0",
+                "host": "catalog",
+                "github": "EliverLara/Nordic",
+                "preview": "https://example.test/nordic.png",
+                "detailpage": "https://github.com/EliverLara/Nordic",
+                "homepage": "https://github.com/EliverLara/Nordic",
+            },
+            on_install=lambda: None,
+            on_open_url=lambda _u: None,
+        )
+        found = {"hero": False, "actions": False, "about": False}
+        stack = [page]
+        while stack:
+            w = stack.pop()
+            if w.has_css_class("fu-page-hero"):
+                found["hero"] = True
+            if w.has_css_class("fu-actions"):
+                found["actions"] = True
+            get_label = getattr(w, "get_label", None)
+            if callable(get_label) and get_label() == "About":
+                found["about"] = True
+            child = w.get_first_child()
+            while child is not None:
+                stack.append(child)
+                child = child.get_next_sibling()
+        self.assertTrue(found["hero"])
+        self.assertTrue(found["actions"])
+        self.assertTrue(found["about"])
+        src = (ROOT / "lib" / "core" / "ui.py").read_text(encoding="utf-8")
+        self.assertIn("def _show_theme_details(", src)
+        self.assertIn("_show_theme_details(card, ar, on_store_install)", src)
 
     def test_overview_section_grid_is_three_rows_of_three(self) -> None:
         page = self.ui.build_overview_content(
