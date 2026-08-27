@@ -2001,18 +2001,24 @@ def build_shell_sidebar(
             sidebar.add_css_class("fu-shell-sidebar-collapsed")
         else:
             sidebar.remove_css_class("fu-shell-sidebar-collapsed")
-        sidebar.set_size_request(56 if on else 212, -1)
+        sidebar.set_size_request(52 if on else 212, -1)
+        sidebar.set_hexpand(False)
+        try:
+            sidebar.set_overflow(Gtk.Overflow.HIDDEN)
+        except Exception:  # noqa: BLE001
+            pass
         brand_text.set_visible(not on)
-        brand.set_halign(Gtk.Align.FILL)
         brand.set_spacing(0 if on else 10)
+        brand.set_halign(Gtk.Align.CENTER if on else Gtk.Align.FILL)
+        brand.set_hexpand(not on)
+        logo.set_hexpand(False)
         logo.set_halign(Gtk.Align.CENTER if on else Gtk.Align.START)
-        logo.set_hexpand(on)
         sec.set_visible(not on)
         for lab in nav_labels:
             lab.set_visible(not on)
         for inner in nav_inners:
             inner.set_halign(Gtk.Align.CENTER if on else Gtk.Align.FILL)
-            inner.set_hexpand(True)
+            inner.set_hexpand(not on)
         toggle_img.set_from_icon_name(
             "go-next-symbolic" if on else "go-previous-symbolic"
         )

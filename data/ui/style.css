@@ -203,12 +203,16 @@ button.fu-cat-pill:checked label {
     alpha(#b43ce4, 0.14) 100%
   );
   border-right: 1px solid alpha(#3c90e4, 0.28);
-  min-width: 200px;
   padding: 8px 0 12px 0;
 }
 
 .fu-shell-sidebar.fu-shell-sidebar-collapsed {
-  min-width: 56px;
+  min-width: 52px;
+}
+
+.fu-shell-sidebar.fu-shell-sidebar-collapsed listbox.navigation-sidebar,
+.fu-shell-sidebar.fu-shell-sidebar-collapsed listbox.navigation-sidebar > row {
+  min-width: 0;
 }
 
 .fu-shell-sidebar-brand {
