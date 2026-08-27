@@ -632,8 +632,6 @@ def page_callout(
 def page_section_label(text: str) -> Gtk.Widget:
     lab = Gtk.Label(label=text, xalign=0.0)
     lab.add_css_class("fu-section-title")
-    lab.set_margin_start(16)
-    lab.set_margin_end(16)
     return lab
 
 
@@ -670,6 +668,24 @@ def page_scroll_body(*, spacing: int = 14) -> tuple[Gtk.ScrolledWindow, Adw.Clam
     clamp.set_child(col)
     scrolled.set_child(clamp)
     return scrolled, clamp, col
+
+
+def page_card_grid(cards: list[Gtk.Widget], columns: int = 3) -> Gtk.Widget:
+    """Fixed N-column grid so Overview / Health cards share width and side inset."""
+    grid = Gtk.Grid()
+    grid.add_css_class("fu-overview-flow")
+    grid.set_column_spacing(12)
+    grid.set_row_spacing(12)
+    grid.set_column_homogeneous(True)
+    grid.set_hexpand(True)
+    grid.set_halign(Gtk.Align.FILL)
+    grid.set_valign(Gtk.Align.START)
+    for i, card in enumerate(cards):
+        card.set_hexpand(True)
+        card.set_halign(Gtk.Align.FILL)
+        card.set_valign(Gtk.Align.FILL)
+        grid.attach(card, i % columns, i // columns, 1, 1)
+    return grid
 
 
 def page_chrome_box() -> Gtk.Box:
@@ -1386,7 +1402,7 @@ def build_overview_content(
     if refresh_top is not None:
         outer.append(page_hero_actions(refresh_top))
 
-    scrolled, _clamp, col = page_scroll_body(spacing=12)
+    scrolled, _clamp, col = page_scroll_body(spacing=14)
 
     sections = parse_sections(raw)
     update_secs = [s for s in sections if s.kind == "update" and s.title != "Overview"]
@@ -1474,16 +1490,7 @@ def build_overview_content(
 
     col.append(page_section_label("Sections"))
 
-    cards = Gtk.FlowBox()
-    cards.add_css_class("fu-overview-flow")
-    cards.set_selection_mode(Gtk.SelectionMode.NONE)
-    cards.set_homogeneous(False)
-    cards.set_column_spacing(12)
-    cards.set_row_spacing(12)
-    cards.set_max_children_per_line(3)
-    cards.set_min_children_per_line(1)
-    cards.set_valign(Gtk.Align.START)
-    cards.set_hexpand(True)
+    section_cards: list[Gtk.Widget] = []
 
     if checking_updates:
         upd_sub = "Scanning enabled sources…"
@@ -1498,7 +1505,7 @@ def build_overview_content(
         upd_badge, upd_warn, upd_ok = "Up to date", False, True
         upd_lines = ["Nothing pending — Refresh anytime to check again."]
 
-    cards.append(
+    section_cards.append(
         _overview_stat_card(
             "Updates",
             upd_sub,
@@ -1518,7 +1525,7 @@ def build_overview_content(
         apps_sub = f"{installed_n} installed · {available_n} available in catalog"
     else:
         apps_sub = "Browse Flatpak, DNF, and vendor apps"
-    cards.append(
+    section_cards.append(
         _overview_stat_card(
             "Apps",
             apps_sub,
@@ -1544,7 +1551,7 @@ def build_overview_content(
         h_warn = health_warn
         h_lines = health_lines
 
-    cards.append(
+    section_cards.append(
         _overview_stat_card(
             "System Health",
             h_sub,
@@ -1561,7 +1568,7 @@ def build_overview_content(
     )
 
     backup_sub, backup_lines = _overview_backup_snapshot()
-    cards.append(
+    section_cards.append(
         _overview_stat_card(
             "Backup",
             backup_sub,
@@ -1576,7 +1583,7 @@ def build_overview_content(
         )
     )
 
-    cards.append(
+    section_cards.append(
         _overview_stat_card(
             "Restore",
             "Rebuild from a previous fedora-setup backup",
@@ -1592,7 +1599,7 @@ def build_overview_content(
         )
     )
 
-    cards.append(
+    section_cards.append(
         _overview_stat_card(
             "Settings",
             "Sources, detection, and preferences",
@@ -1605,7 +1612,7 @@ def build_overview_content(
         )
     )
 
-    cards.append(
+    section_cards.append(
         _overview_stat_card(
             "History",
             "What UrStack has been doing",
@@ -1618,7 +1625,7 @@ def build_overview_content(
         )
     )
 
-    cards.append(
+    section_cards.append(
         _overview_stat_card(
             "Runs",
             last_run,
@@ -1630,7 +1637,7 @@ def build_overview_content(
             lines=run_lines,
         )
     )
-    col.append(cards)
+    col.append(page_card_grid(section_cards))
 
     outer.append(scrolled)
 
@@ -1753,8 +1760,6 @@ def build_hub_content(
         )
         ok_card = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         ok_card.add_css_class("fu-page-card")
-        ok_card.set_margin_start(16)
-        ok_card.set_margin_end(16)
         ic = Gtk.Image.new_from_icon_name("emblem-ok-symbolic")
         ic.set_pixel_size(64)
         ic.set_halign(Gtk.Align.START)
@@ -1827,7 +1832,8 @@ def build_hub_content(
         rebuild_action_grid()
         actions.append(grid)
 
-    outer.append(actions)
+    if actions.get_first_child() is not None:
+        outer.append(actions)
     return outer, rebuild_action_grid
 
 
@@ -4595,6 +4601,7 @@ def build_catalog_content(
     main = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
     main.set_hexpand(True)
     main.set_vexpand(True)
+    main.add_css_class("fu-padded-page")
     main.set_margin_start(PAGE_SIDE_PAD)
     main.set_margin_end(PAGE_SIDE_PAD)
 
@@ -4949,8 +4956,6 @@ def build_catalog_content(
 
         head = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         head.add_css_class("fu-section-head")
-        head.set_margin_start(16)
-        head.set_margin_end(16)
         title = Gtk.Label(label=f"Catalog · {len(ordered)}", xalign=0.0)
         title.add_css_class("fu-section-title")
         title.set_opacity(0.85)
@@ -5764,19 +5769,7 @@ def build_health_content(
         visible_checks.clear()
         selected.clear()
 
-        scrolled = Gtk.ScrolledWindow()
-        scrolled.add_css_class("fu-page-scroll")
-        scrolled.set_vexpand(True)
-        scrolled.set_hexpand(True)
-        scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        try:
-            scrolled.set_kinetic_scrolling(True)
-            scrolled.set_overlay_scrolling(True)
-        except Exception:  # noqa: BLE001
-            pass
-        clamp = wide_clamp()
-        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14)
-        box.set_hexpand(True)
+        scrolled, _clamp, box = page_scroll_body(spacing=14)
         box.set_margin_bottom(8)
         refresh_btn.set_sensitive(not scanning)
 
@@ -5863,8 +5856,6 @@ def build_health_content(
             # ── Recommended for you ───────────────────────────────────────
             head = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
             head.add_css_class("fu-section-head")
-            head.set_margin_start(16)
-            head.set_margin_end(16)
             ht2 = Gtk.Label(label="Recommended for you", xalign=0.0)
             ht2.add_css_class("fu-section-title")
             ht2.set_hexpand(True)
@@ -5895,8 +5886,6 @@ def build_health_content(
                     wrap=True,
                 )
                 good.add_css_class("dim-label")
-                good.set_margin_start(20)
-                good.set_margin_end(20)
                 box.append(good)
             else:
                 rec_cards: list[Gtk.Widget] = []
@@ -5952,8 +5941,6 @@ def build_health_content(
         if storage_fs or storage_hogs:
             box.append(_build_storage_optimizer(storage_fs, storage_hogs))
 
-        clamp.set_child(box)
-        scrolled.set_child(clamp)
         list_host.append(scrolled)
         update_apply_btn()
 
@@ -6026,20 +6013,7 @@ def build_health_content(
 
 def _health_card_grid(cards: list[Gtk.Widget], columns: int = 3) -> Gtk.Widget:
     """Fixed N-column grid so health info cards don't collapse to one column."""
-    grid = Gtk.Grid()
-    grid.add_css_class("fu-overview-flow")
-    grid.set_column_spacing(12)
-    grid.set_row_spacing(12)
-    grid.set_column_homogeneous(True)
-    grid.set_hexpand(True)
-    grid.set_halign(Gtk.Align.FILL)
-    grid.set_valign(Gtk.Align.START)
-    for i, card in enumerate(cards):
-        card.set_hexpand(True)
-        card.set_halign(Gtk.Align.FILL)
-        card.set_valign(Gtk.Align.FILL)
-        grid.attach(card, i % columns, i // columns, 1, 1)
-    return grid
+    return page_card_grid(cards, columns)
 
 
 def _health_badge(label: str, css: str) -> Gtk.Label:
@@ -7064,8 +7038,6 @@ def build_settings_content(
 
     status_banner = Gtk.Label(label="", xalign=0.0, wrap=True)
     status_banner.add_css_class("dim-label")
-    status_banner.set_margin_start(16)
-    status_banner.set_margin_end(16)
     status_banner.set_visible(False)
     page.append(status_banner)
 
@@ -8541,8 +8513,6 @@ def mode_shell(args: argparse.Namespace) -> int:
                 listbox = Gtk.ListBox()
                 listbox.add_css_class("boxed-list")
                 listbox.set_selection_mode(Gtk.SelectionMode.NONE)
-                listbox.set_margin_start(16)
-                listbox.set_margin_end(16)
                 for chunk in reversed(chunks[-80:]):
                     lines = chunk.splitlines()
                     head = lines[0] if lines else "Entry"
@@ -8579,7 +8549,8 @@ def mode_shell(args: argparse.Namespace) -> int:
                 if runs_dir.is_dir()
                 else []
             )
-            outer.append(
+            chrome = page_chrome_box()
+            chrome.append(
                 page_hero(
                     str(len(runs_preview)),
                     "sessions",
@@ -8590,11 +8561,15 @@ def mode_shell(args: argparse.Namespace) -> int:
                     icon_name=page_icon("runs"),
                 )
             )
-            outer.append(page_callout("Runs directory", str(runs_dir)))
+            outer.append(chrome)
+            callout = page_callout("Runs directory", str(runs_dir))
+            callout.set_margin_start(PAGE_SIDE_PAD)
+            callout.set_margin_end(PAGE_SIDE_PAD)
+            outer.append(callout)
 
             body = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
-            body.set_margin_start(16)
-            body.set_margin_end(16)
+            body.set_margin_start(PAGE_SIDE_PAD)
+            body.set_margin_end(PAGE_SIDE_PAD)
             body.set_margin_bottom(12)
             body.set_vexpand(True)
             body.set_hexpand(True)

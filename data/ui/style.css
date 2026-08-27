@@ -135,7 +135,7 @@ window.urstack headerbar windowcontrols.start > image {
 }
 
 .fu-apps-chrome {
-  padding: 0 16px 8px 16px;
+  padding: 0 0 8px 0;
 }
 
 .fu-cat-scroll {
@@ -247,7 +247,7 @@ button.fu-cat-pill:checked .fu-cat-count {
 }
 
 .fu-section-card {
-  margin: 0 16px 10px 16px;
+  margin: 0 0 10px 0;
 }
 
 .fu-section-title {
@@ -284,7 +284,7 @@ button.fu-cat-pill:checked .fu-cat-count {
 /* Shared page chrome (Health-style; used across Updates / Backup / Settings / …) */
 .fu-page-hero,
 .fu-health-hero {
-  margin: 4px 16px 8px 16px;
+  margin: 4px 0 8px 0;
   padding: 22px 22px 18px 22px;
   border-radius: 18px;
   background-color: #243c6c;
@@ -374,12 +374,7 @@ button.fu-cat-pill:checked .fu-cat-count {
 }
 
 .fu-overview-flow {
-  margin: 0 12px 4px 12px;
-}
-
-.fu-overview-flow > flowboxchild {
-  padding: 0;
-  min-width: 240px;
+  margin: 0 0 4px 0;
 }
 
 .fu-health-items {
@@ -554,11 +549,11 @@ button.fu-shot-btn {
 }
 
 .fu-app-flow {
-  margin: 0 12px 4px 12px;
+  margin: 0 0 4px 0;
 }
 
 .fu-app-grid {
-  padding: 4px 12px 12px 12px;
+  padding: 4px 0 12px 0;
 }
 
 .fu-page-card-title,
@@ -584,7 +579,7 @@ button.fu-shot-btn {
 
 .fu-page-callout,
 .fu-health-rp {
-  margin: 0 16px 10px 16px;
+  margin: 0 0 10px 0;
   padding: 12px 14px;
   border-radius: 14px;
   background-color: @card_bg_color;
@@ -592,8 +587,8 @@ button.fu-shot-btn {
 }
 
 .fu-page-body {
-  margin-left: 16px;
-  margin-right: 16px;
+  margin-left: 0;
+  margin-right: 0;
 }
 
 .fu-mono {
@@ -603,8 +598,14 @@ button.fu-shot-btn {
 }
 
 .fu-actions {
-  padding: 12px 40px 16px 40px;
+  padding: 12px 24px 16px 24px;
   border-top: 1px solid alpha(#3c90e4, 0.28);
+}
+
+/* Apps already applies PAGE_SIDE_PAD on the page box. */
+.fu-padded-page > .fu-actions {
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .fu-action-grid {
@@ -648,7 +649,7 @@ button.suggested-action.fu-primary:hover {
 }
 
 .fu-page-hero-actions {
-  padding: 8px 40px 0 40px;
+  padding: 8px 24px 0 24px;
 }
 
 .fu-page-title {
@@ -892,7 +893,7 @@ window.urstack.fu-dark .fu-overview-card-warn {
 }
 
 .fu-storage {
-  margin: 0 16px 10px 16px;
+  margin: 0 0 10px 0;
   padding: 16px 18px 14px 18px;
   border-radius: 16px;
 }
