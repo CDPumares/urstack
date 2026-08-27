@@ -51,10 +51,12 @@ APP_ID="urstack"
 APP_TAGLINE="Update your whole Fedora stack — and install popular apps"
 
 TIMEOUT_DNF="${TIMEOUT_DNF:-120}"
-CHECK_PARALLEL="${CHECK_PARALLEL:-4}"
+CHECK_PARALLEL="${CHECK_PARALLEL:-8}"
 TIMEOUT_SNAP="${TIMEOUT_SNAP:-15}"
 TIMEOUT_FW="${TIMEOUT_FW:-20}"
 TIMEOUT_FLATPAK="${TIMEOUT_FLATPAK:-45}"
+# Reuse DNF/Flatpak metadata if a check ran within this window (seconds)
+METADATA_MAX_AGE="${METADATA_MAX_AGE:-21600}"
 TIMEOUT_NPM="${TIMEOUT_NPM:-15}"
 TIMEOUT_PIP="${TIMEOUT_PIP:-20}"
 TIMEOUT_PIPX="${TIMEOUT_PIPX:-15}"
@@ -365,6 +367,26 @@ EOF
 
 has_section() { [[ -f "${check_dir:-}/$1" ]]; }
 read_check() { cat "${check_dir:-}/$1" 2>/dev/null; }
+
+urstack_cache_dir() {
+  printf '%s' "${XDG_CACHE_HOME:-$HOME/.cache}/urstack"
+}
+
+# True when stamp exists and is newer than max_age seconds (default METADATA_MAX_AGE).
+cache_stamp_fresh() {
+  local stamp="$1" max_age="${2:-${METADATA_MAX_AGE:-21600}}" mt now
+  [[ -f "$stamp" ]] || return 1
+  [[ "$max_age" =~ ^[0-9]+$ ]] || max_age=21600
+  mt=$(stat -c %Y "$stamp" 2>/dev/null) || return 1
+  now=$(date +%s)
+  (( now - mt < max_age ))
+}
+
+cache_stamp_touch() {
+  local stamp="$1"
+  mkdir -p "$(dirname "$stamp")" 2>/dev/null || true
+  touch "$stamp" 2>/dev/null || true
+}
 
 # ---------------------------------------------------------------------------
 # Run logging

@@ -57,12 +57,18 @@ _health_du_timed() {
   echo "$n"
 }
 
+_health_hog_bytes() {
+  local store="$1" id="$2"
+  [[ -f "$store" ]] || { echo 0; return; }
+  awk -F'|' -v id="$id" '$1=="hog" && $2==id {print $5; found=1; exit} END { if (!found) print 0 }' "$store"
+}
+
 # ---------------------------------------------------------------------------
 # Storage optimiser — disk meters + known space hogs
 # ---------------------------------------------------------------------------
 _health_scan_storage() {
   local out="$1"
-  local -n _st_lines=$2
+  local -a _st_lines=()
   local store="${out}.storage"
   : > "$store"
 
@@ -134,19 +140,54 @@ _health_scan_storage() {
 
   local spec id label path action b
   local -A seen_path=()
+  local hog_dir i=0 cap
+  local -a hog_pids=()
+  hog_dir=$(mktemp -d)
+  cap=${CHECK_PARALLEL:-8}
+  [[ "$cap" =~ ^[0-9]+$ && "$cap" -gt 0 ]] || cap=8
+
+  # Walk $HOME top-level while hog dus run — otherwise this is a serial 10s tax.
+  local home_du_file="" home_du_pid=""
+  if command -v timeout &>/dev/null; then
+    home_du_file=$(mktemp)
+    timeout 6 du -xd1 -b "$HOME" 2>/dev/null | sort -nr | head -16 > "$home_du_file" &
+    home_du_pid=$!
+  fi
+
   for spec in "${hog_spec[@]}"; do
     IFS='|' read -r id label path action <<< "$spec"
     [[ -n "$path" && -e "$path" ]] || continue
     [[ -z "${seen_path[$path]:-}" ]] || continue
     seen_path["$path"]=1
-    b=$(_health_du_timed "$path" 4)
-    [[ "$b" -gt 1048576 ]] || continue
-    printf 'hog|%s|%s|%s|%s|%s\n' "$id" "$label" "$path" "$b" "$action" >> "$store"
+    while (( ${#hog_pids[@]} >= cap )); do
+      wait "${hog_pids[0]}" 2>/dev/null || true
+      hog_pids=("${hog_pids[@]:1}")
+    done
+    (
+      local bytes
+      bytes=$(_health_du_timed "$path" 2)
+      [[ "$bytes" -gt 1048576 ]] || exit 0
+      printf 'hog|%s|%s|%s|%s|%s\n' "$id" "$label" "$path" "$bytes" "$action"
+    ) > "$hog_dir/$i" &
+    hog_pids+=($!)
+    i=$((i + 1))
   done
+  local hp
+  for hp in "${hog_pids[@]}"; do
+    wait "$hp" 2>/dev/null || true
+  done
+  local hogf
+  for hogf in "$hog_dir"/*; do
+    [[ -f "$hogf" && -s "$hogf" ]] && cat "$hogf" >> "$store"
+  done
+  rm -rf "$hog_dir"
 
   # Top-level folders in $HOME (why the disk is full — not all are cleanable)
-  local home_line home_path home_b home_name
-  if command -v timeout &>/dev/null; then
+  local home_path home_b home_name
+  if [[ -n "$home_du_pid" ]]; then
+    wait "$home_du_pid" 2>/dev/null || true
+  fi
+  if [[ -n "$home_du_file" && -s "$home_du_file" ]]; then
     while read -r home_b home_path; do
       [[ "$home_path" == "$HOME" ]] && continue
       [[ -n "$home_path" && "$home_b" =~ ^[0-9]+$ ]] || continue
@@ -155,19 +196,20 @@ _health_scan_storage() {
       home_name="${home_path##*/}"
       [[ "$home_b" -gt 104857600 ]] || continue
       printf 'hog|home-%s|%s|%s|%s|\n' "$home_name" "$home_name" "$home_path" "$home_b" >> "$store"
-    done < <(timeout 10 du -xd1 -b "$HOME" 2>/dev/null | sort -nr | head -16)
+    done < "$home_du_file"
   fi
+  [[ -n "$home_du_file" ]] && rm -f "$home_du_file"
 
   if [[ -d /var/log/journal ]]; then
     local journal_b
-    journal_b=$(_health_du_timed /var/log/journal 3)
+    journal_b=$(_health_du_timed /var/log/journal 2)
     if [[ "$journal_b" -gt 1048576 ]]; then
       printf 'hog|journal|Systemd journal|/var/log/journal|%s|journal-vacuum\n' "$journal_b" >> "$store"
     fi
   fi
 
   # ── Actionable cleanups (only when there is something to reclaim) ───────
-  b=$(_health_du_timed "$HOME/.local/share/Trash" 3)
+  b=$(_health_hog_bytes "$store" trash)
   if [[ "$b" -gt 10485760 ]]; then
     _st_lines+=("$(_health_line \
       "trash" "storage" "Empty trash" \
@@ -181,7 +223,7 @@ _health_scan_storage() {
       "ok" "0" "0" "")")
   fi
 
-  b=$(_health_du_timed "$HOME/.cache/thumbnails" 3)
+  b=$(_health_hog_bytes "$store" thumbnails)
   if [[ "$b" -gt 20971520 ]]; then
     _st_lines+=("$(_health_line \
       "thumbnails" "storage" "Clear thumbnail cache" \
@@ -195,7 +237,7 @@ _health_scan_storage() {
       "ok" "0" "0" "")")
   fi
 
-  b=$(_health_du_timed "$HOME/.cache/pip" 3)
+  b=$(_health_hog_bytes "$store" pip-cache)
   if [[ "$b" -gt 52428800 ]]; then
     _st_lines+=("$(_health_line \
       "pip-cache" "storage" "Clear pip cache" \
@@ -204,9 +246,9 @@ _health_scan_storage() {
       "pip cache purge")")
   fi
 
-  b=$(_health_du_timed "$HOME/.npm/_cacache" 3)
+  b=$(_health_hog_bytes "$store" npm-cache)
   if [[ "$b" -eq 0 ]]; then
-    b=$(_health_du_timed "$HOME/.local/share/npm/_cacache" 3)
+    b=$(_health_du_timed "$HOME/.local/share/npm/_cacache" 2)
   fi
   if [[ "$b" -gt 52428800 ]]; then
     _st_lines+=("$(_health_line \
@@ -216,7 +258,7 @@ _health_scan_storage() {
       "npm cache clean --force")")
   fi
 
-  b=$(_health_du_timed "$HOME/.cargo/registry/cache" 3)
+  b=$(_health_hog_bytes "$store" cargo-cache)
   if [[ "$b" -gt 104857600 ]]; then
     _st_lines+=("$(_health_line \
       "cargo-cache" "storage" "Clear Cargo registry cache" \
@@ -244,7 +286,7 @@ _health_scan_storage() {
   fi
 
   if command -v podman &>/dev/null; then
-    b=$(( $(_health_du_timed "$HOME/.local/share/containers" 4) + $(_health_du_timed /var/lib/containers 4) ))
+    b=$(( $(_health_hog_bytes "$store" podman-user) + $(_health_hog_bytes "$store" podman-sys) ))
     if [[ "$b" -gt 209715200 ]]; then
       _st_lines+=("$(_health_line \
         "podman-prune" "storage" "Prune unused Podman data" \
@@ -260,7 +302,7 @@ _health_scan_storage() {
   fi
 
   if command -v docker &>/dev/null; then
-    b=$(_health_du_timed /var/lib/docker 4)
+    b=$(_health_hog_bytes "$store" docker-sys)
     if [[ "$b" -gt 209715200 ]]; then
       _st_lines+=("$(_health_line \
         "docker-prune" "storage" "Prune unused Docker data" \
@@ -270,7 +312,7 @@ _health_scan_storage() {
     fi
   fi
 
-  b=$(_health_du_timed /var/lib/systemd/coredump 3)
+  b=$(_health_hog_bytes "$store" coredumps)
   if [[ "$b" -gt 1048576 ]]; then
     _st_lines+=("$(_health_line \
       "coredumps" "storage" "Delete core dumps" \
@@ -300,6 +342,8 @@ _health_scan_storage() {
         "ok" "0" "0" "")")
     fi
   fi
+
+  printf '%s\n' "${_st_lines[@]}" > "${out}.storage-lines"
 }
 
 # Persisted one-shot / recently-applied markers so suggestions clear after apply
@@ -390,11 +434,23 @@ fedora_health_scan() {
   : > "$out"
   HEALTH_KEEP_KERNELS="${KEEP_KERNELS:-${HEALTH_KEEP_KERNELS:-3}}"
 
-  local -a lines=()
+  local -a lines=() st_lines=()
   local tmp
   tmp=$(mktemp)
 
-  _health_scan_storage "$out" lines
+  : > "${out}.storage-lines"
+  _health_scan_storage "$out" &
+  local _stor_pid=$!
+
+  local _unused_pid="" _unused_file=""
+  if command -v flatpak &>/dev/null; then
+    _unused_file=$(mktemp)
+    (
+      timeout 12 flatpak uninstall --unused --assumeyes --dry-run 2>/dev/null \
+        | grep -E '^(Uninstalling|Nothing)' || true
+    ) > "$_unused_file" 2>/dev/null &
+    _unused_pid=$!
+  fi
 
   # ── Cleanup: old kernels ────────────────────────────────────────────────
   local keep="${HEALTH_KEEP_KERNELS}"
@@ -433,11 +489,17 @@ fedora_health_scan() {
   fi
 
   # ── Cleanup: DNF cache (system + per-user libdnf5) ──────────────────────
+  wait "$_stor_pid" 2>/dev/null || true
+  if [[ -s "${out}.storage-lines" ]]; then
+    mapfile -t st_lines < "${out}.storage-lines"
+  fi
   local dnf_cache_b=0
-  local c
-  for c in /var/cache/dnf /var/cache/libdnf5 "$HOME/.cache/libdnf5" "$HOME/.cache/dnf"; do
-    dnf_cache_b=$((dnf_cache_b + $(_health_du_bytes "$c")))
-  done
+  dnf_cache_b=$((
+    $(_health_hog_bytes "${out}.storage" dnf-sys) +
+    $(_health_hog_bytes "${out}.storage" libdnf5-sys) +
+    $(_health_hog_bytes "${out}.storage" libdnf5-user) +
+    $(_health_du_timed "$HOME/.cache/dnf" 2)
+  ))
   local dnf_clean_age
   dnf_clean_age=$(_health_applied_age_days "dnf-cache")
   if [[ "$dnf_cache_b" -gt 104857600 && "$dnf_clean_age" -ge 1 ]]; then
@@ -480,8 +542,12 @@ fedora_health_scan() {
 
   # ── Cleanup: flatpak unused ─────────────────────────────────────────────
   if command -v flatpak &>/dev/null; then
-    local unused
-    unused=$(flatpak uninstall --unused --assumeyes --dry-run 2>/dev/null | grep -E '^(Uninstalling|Nothing)' || true)
+    local unused=""
+    if [[ -n "$_unused_pid" ]]; then
+      wait "$_unused_pid" 2>/dev/null || true
+    fi
+    [[ -n "$_unused_file" && -f "$_unused_file" ]] && unused=$(cat "$_unused_file" 2>/dev/null || true)
+    rm -f "$_unused_file"
     if echo "$unused" | grep -qi uninstalling; then
       local ucount
       ucount=$(echo "$unused" | grep -ci uninstalling || true)
@@ -500,15 +566,16 @@ fedora_health_scan() {
     # Orphan ~/.var/app data for apps no longer installed
     local -a orphans=()
     local appdir app_id
+    local -A fp_installed=()
+    local _fp_id
+    while IFS= read -r _fp_id; do
+      [[ -n "$_fp_id" ]] && fp_installed["$_fp_id"]=1
+    done < <(flatpak list --columns=application 2>/dev/null)
     if [[ -d "$HOME/.var/app" ]]; then
       for appdir in "$HOME/.var/app"/*; do
         [[ -d "$appdir" ]] || continue
         app_id=$(basename "$appdir")
-        if ! flatpak info "$app_id" &>/dev/null \
-          && ! flatpak info --user "$app_id" &>/dev/null \
-          && ! flatpak info --system "$app_id" &>/dev/null; then
-          orphans+=("$app_id")
-        fi
+        [[ -n "${fp_installed[$app_id]:-}" ]] || orphans+=("$app_id")
       done
     fi
     if [[ ${#orphans[@]} -gt 0 ]]; then
@@ -582,21 +649,12 @@ fedora_health_scan() {
       "ok" "0" "0" "")")
   fi
 
-  # ── Workstation: firmware note ──────────────────────────────────────────
+  # ── Workstation: firmware note (Updates already probes fwupd) ───────────
   if command -v fwupdmgr &>/dev/null; then
-    local fw_out
-    fw_out=$(timeout "${TIMEOUT_FW:-20}" fwupdmgr get-updates 2>/dev/null) || true
-    if declare -F fwupd_output_has_updates &>/dev/null && fwupd_output_has_updates "$fw_out"; then
-      lines+=("$(_health_line \
-        "firmware-note" "workstation" "Firmware updates available" \
-        "Apply from Updates (fwupd) — not duplicated here" \
-        "info" "0" "0" "")")
-    else
-      lines+=("$(_health_line \
-        "firmware-note" "workstation" "Firmware (fwupd)" \
-        "No pending updates reported" \
-        "ok" "0" "0" "")")
-    fi
+    lines+=("$(_health_line \
+      "firmware-note" "workstation" "Firmware (fwupd)" \
+      "Checked on the Updates page — not probed again here" \
+      "info" "0" "0" "")")
   fi
 
   # ── Memory: zram / swap ─────────────────────────────────────────────────
@@ -643,18 +701,14 @@ fedora_health_scan() {
 
   # ── Memory: boot blame (info) ───────────────────────────────────────────
   if command -v systemd-analyze &>/dev/null; then
-    local blame_time blame_full
-    blame_time=$(systemd-analyze 2>/dev/null | head -1 || true)
+    local blame_time
+    blame_time=$(timeout 3 systemd-analyze 2>/dev/null | head -1 || true)
     {
       echo "${blame_time:-Boot timing unavailable}"
       echo
       echo "Slowest units"
       echo "─────────────"
-      timeout 8 systemd-analyze blame 2>/dev/null | head -25
-      echo
-      echo "Critical chain"
-      echo "──────────────"
-      timeout 8 systemd-analyze critical-chain 2>/dev/null | head -30
+      timeout 4 systemd-analyze blame 2>/dev/null | head -25
     } > "${out}.boot-blame" 2>/dev/null || true
     lines+=("$(_health_line \
       "boot-blame" "memory" "Boot analysis" \
@@ -785,8 +839,9 @@ fedora_health_scan() {
     fi
   done
 
+  lines=("${st_lines[@]}" "${lines[@]}")
   printf '%s\n' "${lines[@]}" > "$out"
-  rm -f "$tmp"
+  rm -f "$tmp" "${out}.storage-lines"
   return 0
 }
 

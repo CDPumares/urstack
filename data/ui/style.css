@@ -1,5 +1,18 @@
+/* Palette from the UrStack gear mark: navy body, electric-blue rings, magenta arrow. */
+@define-color urstack_navy #243c6c;
+@define-color urstack_navy_deep #17233f;
+@define-color urstack_blue #3c90e4;
+@define-color urstack_cyan #51b8f2;
+@define-color urstack_magenta #b43ce4;
+@define-color accent_bg_color #3c90e4;
+@define-color accent_color #3c90e4;
+@define-color accent_fg_color #ffffff;
+
 window.urstack {
   font-size: 14px;
+  --accent-bg-color: #3c90e4;
+  --accent-color: #3c90e4;
+  --accent-fg-color: #ffffff;
 }
 
 .fu-hero {
@@ -68,13 +81,13 @@ window.urstack headerbar windowcontrols.start > image {
 }
 
 .fu-badge-ok {
-  background-color: alpha(@success_color, 0.18);
-  color: @success_color;
+  background-color: alpha(#51b8f2, 0.20);
+  color: #1e6aa8;
 }
 
 .fu-badge-warn {
-  background-color: alpha(@warning_color, 0.20);
-  color: @warning_color;
+  background-color: alpha(#b43ce4, 0.18);
+  color: #b43ce4;
 }
 
 .fu-method {
@@ -87,18 +100,18 @@ window.urstack headerbar windowcontrols.start > image {
 }
 
 .fu-method-flatpak {
-  background-color: alpha(@accent_bg_color, 0.18);
-  color: @accent_color;
+  background-color: alpha(#3c90e4, 0.20);
+  color: #3c90e4;
 }
 
 .fu-method-dnf {
-  background-color: alpha(@success_color, 0.16);
-  color: @success_color;
+  background-color: alpha(#51b8f2, 0.18);
+  color: #2a7ab8;
 }
 
 .fu-method-snap {
-  background-color: alpha(@warning_color, 0.16);
-  color: @warning_color;
+  background-color: alpha(#b43ce4, 0.16);
+  color: #b43ce4;
 }
 
 .fu-method-vendor,
@@ -125,19 +138,19 @@ window.urstack headerbar windowcontrols.start > image {
   padding: 0 16px 8px 16px;
 }
 
-.fu-cat-rail {
-  margin: 2px 0 2px 0;
+.fu-cat-scroll {
+  min-height: 24px;
 }
 
-.fu-cat-rail > flowboxchild {
-  padding: 0;
+.fu-cat-rail {
   margin: 0;
 }
 
 button.fu-cat-pill {
-  padding: 2px 10px 2px 8px;
+  padding: 0 7px 0 5px;
   border-radius: 999px;
-  min-height: 32px;
+  min-height: 22px;
+  font-size: 11px;
   font-weight: 500;
   background-image: none;
   background-color: alpha(@card_bg_color, 0.92);
@@ -145,29 +158,38 @@ button.fu-cat-pill {
   box-shadow: none;
 }
 
+button.fu-cat-pill label {
+  font-size: 11px;
+}
+
 button.fu-cat-pill:hover {
   background-image: none;
-  background-color: alpha(@accent_bg_color, 0.12);
-  border-color: alpha(@accent_bg_color, 0.32);
+  background-color: alpha(#3c90e4, 0.14);
+  border-color: alpha(#3c90e4, 0.40);
 }
 
 button.fu-cat-pill:checked {
-  background-image: none;
-  background-color: alpha(@accent_bg_color, 0.24);
-  border-color: alpha(@accent_bg_color, 0.50);
-  color: @accent_color;
+  background-image: linear-gradient(135deg, #3c90e4, #b43ce4);
+  background-color: #3c90e4;
+  border-color: transparent;
+  color: #ffffff;
   font-weight: 650;
+}
+
+button.fu-cat-pill:checked label {
+  color: #ffffff;
 }
 
 .fu-cat-count {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 650;
   opacity: 0.58;
-  min-width: 1.2em;
+  min-width: 1em;
 }
 
 button.fu-cat-pill:checked .fu-cat-count {
-  opacity: 0.9;
+  opacity: 0.95;
+  color: #ffffff;
 }
 
 .fu-filter-toolbar {
@@ -185,8 +207,14 @@ button.fu-cat-pill:checked .fu-cat-count {
 }
 
 .fu-shell-sidebar {
-  background-color: alpha(@card_bg_color, 0.55);
-  border-right: 1px solid alpha(@borders, 0.7);
+  background-color: #1c2c4c;
+  background-image: linear-gradient(
+    180deg,
+    alpha(#3c90e4, 0.32) 0%,
+    alpha(#243c6c, 0.0) 42%,
+    alpha(#b43ce4, 0.22) 100%
+  );
+  border-right: 1px solid alpha(#3c90e4, 0.32);
   min-width: 200px;
   padding: 8px 0 12px 0;
 }
@@ -244,19 +272,42 @@ button.fu-cat-pill:checked .fu-cat-count {
   opacity: 0.85;
 }
 
+/* Opaque scroll surfaces — alpha + linear-gradient on tall pages forces GSK offscreens. */
+.fu-page-scroll {
+  background-color: @window_bg_color;
+}
+
+.fu-page-chrome {
+  padding-top: 4px;
+}
+
 /* Shared page chrome (Health-style; used across Updates / Backup / Settings / …) */
 .fu-page-hero,
 .fu-health-hero {
   margin: 4px 16px 8px 16px;
   padding: 22px 22px 18px 22px;
   border-radius: 18px;
+  background-color: #243c6c;
   background-image: linear-gradient(
-    135deg,
-    alpha(@accent_bg_color, 0.22),
-    alpha(@success_color, 0.10) 55%,
-    alpha(@window_bg_color, 0.0)
+    125deg,
+    #3c90e4 0%,
+    #3060a8 48%,
+    #b43ce4 100%
   );
-  border: 1px solid alpha(@accent_bg_color, 0.18);
+  color: #ffffff;
+  border: 1px solid alpha(#ffffff, 0.18);
+}
+
+.fu-page-hero label,
+.fu-health-hero label {
+  color: #ffffff;
+}
+
+.fu-page-hero .fu-hero-sub,
+.fu-page-hero .fu-page-score-label,
+.fu-health-hero .fu-hero-sub,
+.fu-health-hero .fu-health-score-label {
+  opacity: 0.88;
 }
 
 .fu-page-hero-head {
@@ -272,17 +323,19 @@ button.fu-cat-pill:checked .fu-cat-count {
 .fu-page-hero-sep {
   margin-top: 2px;
   margin-bottom: 2px;
+  background-color: alpha(#ffffff, 0.35);
 }
 
 .fu-page-hero-warn,
 .fu-health-hero-warn {
+  background-color: #4a3060;
   background-image: linear-gradient(
-    135deg,
-    alpha(@warning_color, 0.22),
-    alpha(@accent_bg_color, 0.08) 55%,
-    alpha(@window_bg_color, 0.0)
+    125deg,
+    #e0a020 0%,
+    #b43ce4 55%,
+    #3c90e4 100%
   );
-  border: 1px solid alpha(@warning_color, 0.22);
+  border: 1px solid alpha(#ffffff, 0.22);
 }
 
 .fu-page-score,
@@ -304,8 +357,8 @@ button.fu-cat-pill:checked .fu-cat-count {
   margin: 0;
   padding: 14px 16px;
   border-radius: 14px;
-  background-color: alpha(@card_bg_color, 0.9);
-  border: 1px solid alpha(@borders, 0.55);
+  background-color: @card_bg_color;
+  border: 1px solid alpha(#3c90e4, 0.28);
 }
 
 .fu-overview-flow {
@@ -351,7 +404,7 @@ button.fu-health-item-btn {
 
 button.fu-health-item-btn:hover {
   background-image: none;
-  background-color: alpha(@accent_bg_color, 0.12);
+  background-color: alpha(#3c90e4, 0.14);
 }
 
 .fu-overview-card {
@@ -359,30 +412,19 @@ button.fu-health-item-btn:hover {
   padding: 18px 16px 14px 16px;
   border-radius: 16px;
   min-width: 0;
-  background-color: alpha(@card_bg_color, 0.94);
-  border: 1px solid alpha(@borders, 0.55);
-  background-image: linear-gradient(
-    160deg,
-    alpha(@accent_bg_color, 0.10),
-    alpha(@card_bg_color, 0.0) 42%
-  );
+  background-color: @card_bg_color;
+  background-image: none;
+  border: 1px solid alpha(#3c90e4, 0.28);
 }
 
 .fu-overview-card-warn {
-  background-image: linear-gradient(
-    160deg,
-    alpha(@warning_color, 0.14),
-    alpha(@card_bg_color, 0.0) 45%
-  );
-  border: 1px solid alpha(@warning_color, 0.22);
+  background-image: none;
+  border: 1px solid alpha(#b43ce4, 0.42);
 }
 
 .fu-overview-card-ok {
-  background-image: linear-gradient(
-    160deg,
-    alpha(@success_color, 0.12),
-    alpha(@card_bg_color, 0.0) 45%
-  );
+  background-image: none;
+  border: 1px solid alpha(#51b8f2, 0.42);
 }
 
 .fu-overview-card-title {
@@ -432,17 +474,17 @@ button.fu-health-item-btn:hover {
   padding: 10px 12px;
   border-radius: 12px;
   background-color: @card_bg_color;
-  border: 1px solid alpha(@borders, 0.5);
+  border: 1px solid alpha(#3c90e4, 0.22);
   min-width: 210px;
 }
 
 .fu-app-mini:hover {
-  background-color: alpha(@accent_bg_color, 0.10);
-  border-color: alpha(@accent_bg_color, 0.35);
+  background-color: alpha(#3c90e4, 0.12);
+  border-color: alpha(#b43ce4, 0.40);
 }
 
 .fu-app-mini:active {
-  background-color: alpha(@accent_bg_color, 0.16);
+  background-color: alpha(#b43ce4, 0.14);
 }
 
 .fu-app-mini-title {
@@ -533,8 +575,8 @@ button.fu-shot-btn {
   margin: 0 16px 10px 16px;
   padding: 12px 14px;
   border-radius: 14px;
-  background-color: alpha(@card_bg_color, 0.85);
-  border: 1px dashed alpha(@borders, 0.7);
+  background-color: @card_bg_color;
+  border: 1px dashed alpha(#3c90e4, 0.45);
 }
 
 .fu-page-body {
@@ -550,7 +592,7 @@ button.fu-shot-btn {
 
 .fu-actions {
   padding: 12px 40px 16px 40px;
-  border-top: 1px solid alpha(@borders, 0.6);
+  border-top: 1px solid alpha(#3c90e4, 0.28);
 }
 
 .fu-action-grid {
@@ -560,6 +602,21 @@ button.fu-shot-btn {
 .fu-primary {
   min-height: 44px;
   font-weight: 600;
+}
+
+button.fu-primary,
+button.suggested-action.fu-primary {
+  background-image: linear-gradient(135deg, #3c90e4 0%, #8a55f0 62%, #b43ce4 100%);
+  background-color: #3c90e4;
+  color: #ffffff;
+  border: none;
+}
+
+button.fu-primary:hover,
+button.suggested-action.fu-primary:hover {
+  background-image: linear-gradient(135deg, #51b8f2 0%, #9b6af4 62%, #c050f0 100%);
+  background-color: #51b8f2;
+  color: #ffffff;
 }
 
 .fu-secondary {
@@ -646,79 +703,130 @@ button.fu-shot-btn {
   margin-bottom: 4px;
 }
 
-/* Light: stronger chrome so cards and the sidebar don't wash out. */
+/* Light: pale blue–lilac wash; keep logo gradients on pinned chrome. */
+window.urstack.fu-light {
+  background-color: #eef4fc;
+}
+
+window.urstack.fu-light .fu-page-scroll {
+  background-color: #eef4fc;
+}
+
 window.urstack.fu-light .fu-shell-sidebar {
-  background-color: alpha(@card_bg_color, 0.96);
-  border-right: 1px solid alpha(@borders, 0.95);
+  background-color: #f4f8fd;
+  background-image: linear-gradient(
+    180deg,
+    alpha(#3c90e4, 0.20) 0%,
+    #f7f4fc 48%,
+    alpha(#b43ce4, 0.12) 100%
+  );
+  border-right: 1px solid alpha(#3c90e4, 0.28);
+}
+
+window.urstack.fu-light .fu-shell-sidebar-title {
+  color: #243c6c;
+}
+
+window.urstack.fu-light .fu-shell-sidebar-sub {
+  color: #3c90e4;
+  opacity: 0.9;
 }
 
 window.urstack.fu-light .fu-overview-card,
 window.urstack.fu-light .fu-page-card,
 window.urstack.fu-light .fu-health-card,
 window.urstack.fu-light .fu-app-mini {
-  background-color: @card_bg_color;
-  border: 1px solid alpha(@borders, 0.9);
+  background-color: #ffffff;
+  border: 1px solid alpha(#3c90e4, 0.28);
 }
 
 window.urstack.fu-light .fu-app-mini:hover {
-  background-color: alpha(@accent_bg_color, 0.10);
-  border-color: alpha(@accent_bg_color, 0.38);
+  background-color: alpha(#3c90e4, 0.10);
+  border-color: alpha(#b43ce4, 0.38);
 }
 
 window.urstack.fu-light .fu-page-hero,
 window.urstack.fu-light .fu-health-hero {
+  background-color: #3060a8;
   background-image: linear-gradient(
-    135deg,
-    alpha(@accent_bg_color, 0.18),
-    alpha(@success_color, 0.08) 55%,
-    @card_bg_color
+    125deg,
+    #3c90e4 0%,
+    #5a6ad8 48%,
+    #b43ce4 100%
   );
-  border: 1px solid alpha(@accent_bg_color, 0.32);
+  border: 1px solid alpha(#243c6c, 0.18);
 }
 
 window.urstack.fu-light .fu-page-hero-warn,
 window.urstack.fu-light .fu-health-hero-warn {
+  background-color: #8a4a20;
   background-image: linear-gradient(
-    135deg,
-    alpha(@warning_color, 0.20),
-    alpha(@accent_bg_color, 0.06) 55%,
-    @card_bg_color
+    125deg,
+    #e0a020 0%,
+    #b43ce4 55%,
+    #3c90e4 100%
   );
-  border: 1px solid alpha(@warning_color, 0.38);
+  border: 1px solid alpha(#243c6c, 0.18);
 }
 
 window.urstack.fu-light .fu-page-callout,
 window.urstack.fu-light .fu-health-rp {
-  background-color: alpha(@card_bg_color, 0.98);
-  border: 1px dashed alpha(@borders, 0.9);
+  background-color: #ffffff;
+  border: 1px dashed alpha(#3c90e4, 0.45);
 }
 
 window.urstack.fu-light button.fu-cat-pill {
-  background-color: @card_bg_color;
-  border: 1px solid alpha(@borders, 0.85);
+  background-color: #ffffff;
+  border: 1px solid alpha(#3c90e4, 0.32);
 }
 
 window.urstack.fu-light .fu-badge-ok {
-  background-color: alpha(@success_color, 0.16);
+  background-color: alpha(#3c90e4, 0.16);
+  color: #1e6aa8;
 }
 
 window.urstack.fu-light .fu-badge-warn {
-  background-color: alpha(@warning_color, 0.18);
+  background-color: alpha(#b43ce4, 0.14);
+  color: #8a20c0;
 }
 
-/* Dark: keep the existing glow, a bit more depth on the sidebar. */
+/* Dark: navy workspace, same logo gradients on sidebar + heroes. */
+window.urstack.fu-dark {
+  background-color: #17233f;
+}
+
+window.urstack.fu-dark .fu-page-scroll {
+  background-color: #17233f;
+}
+
 window.urstack.fu-dark .fu-shell-sidebar {
-  background-color: alpha(@card_bg_color, 0.40);
+  background-color: #142038;
+  background-image: linear-gradient(
+    180deg,
+    alpha(#3c90e4, 0.34) 0%,
+    alpha(#243c6c, 0.0) 42%,
+    alpha(#b43ce4, 0.24) 100%
+  );
+  border-right: 1px solid alpha(#3c90e4, 0.36);
 }
 
 window.urstack.fu-dark .fu-page-hero,
 window.urstack.fu-dark .fu-health-hero {
+  background-color: #243c6c;
   background-image: linear-gradient(
-    135deg,
-    alpha(@accent_bg_color, 0.28),
-    alpha(@success_color, 0.12) 55%,
-    alpha(@window_bg_color, 0.0)
+    125deg,
+    #3c90e4 0%,
+    #3060a8 48%,
+    #b43ce4 100%
   );
+}
+
+window.urstack.fu-dark .fu-overview-card,
+window.urstack.fu-dark .fu-page-card,
+window.urstack.fu-dark .fu-health-card,
+window.urstack.fu-dark .fu-app-mini {
+  background-color: #243352;
+  border-color: alpha(#3c90e4, 0.32);
 }
 
 .fu-storage {

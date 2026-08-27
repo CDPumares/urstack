@@ -38,10 +38,25 @@ flatpak_update_is_phantom() {
 
 check_dnf() {
   command -v dnf &>/dev/null || return 0
-  local out ec=0
+  local out ec=0 used_cache=0
   local -a excl=()
+  local stamp
+  stamp="$(urstack_cache_dir)/dnf-check.stamp"
   mapfile -t excl < <(dnf_exclude_args)
-  out=$(timeout "$TIMEOUT_DNF" dnf check-update -q "${excl[@]}" 2>/dev/null) || ec=$?
+  # Warm metadata: cache-only is seconds, not a metadata refresh.
+  if [[ "${URSTACK_FORCE_METADATA:-0}" != "1" ]] && cache_stamp_fresh "$stamp"; then
+    out=$(timeout 20 dnf check-update -q -C "${excl[@]}" 2>/dev/null) || ec=$?
+    if [[ $ec -eq 0 || $ec -eq 100 ]]; then
+      used_cache=1
+    else
+      ec=0
+      out=""
+    fi
+  fi
+  if [[ $used_cache -eq 0 ]]; then
+    out=$(timeout "$TIMEOUT_DNF" dnf check-update -q "${excl[@]}" 2>/dev/null) || ec=$?
+    cache_stamp_touch "$stamp"
+  fi
   # dnf: 0 = none, 100 = updates available, 124 = timeout
   if [[ $ec -eq 124 ]]; then
     echo "DNF check timed out after ${TIMEOUT_DNF}s — metadata refresh may still be running" \
@@ -59,9 +74,9 @@ check_dnf() {
     echo "$out"   > "$check_dir/dnf"
     echo "$count" > "$check_dir/dnf_count"
     local pkgs snip
-    pkgs=$(printf '%s\n' "$out" | awk '{print $1}' | sed 's/\.[^.]*$//' | head -n 6 | tr '\n' ' ')
+    pkgs=$(printf '%s\n' "$out" | awk '{print $1}' | sed 's/\.[^.]*$//' | head -n 3 | tr '\n' ' ')
     if [[ -n "$pkgs" ]]; then
-      snip=$(timeout 25 dnf -C changelog --upgrades --count=2 $pkgs 2>/dev/null | head -n 80) || true
+      snip=$(timeout 8 dnf -C changelog --upgrades --count=1 $pkgs 2>/dev/null | head -n 40) || true
       [[ -n "$snip" ]] && printf '%s\n' "$snip" > "$check_dir/dnf_changelog"
     fi
   fi
@@ -93,19 +108,38 @@ check_fw() {
   fi
 }
 
+_flatpak_refresh_appstream() {
+  local stamp
+  stamp="$(urstack_cache_dir)/flatpak-appstream.stamp"
+  if [[ "${URSTACK_FORCE_METADATA:-0}" != "1" ]] && cache_stamp_fresh "$stamp"; then
+    return 0
+  fi
+  timeout "$TIMEOUT_FLATPAK" flatpak update --appstream -y --system &>/dev/null &
+  local p1=$!
+  timeout "$TIMEOUT_FLATPAK" flatpak update --appstream -y --user &>/dev/null &
+  local p2=$!
+  wait "$p1" "$p2" 2>/dev/null || true
+  cache_stamp_touch "$stamp"
+}
+
 check_flatpak() {
   command -v flatpak &>/dev/null || return 0
-  # Metadata refresh only (does not install apps)
-  timeout "$TIMEOUT_FLATPAK" flatpak update --appstream -y --system &>/dev/null || true
-  timeout "$TIMEOUT_FLATPAK" flatpak update --appstream -y --user &>/dev/null || true
+  _flatpak_refresh_appstream
 
   local line app ver branch origin real_out="" noise_out="" count=0
-  local sys_ls user_ls
-
-  sys_ls=$(timeout "$TIMEOUT_FLATPAK" flatpak remote-ls --updates --system \
-    --columns=application,version,branch,origin 2>/dev/null) || true
-  user_ls=$(timeout "$TIMEOUT_FLATPAK" flatpak remote-ls --updates --user \
-    --columns=application,version,branch,origin 2>/dev/null) || true
+  local sys_ls user_ls sys_f user_f
+  sys_f=$(mktemp)
+  user_f=$(mktemp)
+  timeout "$TIMEOUT_FLATPAK" flatpak remote-ls --updates --system \
+    --columns=application,version,branch,origin >"$sys_f" 2>/dev/null &
+  local sp=$!
+  timeout "$TIMEOUT_FLATPAK" flatpak remote-ls --updates --user \
+    --columns=application,version,branch,origin >"$user_f" 2>/dev/null &
+  local up=$!
+  wait "$sp" "$up" 2>/dev/null || true
+  sys_ls=$(cat "$sys_f" 2>/dev/null || true)
+  user_ls=$(cat "$user_f" 2>/dev/null || true)
+  rm -f "$sys_f" "$user_f"
 
   while IFS=$'\t' read -r app ver branch origin || [[ -n "${app:-}" ]]; do
     [[ -z "${app:-}" ]] && continue
@@ -413,7 +447,7 @@ strip_cursor_from_dnf() {
 run_all_checks_parallel() {
   local -a _pids=()
   _check_spawn() {
-    while (( $(jobs -rp | wc -l) >= ${CHECK_PARALLEL:-4} )); do
+    while (( $(jobs -rp | wc -l) >= ${CHECK_PARALLEL:-8} )); do
       wait -n 2>/dev/null || true
     done
     "$@" &

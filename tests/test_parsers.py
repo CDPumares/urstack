@@ -120,6 +120,54 @@ if section_is_selected "{key}" "{selected}"; then exit 0; else exit 1; fi
         self.assertEqual(self._selected("pipx", "pip packages"), 1)
 
 
+class TestCacheStampFresh(unittest.TestCase):
+    def _fresh(self, stamp: str, max_age: str = "21600") -> int:
+        script = f"""
+source "{CORE}/common.sh"
+if cache_stamp_fresh {stamp!r} {max_age}; then exit 0; else exit 1; fi
+"""
+        return subprocess.run(["bash", "-c", script], check=False).returncode
+
+    def test_missing_is_stale(self) -> None:
+        self.assertEqual(self._fresh("/no/such/urstack-stamp"), 1)
+
+    def test_recent_stamp_is_fresh(self) -> None:
+        with tempfile.NamedTemporaryFile() as fh:
+            self.assertEqual(self._fresh(fh.name, "3600"), 0)
+
+    def test_old_stamp_is_stale(self) -> None:
+        with tempfile.NamedTemporaryFile() as fh:
+            os.utime(fh.name, (0, 0))
+            self.assertEqual(self._fresh(fh.name, "60"), 1)
+
+    def test_check_parallel_default(self) -> None:
+        script = f"""
+unset CHECK_PARALLEL
+source "{CORE}/common.sh"
+printf '%s' "$CHECK_PARALLEL"
+"""
+        out = subprocess.check_output(["bash", "-c", script], text=True)
+        self.assertEqual(out.strip(), "8")
+
+
+class TestHealthHogBytes(unittest.TestCase):
+    def test_lookup_and_missing(self) -> None:
+        with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as fh:
+            fh.write("hog|trash|Trash|/tmp/trash|12345|trash\n")
+            fh.write("fs|root|Root|/|1|2|3\n")
+            path = fh.name
+        script = f"""
+source "{ROOT}/lib/plugins/health.sh"
+printf '%s ' "$(_health_hog_bytes {path!r} trash)"
+printf '%s' "$(_health_hog_bytes {path!r} missing)"
+"""
+        try:
+            out = subprocess.check_output(["bash", "-c", script], text=True).strip()
+        finally:
+            Path(path).unlink(missing_ok=True)
+        self.assertEqual(out, "12345 0")
+
+
 class TestConfigSources(unittest.TestCase):
     def test_default_core_only(self) -> None:
         script = f"""
@@ -359,6 +407,13 @@ class TestStyleSheet(unittest.TestCase):
         provider.connect("parsing-error", lambda _p, _s, err: errors.append(err.message))
         provider.load_from_data(self.ui.STYLE_SHEET.read_bytes())
         self.assertEqual(errors, [])
+
+    def test_stylesheet_uses_logo_palette(self) -> None:
+        css = self.ui.STYLE_SHEET.read_text(encoding="utf-8")
+        self.assertIn("#243c6c", css)
+        self.assertIn("#3c90e4", css)
+        self.assertIn("#b43ce4", css)
+        self.assertIn("@define-color accent_bg_color #3c90e4", css)
 
     def test_load_css_survives_a_missing_stylesheet(self) -> None:
         """An unstyled window is still usable; a crash at startup is not."""

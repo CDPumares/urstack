@@ -99,7 +99,7 @@ def page_icon(key: str) -> str:
     return pick_icon(*PAGE_ICON_CANDIDATES.get(key, ()))
 
 
-# Soft teal accent — distinct from default purple; works in light/dark.
+# Accent colours come from the UrStack mark (navy / electric blue / magenta).
 STYLE_SHEET = APP_ROOT / "data" / "ui" / "style.css"
 
 
@@ -514,7 +514,7 @@ def page_hero(
     icon_name: str | None = None,
     heading_trailing: Gtk.Widget | None = None,
 ) -> Gtk.Widget:
-    """Gradient hero: section header + icon on the left, status content on the right."""
+    """Page hero: section header + icon on the left, status content on the right."""
     hero_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=20)
     hero_box.add_css_class("fu-page-hero")
     if warn:
@@ -650,9 +650,15 @@ def wide_clamp(maximum_size: int = CONTENT_MAX) -> Adw.Clamp:
 def page_scroll_body(*, spacing: int = 14) -> tuple[Gtk.ScrolledWindow, Adw.Clamp, Gtk.Box]:
     """Standard wide scroll + clamp + vertical column for shell pages."""
     scrolled = Gtk.ScrolledWindow()
+    scrolled.add_css_class("fu-page-scroll")
     scrolled.set_vexpand(True)
     scrolled.set_hexpand(True)
     scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+    try:
+        scrolled.set_kinetic_scrolling(True)
+        scrolled.set_overlay_scrolling(True)
+    except Exception:  # noqa: BLE001
+        pass
     clamp = wide_clamp()
     clamp.set_margin_top(4)
     clamp.set_margin_bottom(8)
@@ -661,6 +667,16 @@ def page_scroll_body(*, spacing: int = 14) -> tuple[Gtk.ScrolledWindow, Adw.Clam
     clamp.set_child(col)
     scrolled.set_child(clamp)
     return scrolled, clamp, col
+
+
+def page_chrome_box() -> Gtk.Box:
+    """Hero/callout band pinned above the scroller so gradients don't recompose on every frame."""
+    chrome = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+    chrome.add_css_class("fu-page-chrome")
+    chrome.set_hexpand(True)
+    chrome.set_margin_start(PAGE_SIDE_PAD)
+    chrome.set_margin_end(PAGE_SIDE_PAD)
+    return chrome
 
 
 def build_checking_content(
@@ -1387,15 +1403,13 @@ def build_overview_content(
     scan_label = " & ".join(scan_bits) if scan_bits else "system"
 
     if checking:
-        col.append(
-            page_hero(
-                "…",
-                "Scanning",
-                f"Checking {scan_label}",
-                "Updates and health run in the background — cards refresh as each scan finishes.",
-                warn=False,
-                **hero_head,
-            )
+        hero = page_hero(
+            "…",
+            "Scanning",
+            f"Checking {scan_label}",
+            "Updates and health run in the background — cards refresh as each scan finishes.",
+            warn=False,
+            **hero_head,
         )
         col.append(
             page_callout(
@@ -1408,21 +1422,19 @@ def build_overview_content(
         badge.add_css_class("fu-badge")
         badge.add_css_class("fu-badge-warn")
         badge.set_valign(Gtk.Align.CENTER)
-        col.append(
-            page_hero(
-                str(update_count),
-                "update source" + ("s" if update_count != 1 else ""),
-                "Updates ready",
-                "Review and apply from Updates when you're ready."
-                + (
-                    f" Health score {health_score}."
-                    if health_score not in {"—", ""} and not checking_health
-                    else ""
-                ),
-                warn=True,
-                trailing=badge,
-                **hero_head,
-            )
+        hero = page_hero(
+            str(update_count),
+            "update source" + ("s" if update_count != 1 else ""),
+            "Updates ready",
+            "Review and apply from Updates when you're ready."
+            + (
+                f" Health score {health_score}."
+                if health_score not in {"—", ""} and not checking_health
+                else ""
+            ),
+            warn=True,
+            trailing=badge,
+            **hero_head,
         )
     else:
         badge = Gtk.Label(label="All clear")
@@ -1434,17 +1446,19 @@ def build_overview_content(
             hero_sub += " Health looks good too."
         elif health_warn:
             hero_sub += f" Health score {health_score} — open Health for recommendations."
-        col.append(
-            page_hero(
-                health_score if health_score not in {"—", ""} else "OK",
-                "Workstation" if health_score in {"—", ""} else "health score",
-                "Looking sharp" if not health_warn else "Mostly clear",
-                hero_sub,
-                warn=health_warn,
-                trailing=badge,
-                **hero_head,
-            )
+        hero = page_hero(
+            health_score if health_score not in {"—", ""} else "OK",
+            "Workstation" if health_score in {"—", ""} else "health score",
+            "Looking sharp" if not health_warn else "Mostly clear",
+            hero_sub,
+            warn=health_warn,
+            trailing=badge,
+            **hero_head,
         )
+
+    chrome = page_chrome_box()
+    chrome.append(hero)
+    outer.append(chrome)
 
     if not checking:
         col.append(
@@ -1459,7 +1473,7 @@ def build_overview_content(
     cards = Gtk.FlowBox()
     cards.add_css_class("fu-overview-flow")
     cards.set_selection_mode(Gtk.SelectionMode.NONE)
-    cards.set_homogeneous(True)
+    cards.set_homogeneous(False)
     cards.set_column_spacing(12)
     cards.set_row_spacing(12)
     cards.set_max_children_per_line(3)
@@ -1689,16 +1703,14 @@ def build_hub_content(
         badge.add_css_class("fu-badge")
         badge.add_css_class("fu-badge-warn")
         badge.set_valign(Gtk.Align.CENTER)
-        col.append(
-            page_hero(
-                str(update_count),
-                "source" + ("s" if update_count != 1 else ""),
-                "Updates ready",
-                "Expand a source to review packages, then apply when you're happy.",
-                warn=True,
-                trailing=badge,
-                **hero_head,
-            )
+        hero = page_hero(
+            str(update_count),
+            "source" + ("s" if update_count != 1 else ""),
+            "Updates ready",
+            "Expand a source to review packages, then apply when you're happy.",
+            warn=True,
+            trailing=badge,
+            **hero_head,
         )
         col.append(
             page_callout(
@@ -1719,16 +1731,14 @@ def build_hub_content(
         badge.add_css_class("fu-badge")
         badge.add_css_class("fu-badge-ok")
         badge.set_valign(Gtk.Align.CENTER)
-        col.append(
-            page_hero(
-                "100",
-                "up to date",
-                "Looking sharp",
-                "Every enabled source is current. Refresh anytime to check again.",
-                warn=False,
-                trailing=badge,
-                **hero_head,
-            )
+        hero = page_hero(
+            "100",
+            "up to date",
+            "Looking sharp",
+            "Every enabled source is current. Refresh anytime to check again.",
+            warn=False,
+            trailing=badge,
+            **hero_head,
         )
         col.append(
             page_callout(
@@ -1756,6 +1766,9 @@ def build_hub_content(
         ok_card.append(os_)
         col.append(ok_card)
 
+    chrome = page_chrome_box()
+    chrome.append(hero)
+    outer.append(chrome)
     outer.append(scrolled)
 
     actions = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
@@ -4594,18 +4607,23 @@ def build_catalog_content(
     chrome = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
     chrome.add_css_class("fu-apps-chrome")
 
-    cat_rail = Gtk.FlowBox()
+    cat_rail = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
     cat_rail.add_css_class("fu-cat-rail")
-    cat_rail.set_selection_mode(Gtk.SelectionMode.NONE)
-    cat_rail.set_activate_on_single_click(False)
-    cat_rail.set_homogeneous(False)
-    cat_rail.set_column_spacing(6)
-    cat_rail.set_row_spacing(6)
-    cat_rail.set_max_children_per_line(16)
-    cat_rail.set_min_children_per_line(1)
-    cat_rail.set_valign(Gtk.Align.START)
     cat_rail.set_halign(Gtk.Align.START)
-    cat_rail.set_hexpand(True)
+    cat_rail.set_valign(Gtk.Align.CENTER)
+    cat_rail.set_hexpand(False)
+    cat_scroll = Gtk.ScrolledWindow()
+    cat_scroll.add_css_class("fu-cat-scroll")
+    cat_scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
+    cat_scroll.set_hexpand(True)
+    cat_scroll.set_vexpand(False)
+    try:
+        cat_scroll.set_propagate_natural_height(True)
+        cat_scroll.set_overlay_scrolling(True)
+        cat_scroll.set_kinetic_scrolling(True)
+    except Exception:  # noqa: BLE001
+        pass
+    cat_scroll.set_child(cat_rail)
 
     cat_btns: dict[str, Gtk.ToggleButton] = {}
     cat_guard = {"busy": True}
@@ -4645,14 +4663,14 @@ def build_catalog_content(
 
     def add_cat_pill(cid: str, count: int) -> None:
         label = cat_chip_label(cid)
-        inner = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        inner = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
         icon = Gtk.Image.new_from_icon_name(
             CAT_ICONS.get(
                 cid,
                 pick_icon("application-x-executable-symbolic", "applications-other-symbolic"),
             )
         )
-        icon.set_pixel_size(14)
+        icon.set_pixel_size(12)
         inner.append(icon)
         name = Gtk.Label(label=label)
         name.set_single_line_mode(True)
@@ -4766,7 +4784,7 @@ def build_catalog_content(
     filter_row.append(clear_btn)
 
     chrome.append(filter_row)
-    chrome.append(cat_rail)
+    chrome.append(cat_scroll)
     main.append(chrome)
 
     list_host = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
@@ -5701,6 +5719,10 @@ def build_health_content(
         refresh_btn.set_sensitive(False)
     root.append(page_hero_actions(refresh_btn))
 
+    hero_host = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+    hero_host.set_hexpand(True)
+    root.append(hero_host)
+
     list_host = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
     list_host.set_vexpand(True)
     root.append(list_host)
@@ -5729,15 +5751,23 @@ def build_health_content(
         update_apply_btn()
 
     def rebuild_list() -> None:
+        while hero_host.get_first_child() is not None:
+            hero_host.remove(hero_host.get_first_child())
         while list_host.get_first_child() is not None:
             list_host.remove(list_host.get_first_child())
         visible_checks.clear()
         selected.clear()
 
         scrolled = Gtk.ScrolledWindow()
+        scrolled.add_css_class("fu-page-scroll")
         scrolled.set_vexpand(True)
         scrolled.set_hexpand(True)
         scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        try:
+            scrolled.set_kinetic_scrolling(True)
+            scrolled.set_overlay_scrolling(True)
+        except Exception:  # noqa: BLE001
+            pass
         clamp = wide_clamp()
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14)
         box.set_hexpand(True)
@@ -5774,7 +5804,8 @@ def build_health_content(
             hero_title = f"{len(recs)} recommendation{'s' if len(recs) != 1 else ''}"
             hero_sub = f"{attention_n} need attention · {actionable_n} optional fixes"
             hero_warn = True
-        box.append(
+        chrome = page_chrome_box()
+        chrome.append(
             page_hero(
                 score_txt,
                 score_sub,
@@ -5786,6 +5817,7 @@ def build_health_content(
                 icon_name=page_icon("health"),
             )
         )
+        hero_host.append(chrome)
 
         # ── Restore point strip ───────────────────────────────────────────
         rp_id, rp_created = _health_latest_restore_point()
@@ -6597,7 +6629,8 @@ def build_backup_restore_content(
 
     scrolled, clamp, col = page_scroll_body(spacing=14)
 
-    col.append(
+    chrome = page_chrome_box()
+    chrome.append(
         page_hero(
             "1" if is_backup else "↺",
             "archive" if is_backup else "restore",
@@ -6617,6 +6650,7 @@ def build_backup_restore_content(
             icon_name=page_icon("backup") if is_backup else page_icon("restore"),
         )
     )
+    outer.append(chrome)
     col.append(
         page_callout(
             "Safety",
@@ -7001,7 +7035,8 @@ def build_settings_content(
         for k, group, _t, _s in SETTING_KEYS
         if group != "Startup" and values.get(k, "0") == "1"
     )
-    page.append(
+    chrome = page_chrome_box()
+    chrome.append(
         page_hero(
             str(enabled_n),
             "sources on",
@@ -7012,6 +7047,7 @@ def build_settings_content(
             icon_name=page_icon("settings"),
         )
     )
+    outer.append(chrome)
     page.append(
         page_callout(
             "Config file",
@@ -7574,11 +7610,14 @@ def mode_shell(args: argparse.Namespace) -> int:
 
             threading.Thread(target=work, daemon=True).start()
 
-        def _refresh_updates_async(fail_message: str, fail_toast: str) -> None:
+        def _refresh_updates_async(
+            fail_message: str, fail_toast: str, *, force_metadata: bool = False
+        ) -> None:
             """Re-scan updates off the main thread and fold the result into the UI.
 
             First launch, the Refresh button and the Overview refresh differ only
-            in what they say when the scan fails.
+            in what they say when the scan fails. Manual refresh also forces a
+            metadata pull so cached DNF/Flatpak stamps are not reused.
             """
 
             def work() -> None:
@@ -7602,7 +7641,9 @@ def mode_shell(args: argparse.Namespace) -> int:
                     return False
 
                 try:
-                    ok, has_u, raw, err = refresh_hub_from_session()
+                    ok, has_u, raw, err = refresh_hub_from_session(
+                        force_metadata=force_metadata
+                    )
                 finally:
                     # done() clears scan_inflight; skipping it would leave every
                     # later refresh refused as "a scan is already running".
@@ -7634,6 +7675,7 @@ def mode_shell(args: argparse.Namespace) -> int:
             _refresh_updates_async(
                 "Could not refresh updates.",
                 "Update check failed",
+                force_metadata=True,
             )
 
         def start_manual_refresh() -> None:
@@ -7648,6 +7690,7 @@ def mode_shell(args: argparse.Namespace) -> int:
             _refresh_updates_async(
                 "Could not refresh updates.",
                 "Refresh failed",
+                force_metadata=True,
             )
 
         def rebuild_hub(raw: str | None = None, has_updates: bool | None = None) -> None:
@@ -7756,7 +7799,7 @@ def mode_shell(args: argparse.Namespace) -> int:
                 session["nav"] = nav_id
                 set_active(nav_id)
 
-        def refresh_hub_from_session() -> tuple[bool, bool, str, str]:
+        def refresh_hub_from_session(*, force_metadata: bool = False) -> tuple[bool, bool, str, str]:
             """Re-run checks into the live check-dir and rewrite results/sections files.
 
             Returns (ok, has_updates, raw, error).
@@ -7781,6 +7824,8 @@ def mode_shell(args: argparse.Namespace) -> int:
             env["URSTACK_ROOT"] = str(root)
             env["STACKUP_ROOT"] = str(root)
             env["URSTACK_EMBEDDED_PROGRESS"] = "1"
+            if force_metadata:
+                env["URSTACK_FORCE_METADATA"] = "1"
             try:
                 proc = subprocess.run(
                     cmd,
@@ -8024,7 +8069,9 @@ def mode_shell(args: argparse.Namespace) -> int:
                         return False
 
                     try:
-                        rok, has_u, raw, err = refresh_hub_from_session()
+                        rok, has_u, raw, err = refresh_hub_from_session(
+                            force_metadata=True
+                        )
                     finally:
                         # after() clears job_busy; skipping it wedges the job UI.
                         GLib.idle_add(after)
@@ -8458,7 +8505,8 @@ def mode_shell(args: argparse.Namespace) -> int:
                 chunks = re.split(r"(?m)(?=^\[[0-9T:\-+.]+\]\s*$)", raw)
                 chunks = [c.strip() for c in chunks if c.strip()]
 
-            list_col.append(
+            chrome = page_chrome_box()
+            chrome.append(
                 page_hero(
                     str(len(chunks)) if chunks else "0",
                     "entries",
@@ -8470,6 +8518,7 @@ def mode_shell(args: argparse.Namespace) -> int:
                     icon_name=page_icon("log"),
                 )
             )
+            outer.append(chrome)
             list_col.append(page_callout("Log file", str(log_path)))
             list_col.append(page_section_label("Log entries"))
 
