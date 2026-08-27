@@ -414,10 +414,14 @@ class TestStyleSheet(unittest.TestCase):
 
         def on_parse_error(_p, _section, err) -> None:
             msg = getattr(err, "message", None) or str(err)
-            # Fedora's GTK is newer than GitHub's ubuntu-latest. Properties
-            # such as letter-spacing are real on the desktop and unknown on
-            # the runner; GTK still applies the rest of the rule.
+            # Fedora's GTK/libadwaita is newer than GitHub's ubuntu-latest.
+            # Unknown names are ignored at runtime; the rest of the rule still
+            # applies. Real typos use a different wording.
             if "is not a valid property name" in msg:
+                return
+            if msg.startswith("No property named \"--") or msg.startswith(
+                "No property named '--"
+            ):
                 return
             errors.append(msg)
 
