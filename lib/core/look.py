@@ -470,8 +470,11 @@ def _wallpaper_from_kde(home: Path) -> list[Path]:
                 p = Path(_strip_file_uri(part.strip()))
                 if p.is_file():
                     found.append(p)
-    # Plasma 6 sometimes stores a single current image under wallpapers.
     extra = home / ".local/share/wallpapers"
+    if extra.is_dir() and not found:
+        for path in extra.rglob("*"):
+            if path.is_file() and path.suffix.lower() in _IMAGE_SUFFIXES:
+                found.append(path)
     return list(dict.fromkeys(found))
 
 
