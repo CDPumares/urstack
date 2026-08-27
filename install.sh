@@ -126,6 +126,7 @@ uninstall() {
   run_priv rm -rf /usr/local/share/stackup 2>/dev/null || true
   run_priv rm -f "$BIN_DIR/urstack" "$BIN_DIR/stackup" "$BIN_DIR/fedora-updates"
   run_priv rm -f "$APP_DIR/urstack.desktop" "$APP_DIR/com.local.urstack.desktop" \
+    "$APP_DIR/com.local.urstack.tray.desktop" \
     "$APP_DIR/stackup.desktop" "$APP_DIR/com.local.stackup.desktop" "$APP_DIR/fedora-updates.desktop"
   run_priv rm -f "$ICON_DIR/urstack.png" "$ICON_DIR/stackup.png" "$ICON_DIR/fedora-updates.png"
   if [[ -n "$LIBEXEC_DIR" ]]; then
@@ -157,7 +158,7 @@ run_priv rsync -a --delete \
   --exclude '__pycache__' \
   "$ROOT/" "$APP_HOME/"
 
-run_priv chmod +x "$APP_HOME/bin/urstack" "$APP_HOME/lib/core/priv.sh" "$APP_HOME/lib/core/ui.py"
+run_priv chmod +x "$APP_HOME/bin/urstack" "$APP_HOME/lib/core/priv.sh" "$APP_HOME/lib/core/ui.py" "$APP_HOME/lib/core/tray.py"
 [[ -f "$APP_HOME/bin/stackup" ]] && run_priv chmod +x "$APP_HOME/bin/stackup"
 [[ -f "$APP_HOME/bin/fedora-updates" ]] && run_priv chmod +x "$APP_HOME/bin/fedora-updates"
 
@@ -176,9 +177,11 @@ run_priv ln -sfn urstack "$BIN_DIR/fedora-updates"
 run_priv install -m 644 "$ROOT/data/urstack.desktop" "$APP_DIR/urstack.desktop"
 # Wayland/Plasma match windows by GApplication id → desktop basename
 run_priv install -m 644 "$ROOT/data/com.local.urstack.desktop" "$APP_DIR/com.local.urstack.desktop"
+run_priv install -m 644 "$ROOT/data/com.local.urstack.tray.desktop" "$APP_DIR/com.local.urstack.tray.desktop"
 if [[ "$MODE" == "user" ]]; then
   sed -i "s|^Exec=.*|Exec=$BIN_DIR/urstack|" "$APP_DIR/urstack.desktop"
   sed -i "s|^Exec=.*|Exec=$BIN_DIR/urstack|" "$APP_DIR/com.local.urstack.desktop"
+  sed -i "s|^Exec=urstack|Exec=$BIN_DIR/urstack|" "$APP_DIR/com.local.urstack.tray.desktop"
 fi
 # Remove old desktop entry names
 run_priv rm -f "$APP_DIR/stackup.desktop" "$APP_DIR/com.local.stackup.desktop" "$APP_DIR/fedora-updates.desktop"

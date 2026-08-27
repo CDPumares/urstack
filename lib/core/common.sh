@@ -448,6 +448,11 @@ acquire_update_lock() {
   return 0
 }
 
+release_update_lock() {
+  flock -u 9 2>/dev/null || true
+  rm -f "$LOCK_FILE.pid" 2>/dev/null || true
+}
+
 # ---------------------------------------------------------------------------
 # Competing updaters (pause GNOME Software for this run only — never mask)
 # ---------------------------------------------------------------------------

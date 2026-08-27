@@ -2776,7 +2776,7 @@ SETTING_KEYS: list[tuple[str, str, str, str]] = [
         "autostart_background",
         "Startup",
         "Check in the background at login",
-        "When Launch at login is on, run a silent check instead of opening the window. You’ll get a notification if updates are waiting.",
+        "When Launch at login is on, run a silent check instead of opening the window. A taskbar icon shows while it scans; click it if updates are waiting.",
     ),
     (
         "scan_on_startup",
@@ -2981,7 +2981,7 @@ def autostart_desktop_text(
 ) -> str:
     cmd = exec_cmd or urstack_launch_command()
     if background:
-        cmd = f"{cmd} --check"
+        cmd = f"{cmd} --check --tray"
     comment = (
         "Check for Fedora stack updates at login"
         if background
@@ -2997,6 +2997,7 @@ def autostart_desktop_text(
         "Terminal=false\n"
         "Categories=System;Settings;PackageManager;\n"
         "StartupNotify=false\n"
+        "StartupWMClass=urstack\n"
         "X-GNOME-Autostart-enabled=true\n"
         "X-GNOME-Autostart-Delay=10\n"
     )

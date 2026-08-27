@@ -219,6 +219,7 @@ With no flags, UrStack opens the GUI (and detaches from the terminal). Flags sta
 ```text
 urstack                         # GUI
 urstack --check                 # Print results; exit 1 if anything is pending
+urstack --check --tray          # Same, with a taskbar / tray icon while it scans
 urstack --yes                   # Non-interactive apply (skips firmware unless Settings apply_fw=1)
 urstack --yes --include-firmware
 urstack --log                   # History viewer
@@ -237,7 +238,7 @@ urstack --health-restore-list
 urstack --health-restore [id|latest]
 ```
 
-`--check` is suitable for scripts and the daily timer: exit `0` if the stack is current, `1` if updates exist, `3` if another instance holds the lock.
+`--check` is suitable for scripts and the daily timer: exit `0` if the stack is current, `1` if updates exist, `3` if another instance holds the lock. `--check --tray` is what login autostart uses in background mode: a tray icon (StatusNotifierItem on Plasma, Cinnamon, XFCE, COSMIC; a small window on the GNOME dash if there is no tray) while the scan runs, and it stays until you click it if updates were found.
 
 ### Daily check timer
 
@@ -275,7 +276,7 @@ Keys are `1` / `0`. Shipped templates live in `config/default.conf` and `config/
 | `quiet_gnome_software` | 1 | Pause GNOME Software’s background service during a GUI run |
 | `keep_kernels` | 3 | Kernels to keep when pruning |
 | `autostart` | 0 | Launch UrStack at login (`~/.config/autostart/urstack.desktop`) |
-| `autostart_background` | 0 | With autostart: run `urstack --check` instead of opening the window |
+| `autostart_background` | 0 | With autostart: run `urstack --check --tray` instead of opening the window |
 | `scan_on_startup` | 1 | Run update and health scans when the app window opens |
 | `daily_check` | 0 | User systemd timer that checks once a day and notifies (does not apply) |
 | `notifications` | 1 | Desktop notifications when updates are found or an apply finishes |

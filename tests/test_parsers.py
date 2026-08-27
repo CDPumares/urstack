@@ -537,14 +537,18 @@ class TestStartupSettings(unittest.TestCase):
             self.assertIn("X-GNOME-Autostart-enabled=true", text)
             self.assertIn("Exec=", text)
             self.assertNotIn("--check", text)
+            self.assertNotIn("--tray", text)
             self.ui.sync_xdg_autostart(True, background=True, path=dest)
-            self.assertIn(" --check", dest.read_text(encoding="utf-8"))
+            bg = dest.read_text(encoding="utf-8")
+            self.assertIn(" --check --tray", bg)
+            self.assertIn("StartupWMClass=urstack", bg)
             self.ui.sync_xdg_autostart(False, path=dest)
             self.assertFalse(dest.exists())
 
     def test_daily_check_units_are_check_only(self) -> None:
         svc, tmr = self.ui.daily_check_unit_texts("/opt/urstack")
         self.assertIn("ExecStart=/opt/urstack --check", svc)
+        self.assertNotIn("--tray", svc)
         self.assertIn("SuccessExitStatus=0 1", svc)
         self.assertIn("OnCalendar=daily", tmr)
         with tempfile.TemporaryDirectory() as d:
@@ -581,7 +585,7 @@ class TestStartupSettings(unittest.TestCase):
                 self.assertEqual(saved["scan_on_startup"], "0")
                 self.assertEqual(saved["daily_check"], "1")
                 self.assertTrue(auto.is_file(), "enabling autostart must create the desktop file")
-                self.assertIn(" --check", auto.read_text(encoding="utf-8"))
+                self.assertIn(" --check --tray", auto.read_text(encoding="utf-8"))
                 timer = Path(env_home) / "systemd" / "user" / "urstack-check.timer"
                 self.assertTrue(timer.is_file())
                 self.ui.write_config_map(cfg, {"autostart": "0", "daily_check": "0"})
@@ -592,6 +596,48 @@ class TestStartupSettings(unittest.TestCase):
                     os.environ.pop("XDG_CONFIG_HOME", None)
                 else:
                     os.environ["XDG_CONFIG_HOME"] = old
+
+
+def load_tray_module():
+    path = CORE / "tray.py"
+    spec = importlib.util.spec_from_file_location("urstack_tray", path)
+    assert spec and spec.loader
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+class TestSilentTray(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        try:
+            cls.tray = load_tray_module()
+        except Exception as exc:
+            raise unittest.SkipTest(f"GLib/GTK unavailable: {exc}") from exc
+
+    def test_parse_args(self) -> None:
+        args = self.tray.parse_args(["--fifo", "/tmp/urstack-tray", "--icon", "", "--open-cmd", "urstack"])
+        self.assertEqual(args.fifo, "/tmp/urstack-tray")
+        self.assertEqual(args.open_cmd, "urstack")
+
+    def test_empty_icon_has_no_pixmap(self) -> None:
+        self.assertEqual(self.tray.icon_pixmap_from_png(""), [])
+        self.assertEqual(self.tray.icon_pixmap_from_png("/nonexistent/urstack.png"), [])
+
+    def test_pixmap_from_shipped_icon(self) -> None:
+        icon = ROOT / "data" / "icons" / "hicolor" / "48x48" / "apps" / "urstack.png"
+        if not icon.is_file():
+            raise unittest.SkipTest("shipped icon missing")
+        pix = self.tray.icon_pixmap_from_png(str(icon))
+        self.assertEqual(len(pix), 1)
+        width, height, data = pix[0]
+        self.assertGreater(width, 0)
+        self.assertGreater(height, 0)
+        self.assertEqual(len(data), width * height * 4)
+
+    def test_pixmaps_variant_type(self) -> None:
+        var = self.tray._pixmaps_variant([(2, 2, bytes(16))])
+        self.assertEqual(var.get_type_string(), "a(iiay)")
 
 
 if __name__ == "__main__":

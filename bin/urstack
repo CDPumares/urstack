@@ -4,6 +4,7 @@
 # Usage:
 #   urstack                           GUI check + apply
 #   urstack --check                   Print results; exit 1 if updates available
+#   urstack --check --tray            Silent check with a taskbar / tray icon
 #   urstack --yes                     Non-interactive apply (skips firmware)
 #   urstack --yes --include-firmware
 #   urstack --log                     View history
@@ -28,7 +29,7 @@ if [[ -z "${_FEDORA_UPDATES_RELAUNCHED:-}" ]]; then
   is_cli=0
   for _a in "${@:-}"; do
     case "$_a" in
-      --check|--yes|-y|--log|--backup|--restore|--install-timer|--remove-timer|--include-firmware|--config|--detect|--write-config|--include-backup|--apply-sections|--catalog-choice|--check-dir|--refresh-check|--results-file|--sections-file|--health-scan|--health-apply|--health-status|--health-restore-point|--health-restore|--health-restore-list)
+      --check|--tray|--yes|-y|--log|--backup|--restore|--install-timer|--remove-timer|--include-firmware|--config|--detect|--write-config|--include-backup|--apply-sections|--catalog-choice|--check-dir|--refresh-check|--results-file|--sections-file|--health-scan|--health-apply|--health-status|--health-restore-point|--health-restore|--health-restore-list)
         is_cli=1; break ;;
     esac
   done
@@ -108,9 +109,20 @@ OWNED_CHECK_DIR=1
 prog_fifo=$(mktemp -u)
 results_file=""
 prog_pid=""
+tray_pid=""
+tray_fd=""
+tray_fifo=""
+tray_persist=0
 
 cleanup() {
   restore_competing_updaters
+  if [[ -n "${tray_pid:-}" && "${tray_persist:-0}" -eq 0 ]]; then
+    [[ -n "${tray_fd:-}" ]] && echo quit >&"$tray_fd" 2>/dev/null || true
+    wait "$tray_pid" 2>/dev/null || true
+    tray_pid=""
+  fi
+  [[ -n "${tray_fd:-}" ]] && exec {tray_fd}>&- 2>/dev/null || true
+  [[ -n "${tray_fifo:-}" ]] && rm -f "$tray_fifo"
   rm -f "$tmp" "$results_file" "$prog_fifo"
   if [[ "${OWNED_CHECK_DIR:-1}" -eq 1 ]]; then
     rm -rf "$check_dir"
@@ -120,11 +132,43 @@ cleanup() {
 }
 trap cleanup EXIT
 
+start_silent_tray() {
+  [[ "${CHECK_ONLY:-0}" -eq 1 && "${SHOW_TRAY:-0}" -eq 1 ]] || return 0
+  command -v python3 &>/dev/null || return 0
+  local tray_py="$FEDORA_UPDATES_LIB/tray.py"
+  [[ -f "$tray_py" ]] || return 0
+
+  local icon="" candidate
+  for candidate in \
+    "$FEDORA_UPDATES_ROOT/data/icons/hicolor/48x48/apps/urstack.png" \
+    "$FEDORA_UPDATES_ROOT/data/icons/urstack.png"
+  do
+    if [[ -f "$candidate" ]]; then
+      icon="$candidate"
+      break
+    fi
+  done
+
+  tray_fifo=$(mktemp -u "${TMPDIR:-/tmp}/urstack-tray.XXXXXX")
+  mkfifo "$tray_fifo" || { tray_fifo=""; return 0; }
+  # Keep a read/write fd so the Python reader does not block on open,
+  # and so later `echo` commands never stall on a full pipe.
+  exec {tray_fd}<>"$tray_fifo" || { rm -f "$tray_fifo"; tray_fifo=""; return 0; }
+  python3 "$tray_py" \
+    --fifo "$tray_fifo" \
+    --icon "$icon" \
+    --open-cmd "$FEDORA_UPDATES_ROOT/bin/urstack" \
+    &
+  tray_pid=$!
+  echo checking >&"$tray_fd" 2>/dev/null || true
+}
+
 sections=()
 advisory_sections=()
 has_any=0
 msg=""
 CHECK_ONLY=0
+SHOW_TRAY=0
 AUTO_YES=0
 INCLUDE_FIRMWARE=0
 SHOW_LOG=0
@@ -159,6 +203,7 @@ _i=0
 while [[ $_i -lt ${#_args[@]} ]]; do
   case "${_args[$_i]}" in
     --check) CHECK_ONLY=1 ;;
+    --tray) SHOW_TRAY=1 ;;
     --yes|-y) AUTO_YES=1 ;;
     --include-firmware) INCLUDE_FIRMWARE=1 ;;
     --log)   SHOW_LOG=1 ;;
@@ -258,7 +303,7 @@ while [[ $_i -lt ${#_args[@]} ]]; do
   _i=$((_i + 1))
 done
 
-export INCLUDE_FIRMWARE AUTO_YES CHECK_ONLY
+export INCLUDE_FIRMWARE AUTO_YES CHECK_ONLY SHOW_TRAY
 export KEEP_KERNELS="${KEEP_KERNELS:-3}"
 
 mkdir -p "$LOG_DIR" 2>/dev/null || true
@@ -516,6 +561,7 @@ if [[ $CHECK_ONLY -eq 0 && $AUTO_YES -eq 0 && -n "${DISPLAY:-}" ]]; then
   fi
 fi
 
+start_silent_tray
 run_all_checks_parallel
 
 exec 4>&- 2>/dev/null || true
@@ -534,6 +580,20 @@ if [[ $CHECK_ONLY -eq 1 ]]; then
   echo -e "$msg"
   if [[ $has_any -eq 1 ]]; then
     notify "Updates available" "Run $APP_NAME to review and apply." "normal"
+  fi
+  if [[ -n "${tray_pid:-}" ]]; then
+    if [[ $has_any -eq 1 && $SHOW_TRAY -eq 1 ]]; then
+      echo updates >&"$tray_fd" 2>/dev/null || true
+      tray_persist=1
+      # Let "Open" launch a second urstack instance.
+      release_update_lock
+      wait "$tray_pid" 2>/dev/null || true
+      tray_pid=""
+    else
+      echo quit >&"$tray_fd" 2>/dev/null || true
+      wait "$tray_pid" 2>/dev/null || true
+      tray_pid=""
+    fi
   fi
   exit "$has_any"
 fi
