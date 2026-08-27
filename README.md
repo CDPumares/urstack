@@ -14,6 +14,7 @@
   <a href="#requirements">Requirements</a> ·
   <a href="#quick-start">Quick Start</a> ·
   <a href="#the-desktop-app">Desktop App</a> ·
+  <a href="#screenshots">Screenshots</a> ·
   <a href="#cli-usage">CLI</a> ·
   <a href="#configuration">Configuration</a> ·
   <a href="#roadmap">Roadmap</a> ·
@@ -206,6 +207,10 @@ Config stays at `~/.config/urstack/config.conf`. Personal Apps listings stay in 
 
 ## The desktop app
 
+<p align="center">
+  <img src="assets/screenshots/overview.png" alt="UrStack Overview: health score, updates, and shortcuts into every page" width="880">
+</p>
+
 The main window is a sidebar shell:
 
 | Page | Role |
@@ -219,6 +224,29 @@ The main window is a sidebar shell:
 | **History** / **Runs** | Combined log and per-run folders. |
 
 Checks run in the background after launch. You can open Apps, Backup, Settings, and History while a scan is still finishing.
+
+### Screenshots
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="assets/screenshots/apps.png" alt="Apps catalog with Flatpak and vendor listings">
+      <br>
+      <sub>Apps — catalog, filters, and batch install</sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="assets/screenshots/health.png" alt="System Health score and restore point">
+      <br>
+      <sub>Health — score, checks, and restore points</sub>
+    </td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="assets/screenshots/backup.png" alt="Backup page with secrets off by default" width="880">
+  <br>
+  <sub>Backup — a workstation blueprint; secrets stay off unless you opt in</sub>
+</p>
 
 ---
 
