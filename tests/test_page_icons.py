@@ -46,10 +46,10 @@ class TestSvgReadsAsSymbolic(unittest.TestCase):
             "configure-symbolic",
         )
 
-    def test_look_candidates_include_theme_symbolic(self) -> None:
+    def test_look_candidates_prefer_image_symbolic(self) -> None:
         self.assertEqual(
             self.icons.PAGE_ICON_CANDIDATES["look"][0],
-            "urstack-look-symbolic",
+            "image-x-generic-symbolic",
         )
 
 

@@ -226,7 +226,7 @@ class ThemeStoreTestCase(unittest.TestCase):
         icons = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(icons)
         self.assertTrue(icons.svg_reads_as_symbolic(svg))
-        self.assertEqual(icons.PAGE_ICON_CANDIDATES["look"][0], "urstack-look-symbolic")
+        self.assertEqual(icons.PAGE_ICON_CANDIDATES["look"][0], "image-x-generic-symbolic")
 
 
 if __name__ == "__main__":
