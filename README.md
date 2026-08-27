@@ -165,7 +165,7 @@ The Look page is a **theme kit**, not the full Backup blueprint. It reads the de
 - GTK / Plasma look-and-feel, colour schemes, and user-installed widgets
 - Desktop settings that select those pieces (`kdeglobals`, appletsrc, GTK, dconf / xfconf)
 
-**Save look pack** writes a `.tar.xz` you can keep or move to another Fedora machine. **Browse themes** is a curated catalog (same idea as Apps), not the GNOME Look / KDE Look feed that Discover already shows. Packs come from GitHub — Dracula, Nordic, Sweet, Catppuccin, Candy icons, Kora, Bibata, Nordzy — and **Install** copies a real archive into your home directory the same way as **Open** + **Install archive**. Installer scripts are never run. Third-party icon, GTK, and Plasma tars/zips are accepted when UrStack can tell what they are. Archives cannot write outside the extract dir and do not install into `/usr`.
+**Save look pack** writes a `.tar.xz` you can keep or move to another Fedora machine. **Browse themes** is a curated catalog (same idea as Apps), not the GNOME Look / KDE Look feed that Discover already shows. Packs come from GitHub — Dracula, Nordic, Sweet, Catppuccin, Candy icons, Kora, Bibata, Nordzy. **Install** downloads a real archive, copies it into your home directory, and switches this desktop to it (GTK theme, icons, cursors, Plasma colour scheme). Third-party `install.sh` scripts inside a zip are not executed; UrStack unpacks the files and applies them with `gsettings` / Plasma helpers. Archives cannot write outside the extract dir and do not install into `/usr`.
 
 Icons, colours, and wallpaper apply immediately when the desktop has a helper (`gsettings`, `plasma-apply-*`). Panels and widgets usually need a log out.
 

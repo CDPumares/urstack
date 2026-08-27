@@ -234,6 +234,69 @@ class LookTestCase(unittest.TestCase):
         self.assertTrue(dest.is_file())
         self.assertIn("colors/CatppuccinMochaBlue.colors", result["installed"])
 
+    def test_apply_spec_from_installed_names(self) -> None:
+        spec = self.look.apply_spec_from_installed(
+            [
+                "gtk/Nordic",
+                "icons/kora-pgrey",
+                "icons/kora",
+                "cursors/Bibata-Modern-Classic",
+                "colors/CatppuccinMochaMauve.colors",
+                "colors/CatppuccinMochaBlue.colors",
+            ]
+        )
+        items = spec["items"]
+        self.assertEqual(items["gtk"]["name"], "Nordic")
+        self.assertEqual(items["icons"]["name"], "kora")
+        self.assertEqual(items["cursors"]["name"], "Bibata-Modern-Classic")
+        self.assertEqual(items["colors"]["name"], "CatppuccinMochaMauve")
+
+    def test_cursor_theme_is_not_treated_as_icons(self) -> None:
+        zpath = self.out / "Bibata.zip"
+        with zipfile.ZipFile(zpath, "w") as zf:
+            zf.writestr("Bibata/index.theme", "[Icon Theme]\nName=Bibata\n")
+            zf.writestr("Bibata/cursors/left_ptr", b"cur")
+        result = self.look.install_archive(zpath, home=self.home, apply=False)
+        self.assertIn("cursors/Bibata", result["installed"])
+        self.assertNotIn("icons/Bibata", result["installed"])
+        spec = self.look.apply_spec_from_installed(result["installed"])
+        self.assertEqual(spec["items"]["cursors"]["name"], "Bibata")
+        self.assertNotIn("icons", spec["items"])
+
+    def test_third_party_install_applies_gtk_name(self) -> None:
+        tarball = self.out / "Nordic.tar.gz"
+        staging = Path(self._td.name) / "nordic-apply"
+        theme = staging / "Nordic"
+        (theme / "gtk-3.0").mkdir(parents=True)
+        (theme / "gtk-3.0" / "gtk.css").write_text("* { }", encoding="utf-8")
+        with tarfile.open(tarball, "w:gz") as tf:
+            tf.add(theme, arcname="Nordic")
+        seen: dict = {}
+
+        def fake_apply(home, manifest, *, environ=None):
+            seen["home"] = home
+            seen["manifest"] = manifest
+            return ["gtk=Nordic"]
+
+        self.look.apply_look = fake_apply
+        result = self.look.install_archive(tarball, home=self.home, apply=True)
+        self.assertEqual(seen["home"], self.home)
+        self.assertEqual(seen["manifest"]["items"]["gtk"]["name"], "Nordic")
+        self.assertEqual(result["applied"], ["gtk=Nordic"])
+
+    def test_apply_look_writes_gtk_settings(self) -> None:
+        self.look._gsettings_set = lambda *_a, **_k: False
+        self.look._xfconf_set = lambda *_a, **_k: None
+        self.look._kwrite = lambda *_a, **_k: None
+        self.look.apply_look(
+            self.home,
+            {"items": {"gtk": {"name": "Nordic"}, "icons": {"name": "Candy"}}},
+            environ={"XDG_CURRENT_DESKTOP": "GNOME"},
+        )
+        text = (self.home / ".config/gtk-3.0/settings.ini").read_text(encoding="utf-8")
+        self.assertIn("gtk-theme-name=Nordic", text)
+        self.assertIn("gtk-icon-theme-name=Candy", text)
+
     def test_third_party_gtk_theme(self) -> None:
         tarball = self.out / "Nordic.tar.gz"
         staging = Path(self._td.name) / "nordic"

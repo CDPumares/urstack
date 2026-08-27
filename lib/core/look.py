@@ -1301,7 +1301,12 @@ def install_archive(
         applied: list[str] = []
         if apply:
             prog("Applying the look…", 80)
-            applied = apply_look(home, manifest if manifest.get("format") == FORMAT else None, environ=environ)
+            spec = (
+                manifest
+                if manifest.get("format") == FORMAT
+                else apply_spec_from_installed(installed)
+            )
+            applied = apply_look(home, spec, environ=environ)
 
         prog("Look installed", 100)
         result = {
@@ -1409,16 +1414,24 @@ def _install_urstack_pack(root: Path, home: Path, manifest: dict[str, Any]) -> l
     return installed
 
 
-def _dir_looks_like_icons(path: Path) -> bool:
+def _dir_looks_like_full_icons(path: Path) -> bool:
     if not (path / "index.theme").is_file():
         return False
-    if (path / "cursors").is_dir():
-        return True
     size_dirs = ("scalable", "16x16", "22x22", "24x24", "32x32", "48x48", "64x64")
     if any((path / d).is_dir() for d in size_dirs):
         return True
     cats = ("apps", "places", "mimetypes", "devices", "actions", "status", "categories")
     return any((path / d).is_dir() for d in cats)
+
+
+def _dir_looks_like_cursors(path: Path) -> bool:
+    return (path / "cursors").is_dir() and not _dir_looks_like_full_icons(path)
+
+
+def _dir_looks_like_icons(path: Path) -> bool:
+    return _dir_looks_like_full_icons(path) or (
+        (path / "index.theme").is_file() and (path / "cursors").is_dir()
+    )
 
 
 def _dir_looks_like_gtk(path: Path) -> bool:
@@ -1454,10 +1467,14 @@ def _theme_roots(root: Path) -> list[Path]:
 def _install_third_party(root: Path, home: Path, info: ArchiveInfo) -> list[str]:
     installed: list[str] = []
     for path in _theme_roots(root):
-        if _dir_looks_like_icons(path):
+        if _dir_looks_like_full_icons(path):
             dest = home / ".local/share/icons" / path.name
             _copy_tree(path, dest)
             installed.append(f"icons/{path.name}")
+        elif _dir_looks_like_cursors(path):
+            dest = home / ".local/share/icons" / path.name
+            _copy_tree(path, dest)
+            installed.append(f"cursors/{path.name}")
         elif _dir_looks_like_gtk(path):
             dest = home / ".local/share/themes" / path.name
             _copy_tree(path, dest)
@@ -1516,6 +1533,100 @@ def _install_third_party(root: Path, home: Path, info: ArchiveInfo) -> list[str]
     return installed
 
 
+_LIGHT_NAME_HINTS = ("latte", "polar", "light", "white", "day", "ice")
+
+
+def _pick_theme_name(names: list[str], prefer: tuple[str, ...] = ()) -> str:
+    uniq = list(dict.fromkeys(n for n in names if n))
+    if not uniq:
+        return ""
+    for hint in prefer:
+        want = hint.lower()
+        for name in uniq:
+            if name.lower() == want:
+                return name
+        for name in uniq:
+            if want in name.lower():
+                return name
+    return uniq[0]
+
+
+def apply_spec_from_installed(installed: list[str]) -> dict[str, Any]:
+    """Turn copy paths (gtk/Nordic, icons/Candy) into the apply_look item map."""
+    gtk: list[str] = []
+    icons: list[str] = []
+    cursors: list[str] = []
+    colors: list[str] = []
+    lookandfeel: list[str] = []
+    walls: list[str] = []
+    for item in installed:
+        kind, _, rest = item.partition("/")
+        if not rest:
+            continue
+        top = rest.split("/", 1)[0]
+        if kind == "gtk":
+            gtk.append(top)
+        elif kind == "icons":
+            icons.append(top)
+        elif kind == "cursors":
+            cursors.append(top)
+        elif kind == "colors":
+            colors.append(Path(rest).stem)
+        elif kind == "look-and-feel":
+            lookandfeel.append(top)
+        elif kind in {"wallpaper", "wallpapers"}:
+            walls.append(Path(rest).name)
+    items: dict[str, Any] = {}
+    if gtk:
+        items["gtk"] = {"name": _pick_theme_name(gtk)}
+    if icons:
+        items["icons"] = {"name": _pick_theme_name(icons, ("kora",))}
+    if cursors:
+        items["cursors"] = {"name": _pick_theme_name(cursors)}
+    if colors:
+        items["colors"] = {"name": _pick_theme_name(colors, ("mauve", "blue", "mocha"))}
+    if lookandfeel:
+        items["lookandfeel"] = {"name": _pick_theme_name(lookandfeel)}
+    if walls:
+        items["wallpaper"] = {"files": walls}
+    return {"items": items}
+
+
+def _write_kv_file(path: Path, data: dict[str, dict[str, str]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    lines: list[str] = []
+    for sec, keys in data.items():
+        if sec:
+            lines.append(f"[{sec}]")
+        for key, value in keys.items():
+            lines.append(f"{key}={value}")
+        lines.append("")
+    path.write_text("\n".join(lines), encoding="utf-8")
+
+
+def _write_gtk_ini(home: Path, *, gtk: str = "", icons: str = "", cursors: str = "") -> None:
+    updates: dict[str, str] = {}
+    if gtk:
+        updates["gtk-theme-name"] = gtk
+    if icons:
+        updates["gtk-icon-theme-name"] = icons
+    if cursors:
+        updates["gtk-cursor-theme-name"] = cursors
+    if not updates:
+        return
+    for rel in (".config/gtk-3.0/settings.ini", ".config/gtk-4.0/settings.ini"):
+        path = home / rel
+        data = _parse_kv_file(path)
+        data.setdefault("Settings", {}).update(updates)
+        _write_kv_file(path, data)
+
+
+def _xfconf_set(channel: str, prop: str, value: str) -> None:
+    if not shutil.which("xfconf-query"):
+        return
+    _run(["xfconf-query", "-c", channel, "-p", prop, "-s", value])
+
+
 def apply_look(
     home: Path,
     manifest: dict[str, Any] | None,
@@ -1544,6 +1655,7 @@ def apply_look(
     if icons:
         if desktop == "plasma":
             _kwrite("kdeglobals", "Icons", "Theme", icons, home=home)
+        _xfconf_set("xsettings", "/Net/IconThemeName", icons)
         for schema in (
             "org.gnome.desktop.interface",
             "org.cinnamon.desktop.interface",
@@ -1553,16 +1665,30 @@ def apply_look(
                 applied.append(f"icons={icons}")
                 break
         else:
-            if icons:
-                applied.append(f"icons={icons}")
+            applied.append(f"icons={icons}")
     if cursors:
         _kwrite("kcminputrc", "Mouse", "cursorTheme", cursors, home=home)
         _gsettings_set("org.gnome.desktop.interface", "cursor-theme", cursors)
+        _gsettings_set("org.cinnamon.desktop.interface", "cursor-theme", cursors)
+        _gsettings_set("org.mate.peripherals-mouse", "cursor-theme", cursors)
+        _xfconf_set("xsettings", "/Gtk/CursorThemeName", cursors)
         applied.append(f"cursors={cursors}")
     if gtk:
         _gsettings_set("org.gnome.desktop.interface", "gtk-theme", gtk)
         _gsettings_set("org.cinnamon.desktop.interface", "gtk-theme", gtk)
+        _gsettings_set("org.mate.interface", "gtk-theme", gtk)
+        _xfconf_set("xsettings", "/Net/ThemeName", gtk)
         applied.append(f"gtk={gtk}")
+    if gtk or icons or cursors:
+        _write_gtk_ini(home, gtk=gtk, icons=icons, cursors=cursors)
+    probe = " ".join(part for part in (gtk, colors, icons, cursors) if part).lower()
+    if probe:
+        dark = not any(hint in probe for hint in _LIGHT_NAME_HINTS)
+        _gsettings_set(
+            "org.gnome.desktop.interface",
+            "color-scheme",
+            "prefer-dark" if dark else "prefer-light",
+        )
     if colors and shutil.which("plasma-apply-colorscheme"):
         if _run(["plasma-apply-colorscheme", colors]):
             applied.append(f"colors={colors}")

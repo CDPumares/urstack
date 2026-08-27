@@ -3537,8 +3537,9 @@ def _look_store_section(
             "Community packs from GitHub",
             "Not the GNOME or KDE theme store — those already live in Discover "
             "and System Settings. This list is hand-picked like Apps: Dracula, "
-            "Nord, Catppuccin, Sweet, Bibata, and other FOSS palettes. Install "
-            "stays in your home directory and never runs theme installer scripts.",
+            "Nord, Catppuccin, Sweet, Bibata, and other FOSS palettes. "
+            "Install copies the pack into your home directory and switches this "
+            "desktop to it (GTK apps, icons, cursors, Plasma colours).",
         )
     )
 

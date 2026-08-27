@@ -4,7 +4,8 @@
 Discover and GNOME Software already list Pling / openDesktop. This catalog is
 the Apps-page equivalent: hand-picked FOSS palettes and icon sets (Dracula,
 Nord, Catppuccin, Sweet, Bibata) downloaded as real archives and installed
-user-local by look.py. Installer scripts are never run.
+user-local by look.py. Archives are unpacked and applied with desktop
+helpers; installer scripts inside a zip are never executed.
 """
 
 from __future__ import annotations
